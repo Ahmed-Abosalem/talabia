@@ -1,0 +1,519 @@
+/* frontend/src/pages/Seller/SellerDashboard.css */
+
+/* ===== صفحة البائع العامة ===== */
+
+.seller-page {
+  direction: rtl;
+  padding-block: 1.2rem 2rem;
+  color: #0f172a;
+}
+
+/* ===== البلوك العلوي: اسم المتجر + حالة + تبويبات ===== */
+
+.seller-top {
+  margin-bottom: 1.1rem;
+  padding: 0.9rem 1.4rem 0.8rem;
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+/* صف المتجر */
+
+.seller-store-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.7rem;
+}
+
+.seller-store-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  max-width: 100%;
+}
+
+/* أيقونة المتجر الصغيرة */
+
+.seller-store-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 0.9rem;
+  background: linear-gradient(135deg, #fed7aa, #fecaca);
+  color: #7f1d1d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 6px 14px rgba(248, 113, 113, 0.25);
+}
+
+/* اسم المتجر في نفس السطر */
+
+.seller-store-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+/* حالة مفعل – مستطيل بحواف ناعمة (ليس كابسولة كاملة) */
+
+.seller-store-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.14rem 0.6rem;
+  border-radius: 0.55rem; /* مستطيل بحواف ناعمة */
+  background: rgba(220, 252, 231, 0.9);
+  border: 1px solid #86efac;
+  font-size: 0.72rem;
+  color: #166534;
+  white-space: nowrap;
+}
+
+.seller-store-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
+}
+
+/* مكان فارغ لأي معلومات مستقبلية */
+
+.seller-store-extra {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.seller-store-user {
+  white-space: nowrap;
+}
+
+/* ===== Tabs (عصرية، في الوسط) ===== */
+
+.seller-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1.6rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  padding-inline: 0.2rem;
+  overflow-x: auto;
+}
+
+.seller-tab {
+  position: relative;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  padding: 0.45rem 0.1rem 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 0.15s ease,
+    transform 0.1s ease,
+    opacity 0.15s ease;
+  opacity: 0.85;
+}
+
+.seller-tab svg {
+  flex-shrink: 0;
+}
+
+.seller-tab:hover {
+  color: #0f172a;
+  transform: translateY(-0.5px);
+  opacity: 1;
+}
+
+.seller-tab-active {
+  color: #b91c1c;
+  font-weight: 700;
+  opacity: 1;
+}
+
+.seller-tab-active::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 3px;
+  background: linear-gradient(90deg, #b91c1c, #f97316);
+  border-radius: 999px;
+}
+
+/* ===== شريط الفلتر الزمني ===== */
+
+.seller-date-filter {
+  margin-top: 0.6rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed rgba(226, 232, 240, 0.9);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+}
+
+.seller-date-filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #6b7280;
+}
+
+.seller-date-filter-label svg {
+  color: #9ca3af;
+}
+
+.seller-date-filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+.seller-date-pill {
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  background: #f9fafb;
+  font-size: 0.76rem;
+  color: #4b5563;
+  cursor: pointer;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.seller-date-pill:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #1d4ed8;
+}
+
+.seller-date-pill-active {
+  background: linear-gradient(135deg, #0ea5e9, #22c55e);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(14, 165, 233, 0.35);
+}
+
+.seller-date-filter-custom {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  font-size: 0.76rem;
+  color: #4b5563;
+}
+
+.seller-date-filter-custom label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.seller-date-filter-custom input[type="date"] {
+  border-radius: 0.6rem;
+  border: 1px solid #e5e7eb;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.76rem;
+  background: #f9fafb;
+  color: #111827;
+}
+
+/* ===== باقي الأقسام كما هي من قبل ===== */
+
+.seller-section {
+  border-radius: 1.1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  padding: 1.25rem 1.25rem 1.4rem;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+}
+
+.seller-section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  align-items: flex-start;
+}
+
+.seller-section-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.seller-section-header p {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.seller-header-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.seller-section-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* أزرار، تولبار، حالات تحميل... (كما في النسخة السابقة) */
+
+.seller-btn-primary,
+.seller-btn-ghost,
+.seller-btn-outline,
+.seller-btn-ghost-small {
+  border-radius: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.12s ease,
+    border-color 0.16s ease;
+  border: 1px solid transparent;
+}
+
+.seller-btn-primary {
+  background: linear-gradient(135deg, #0ea5e9, #22c55e);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(14, 165, 233, 0.35);
+}
+
+.seller-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(14, 165, 233, 0.4);
+}
+
+.seller-btn-ghost {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+.seller-btn-ghost:hover {
+  background: #f3f4f6;
+}
+
+.seller-btn-outline {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #0f172a;
+}
+
+.seller-btn-outline:hover {
+  background: #f9fafb;
+}
+
+.seller-btn-ghost-small {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.75rem;
+  background: #f9fafb;
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+.seller-btn-ghost-small:hover {
+  background: #f3f4f6;
+}
+
+.seller-btn-danger {
+  color: #b91c1c;
+}
+
+.seller-btn-danger:hover {
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.seller-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  align-items: center;
+  margin-bottom: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.seller-search {
+  position: relative;
+  max-width: 260px;
+  width: 100%;
+}
+
+.seller-search svg {
+  position: absolute;
+  inset-inline-end: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.seller-search input {
+  width: 100%;
+  padding: 0.55rem 2.3rem 0.55rem 0.8rem;
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  font-size: 0.8rem;
+  outline: none;
+  background: #f9fafb;
+  color: #111827;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.seller-search input:focus {
+  border-color: #0ea5e9;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.25);
+}
+
+.seller-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.7rem;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
+.seller-select select {
+  border: none;
+  background: transparent;
+  font-size: 0.78rem;
+  color: #111827;
+  outline: none;
+}
+
+.seller-filter-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+.seller-filter-reset {
+  border: none;
+  background: none;
+  font-size: 0.75rem;
+  color: #0ea5e9;
+  cursor: pointer;
+}
+
+.seller-loading {
+  padding: 1.4rem 1rem;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.seller-empty {
+  padding: 2rem 1.2rem;
+  text-align: center;
+}
+
+.seller-empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  margin: 0 auto 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.seller-empty h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.seller-empty p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* ===== Responsive ===== */
+
+@media (max-width: 900px) {
+  .seller-top {
+    padding-inline: 1rem;
+  }
+
+  .seller-store-row {
+    gap: 0.7rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .seller-top {
+    padding-inline: 0.9rem;
+  }
+
+  .seller-section {
+    padding: 1rem 0.85rem 1.1rem;
+  }
+
+  .seller-section-header {
+    flex-direction: column;
+  }
+
+  .seller-section-actions {
+    justify-content: flex-start;
+  }
+
+  .seller-date-filter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .seller-date-filter-controls {
+    justify-content: flex-start;
+  }
+}

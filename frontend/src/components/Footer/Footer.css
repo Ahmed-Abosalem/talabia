@@ -1,0 +1,159 @@
+/* frontend/src/components/Footer/Footer.css */
+
+.footer-root {
+  margin-top: 2rem; /* نفس القيمة السابقة للحجم */
+  background: #0f172a; /* خلفية داكنة أنيقة */
+  color: #e5e7eb;
+  border-top: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.5);
+  font-family: "Tajawal", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+
+/* نحافظ على نفس الـ padding تقريبًا ونفس فكرة الحجم العام */
+.footer-inner {
+  max-width: 1200px;
+  margin-inline: auto;
+  padding: 1.25rem 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.footer-col {
+  min-width: 0;
+}
+
+/* القسم الأول – الهوية */
+
+.footer-brand {
+  font-weight: 800;
+  font-size: 1.05rem; /* قريب جدًا من 1.1rem القديم */
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.04em;
+}
+
+.footer-brand-desc {
+  font-size: 0.8rem;
+  max-width: 260px;
+  margin: 0;
+  line-height: 1.7;
+  color: #cbd5e1;
+}
+
+/* العناوين الجانبية */
+
+.footer-column-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #e5e7eb;
+}
+
+/* الروابط العامة */
+
+.footer-link {
+  font-size: 0.8rem;
+  color: #cbd5f5;
+  margin-bottom: 0.25rem;
+  cursor: pointer;
+  display: inline-block;
+  text-align: start;
+  border: none;
+  background: transparent;
+  padding: 0;
+  transition:
+    color 0.18s ease,
+    transform 0.18s ease,
+    text-shadow 0.18s ease;
+}
+
+.footer-link:hover {
+  color: #818cf8;
+  transform: translateY(-1px);
+  text-shadow: 0 0 6px rgba(129, 140, 248, 0.55);
+}
+
+/* الروابط السريعة – شبكة 2×2 كما في التصور */
+
+.footer-quick-links-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem 0.75rem;
+}
+
+/* القسم الرابع – السوشيال */
+
+.footer-social-icons {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.footer-social-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #475569;
+  color: #9ca3af; /* رمادي افتراضي */
+  text-decoration: none;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.footer-social-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* عند التمرير يتحول للون الأساسي */
+
+.footer-social-icon:hover {
+  background-color: #667eea;
+  border-color: #7c93e6;
+  color: #f9fafb;
+  transform: translateY(1px);
+}
+
+/* قسم الحقوق في الأسفل */
+
+.footer-bottom {
+  max-width: 1200px;
+  margin-inline: auto;
+  padding: 0.5rem 1rem 0.9rem; /* نفس أبعاد القديم تقريبًا */
+}
+
+.footer-bottom-divider {
+  height: 1px;
+  background: rgba(148, 163, 184, 0.4);
+  margin-bottom: 0.5rem;
+}
+
+.footer-bottom-text {
+  margin: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #94a3b8; /* أصغر وأهدأ قليلاً كما طلبت */
+}
+
+/* تجاوب بسيط للجوال */
+
+@media (max-width: 640px) {
+  .footer-inner {
+    text-align: center;
+  }
+
+  .footer-link {
+    text-align: center;
+  }
+
+  .footer-social-icons {
+    justify-content: center;
+  }
+}

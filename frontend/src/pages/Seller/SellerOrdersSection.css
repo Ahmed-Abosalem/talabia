@@ -1,0 +1,469 @@
+/* frontend/src/pages/Seller/SellerOrdersSection.css */
+/* تبويب الطلبات في لوحة البائع */
+
+/* شريط الفلاتر */
+.seller-filters-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.76rem;
+  color: #4b5563;
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px dashed #e5e7eb;
+}
+
+.seller-link-reset {
+  border: none;
+  background: none;
+  font-size: 0.75rem;
+  color: #0ea5e9;
+  cursor: pointer;
+}
+
+/* قائمة الكروت */
+.seller-orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+/* الكرت الخارجي */
+.seller-order-card {
+  border-radius: 1.4rem;
+  border: 1px solid #1d4ed8;
+  background: #edf4ff;
+  padding: 0.75rem 0.9rem 0.85rem;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+}
+
+/* الشريط العلوي */
+.seller-order-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.seller-order-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.24rem 0.75rem;
+  border-radius: 0.5rem; /* مستطيل بحواف ناعمة */
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.seller-order-pill--date {
+  background: #ffffff;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+.seller-order-pill--code {
+  background: #dcfce7;
+  border: 1px solid #6ee7b7;
+  color: #166534;
+  font-weight: 600;
+}
+
+.seller-order-pill--brand {
+  background: transparent;
+  border: none;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+/* الكرت الداخلي الأبيض */
+.seller-order-card-inner {
+  margin-top: 0.7rem;
+  background: #ffffff;
+  border-radius: 1.1rem;
+  border: 1px solid #e5e7eb;
+  padding: 0.9rem 0.95rem 0.8rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+/* ✅ منطقة الوسط: الآن عمود واحد فقط (تفاصيل المنتج) */
+.seller-order-main-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.2rem;
+  align-items: flex-start;
+}
+
+.seller-order-main-row--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.seller-order-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+/* ✅ عمود المنتج يأخذ كامل العرض */
+.seller-order-column--product {
+  padding-inline-end: 0;
+  border-inline-end: none;
+}
+
+.seller-order-column--full {
+  padding-inline: 0;
+  border: none;
+}
+
+/* عناوين الأعمدة */
+.seller-order-column-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+/* خط صغير جانبي لتفاصيل المنتج */
+.seller-header-stick {
+  width: 3px;
+  height: 16px;
+  border-radius: 999px;
+  background: #1d4ed8;
+}
+
+/* نص "المنتج رقم X من هذا الطلب" بجانب عنوان تفاصيل المنتج */
+.seller-order-sub-index {
+  font-size: 0.74rem;
+  color: #6b7280;
+  margin-top: 0.1rem;
+  margin-inline-start: 8ch; /* مسافة تعادل تقريباً ٨ حروف بين العنوانين */
+}
+
+/* تفاصيل المنتج */
+.seller-order-product-main {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1.5fr);
+  gap: 0.9rem;
+  align-items: center;
+}
+
+.seller-order-product-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.seller-order-product-name-label {
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+
+.seller-order-product-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111827;
+  min-width: 0;
+}
+
+/* فراغ صغير بين "اسم المنتج:" واسم المنتج الحقيقي */
+.seller-order-product-name span + span {
+  margin-inline-start: 0.25rem;
+}
+
+/* ✅ صف اللون/الحجم */
+.seller-order-variants-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: -0.15rem;
+}
+
+/* ✅ (محدث) مستطيلات ناعمة + (الأهم) سطر واحد "الحجم: 89" */
+.seller-order-variant-chip {
+  display: inline-flex;
+  flex-direction: row; /* ✅ بدل عمودي */
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.45rem;
+
+  border-radius: 0.85rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+
+  padding: 0.55rem 0.75rem;
+  min-width: 160px;
+
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.seller-order-variant-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap; /* ✅ لا يكسر السطر */
+}
+
+.seller-order-variant-value {
+  font-size: 0.84rem;
+  color: #0f172a;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap; /* ✅ لا يكسر السطر */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* الكمية / سعر الواحدة / الإجمالي – داخل إطار واحد */
+.seller-order-product-meta-row {
+  margin-top: 0.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.9rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  justify-content: center; /* توسيط محتوى الكادر (كمية/سعر/إجمالي) */
+}
+
+/* العناصر داخل الكادر – متوسّطة */
+.seller-order-meta-item {
+  min-width: 110px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  align-items: center;
+  text-align: center;
+}
+
+.seller-meta-label {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.seller-meta-value {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #111827;
+  text-align: center;
+}
+
+/* طريقة الدفع في سطر واحد */
+.seller-order-payment {
+  margin-top: 0.35rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+}
+
+/* صورة المنتج */
+.seller-order-product-media {
+  width: 96px;
+  height: 96px;
+  border-radius: 1rem;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.seller-order-product-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.seller-order-product-placeholder {
+  color: #9ca3af;
+}
+
+/* الشريط السفلي */
+.seller-order-bottom-row {
+  margin-top: 0.85rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+/* مجموعة الأزرار/العناصر في يسار الشريط (حالة الطلب + القائمة المنسدلة) */
+.seller-order-bottom-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* غلاف كرت حالة الطلب */
+.seller-order-status-pill-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* كرت حالة الطلب (ديناميكي) */
+.seller-order-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.28rem 1rem;
+  border-radius: 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #374151;
+  min-width: 150px;
+  text-align: center;
+}
+
+/* غلاف القائمة المنسدلة لتحديث الحالة */
+.seller-order-status-update {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 190px;
+}
+
+/* القائمة المنسدلة نفسها – مستطيل بحواف ناعمة */
+.seller-order-status-select {
+  width: 100%;
+  padding: 0.4rem 0.9rem;
+  border-radius: 0.7rem;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  font-size: 0.8rem;
+  color: #111827;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.seller-order-status-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+  background: #ffffff;
+}
+
+.seller-order-status-select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* زر طباعة السند */
+.seller-order-print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1.4rem;
+  border-radius: 0.6rem;
+  border: 1px solid #020617;
+  background: #020617;
+  font-size: 0.78rem;
+  color: #f9fafb;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+
+.seller-order-print-btn:hover {
+  background: #111827;
+  border-color: #111827;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.25);
+  transform: translateY(-1px);
+}
+
+/* ========== Responsive – تحسين نسخة الهاتف ========== */
+
+@media (max-width: 900px) {
+  .seller-order-card {
+    padding: 0.7rem 0.75rem 0.8rem;
+  }
+
+  .seller-order-main-row {
+    gap: 0.9rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .seller-order-card-inner {
+    padding: 0.8rem 0.8rem 0.75rem;
+  }
+
+  /* الهيدر العلوي يلتف بشكل أنيق */
+  .seller-order-header-row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    row-gap: 0.35rem;
+  }
+
+  .seller-order-pill {
+    font-size: 0.75rem;
+    padding: 0.22rem 0.65rem;
+  }
+
+  /* صف المنتج يبقى واضح */
+  .seller-order-product-main {
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .seller-order-product-media {
+    width: 80px;
+    height: 80px;
+  }
+
+  /* ✅ مستطيلات اللون/الحجم تتمدد بشكل أجمل على الهاتف */
+  .seller-order-variant-chip {
+    min-width: 0;
+    flex: 1;
+  }
+
+  /* صندوق الكمية/السعر/الإجمالي يبقى متوسّط كما هو */
+  .seller-order-product-meta-row {
+    gap: 0.5rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .seller-order-meta-item {
+    min-width: 90px;
+  }
+
+  /* الشريط السفلي يصبح عموديًا أنيقًا */
+  .seller-order-bottom-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+
+  .seller-order-bottom-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .seller-order-status-pill {
+    width: 100%;
+  }
+
+  .seller-order-status-select {
+    width: 100%;
+  }
+
+  .seller-order-print-btn {
+    width: 100%;
+    justify-content: center;
+    padding-inline: 1.1rem;
+  }
+}

@@ -1,0 +1,228 @@
+/* frontend/src/pages/Seller/SellerOverviewSection.css */
+/* تنسيقات تبويب "نظرة عامة" في لوحة البائع بتصميم عصري ومركّز في المنتصف */
+
+/* الجذر الخاص بتبويب نظرة عامة داخل كرت لوحة البائع */
+.seller-overview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===== فلتر الفترة الزمنية داخل نظرة عامة ===== */
+
+.seller-overview-filter {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto 0.9rem;
+}
+
+.seller-overview-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding-bottom: 0.4rem;
+}
+
+.seller-overview-filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.seller-overview-filter-label svg {
+  color: #9ca3af;
+}
+
+.seller-overview-filter-control {
+  min-width: 170px;
+  max-width: 220px;
+}
+
+.seller-overview-filter-select {
+  width: 100%;
+  border-radius: 0.7rem;
+  border: 1px solid #e5e7eb;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  background-color: #f9fafb;
+  color: #111827;
+  outline: none;
+  cursor: pointer;
+  /* سهم القائمة المنسدلة (rtl-friendly) */
+  background-image: linear-gradient(45deg, transparent 50%, #9ca3af 50%),
+    linear-gradient(135deg, #9ca3af 50%, transparent 50%);
+  background-position: calc(0.9rem) 55%, calc(0.55rem) 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.seller-overview-filter-select:focus {
+  border-color: #0ea5e9;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.25);
+}
+
+/* نطاق التاريخ المخصص */
+
+.seller-overview-filter-custom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
+.seller-overview-filter-custom label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.seller-overview-filter-custom input[type="date"] {
+  border-radius: 0.6rem;
+  border: 1px solid #e5e7eb;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  background: #f9fafb;
+  color: #111827;
+}
+
+/* الخط الفاصل بين الفلتر والكروت */
+
+.seller-overview-filter-divider {
+  margin-top: 0.55rem;
+  height: 1px;
+  background: rgba(229, 231, 235, 0.95);
+}
+
+/* ===== كروت الملخص (الإحصائيات) ===== */
+
+.seller-summary-grid {
+  width: 100%;
+  max-width: 960px;
+  margin: 0.9rem auto 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.seller-summary-card {
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 0.9rem 1.05rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
+}
+
+.seller-summary-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.55rem;
+  font-size: 0.8rem;
+}
+
+/* ألوان الأيقونات حسب نوع الإحصائية */
+.summary-blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.summary-amber {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.summary-sky {
+  background: #ecfeff;
+  color: #0284c7;
+}
+
+.summary-green {
+  background: #ecfdf5;
+  color: #16a34a;
+}
+
+.summary-teal {
+  background: #f0fdfa;
+  color: #0f766e;
+}
+
+.seller-summary-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.seller-summary-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.seller-summary-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* كرت الإيرادات يكون أعرض قليلاً على الشاشات المتوسطة والكبيرة */
+.revenue-card {
+  grid-column: span 2;
+}
+
+/* ===== سطر توضيحي في الأسفل ===== */
+
+.seller-overview-footer {
+  margin-top: 1.1rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* ===== استجابة (Responsive) ===== */
+
+@media (max-width: 960px) {
+  .seller-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .revenue-card {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .seller-overview-filter-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .seller-overview-filter-control {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .seller-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .revenue-card {
+    grid-column: span 1;
+  }
+
+  .seller-summary-card {
+    padding-inline: 0.85rem;
+  }
+}

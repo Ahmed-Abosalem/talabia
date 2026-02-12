@@ -1,0 +1,331 @@
+/* src/pages/Admin/AdminDashboard.css */
+
+.admin-page {
+  direction: rtl;
+  text-align: right;
+  min-height: 100vh;
+  padding: 1.5rem 1.5rem 2rem;
+  background: #f3f4f6;
+  color: #111827;
+  box-sizing: border-box;
+}
+
+/* الشريط العلوي الثابت لأقسام الإدارات */
+.admin-top-tabs-sticky {
+  position: sticky;
+  top: var(--navbar-height, 4rem); /* ملاصق للـ Navbar من الأسفل */
+  z-index: 5;                      /* أقل من المودالات حتى لا يغطيها */
+}
+
+/* الحاوية البيضاء للشريط (تشبه شريط التبويبات في المتجر الذي أعجبك) */
+.admin-top-tabs-container {
+  padding: 0 1.25rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+/* صف داخلي قابل للتمرير الأفقي عند الحاجة */
+.admin-top-tabs-scroll {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.admin-top-tabs-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.admin-top-tabs-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-top-tabs-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.8);
+  border-radius: 999px;
+}
+
+/* تجميع تبويبات كل مجموعة (عملياً كلها في صف واحد الآن) */
+.admin-top-tabs-group {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: max-content;
+}
+
+/* عناوين المجموعات مخفية لأننا نعرض التبويبات فقط */
+.admin-top-tabs-group-title {
+  display: none;
+}
+
+.admin-top-tabs-items {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
+}
+
+/* تبويب الإدارة */
+.admin-top-tab-card {
+  position: relative;
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: max-content;
+  border-radius: 0.55rem;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+/* خط سفلي يظهر فقط مع النشط */
+.admin-top-tab-card::after {
+  content: "";
+  position: absolute;
+  left: 0.4rem;
+  right: 0.4rem;
+  bottom: 0.2rem;
+  height: 2px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+.admin-top-tab-card:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.admin-top-tab-card-active {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.admin-top-tab-card-active::after {
+  background: #2563eb;
+}
+
+/* أيقونة التبويب */
+.admin-top-tab-icon {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.admin-top-tab-card-active .admin-top-tab-icon {
+  color: #2563eb;
+  background: rgba(219, 234, 254, 0.7);
+}
+
+/* نص التبويب */
+.admin-top-tab-label {
+  white-space: nowrap;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* استجابة للشاشات الأصغر */
+@media (max-width: 900px) {
+  .admin-page {
+    padding: 1.2rem 0.6rem 1.5rem;
+  }
+
+  .admin-top-tabs-container {
+    padding-inline: 0.7rem;
+  }
+
+  .admin-top-tab-card {
+    padding: 0.45rem 0.7rem;
+    font-size: 0.78rem;
+  }
+}
+
+/* المحتوى الرئيسي */
+.admin-main {
+  min-height: 400px;
+}
+
+/* مسافة بسيطة تحت الشريط حتى لا يلتصق المحتوى به بصرياً */
+.admin-main-with-top-tabs {
+  margin-top: 0.35rem;
+}
+
+/* كروت الأقسام والجداول */
+.admin-section-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 0.9rem 1rem 1rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.admin-section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 0.7rem;
+}
+
+.admin-section-header-main {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.admin-section-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.admin-section-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.admin-section-subtitle {
+  margin-top: 0.1rem;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.admin-section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-start;
+}
+
+/* أزرار عامة */
+.admin-button {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 0.32rem 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: #111827;
+  color: #f9fafb;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.25);
+  transition: transform 0.08s ease, box-shadow 0.12s ease,
+    background 0.16s ease, color 0.16s ease;
+}
+
+.admin-button svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.admin-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.3);
+}
+
+.admin-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.22);
+}
+
+.admin-button-ghost {
+  background: white;
+  color: #111827;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.7);
+}
+
+.admin-button-ghost:hover {
+  background: #f9fafb;
+}
+
+/* فلاتر وأدوات البحث المشتركة */
+.admin-filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+  align-items: center;
+}
+
+.admin-filter-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  padding: 0.2rem 0.65rem;
+  font-size: 0.72rem;
+  background: white;
+  color: #4b5563;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition:
+    background 0.14s ease,
+    color 0.14s ease,
+    border-color 0.14s ease;
+}
+
+.admin-filter-chip-active {
+  background: linear-gradient(135deg, #eff6ff, #ecfdf5);
+  border-color: transparent;
+  color: #111827;
+}
+
+.admin-input {
+  border-radius: 0.7rem;
+  border: 1px solid rgba(148, 163, 184, 0.9);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+  min-width: 130px;
+  background: #f9fafb;
+}
+
+.admin-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+}
+
+/* عدّاد إجمالي المستخدمين (يستخدم في AdminUsersSection) */
+.admin-users-total-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  border: 1px solid rgba(129, 140, 248, 0.6);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #111827;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+}
+
+.admin-users-total-chip-number {
+  font-weight: 700;
+  color: #2563eb;
+}

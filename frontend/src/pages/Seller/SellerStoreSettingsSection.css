@@ -1,0 +1,180 @@
+/* frontend/src/pages/Seller/SellerStoreSettingsSection.css */
+/* تنسيقات تبويب "إعدادات المتجر" في لوحة البائع */
+
+/* توسيط هيدر هذا التبويب فقط */
+.seller-section-header.seller-section-header--center {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 1.1rem;
+}
+
+.seller-section-header.seller-section-header--center > div {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.seller-section-header.seller-section-header--center h2 {
+  font-size: 1.08rem;
+}
+
+.seller-section-header.seller-section-header--center p {
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* الشبكة الأساسية للكروت */
+.seller-settings-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.3fr);
+  gap: 0.9rem;
+}
+
+/* كروت عصرية بخلفية بيضاء وظل خفيف مشابه لأسلوب نظرة عامة */
+.seller-card {
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 0.9rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.03);
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.12s ease;
+}
+
+.seller-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+  transform: translateY(-1px);
+}
+
+/* توسيط عناوين البطاقات في هذا التبويب */
+.seller-card-header {
+  text-align: center;
+  margin-bottom: 0.4rem;
+}
+
+.seller-card-header h3 {
+  margin: 0 0 0.1rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.seller-card-body {
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+/* الحقول داخل الإعدادات */
+
+.seller-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  margin-bottom: 0.6rem;
+}
+
+.seller-field label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.seller-field input,
+.seller-field select,
+.seller-field textarea {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.8rem;
+  outline: none;
+  background: #ffffff;
+  color: #111827;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.seller-field input:focus,
+.seller-field select:focus,
+.seller-field textarea:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.25);
+}
+
+/* ✅ شبكة العنوان داخل بطاقة البيانات الأساسية */
+.seller-address-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+}
+
+.seller-field--compact {
+  margin-bottom: 0; /* داخل الشبكة */
+}
+
+.seller-field--full {
+  grid-column: span 2;
+  margin-bottom: 0;
+}
+
+/* قائمة الملاحظات */
+
+.seller-hint-list {
+  margin: 0.3rem 0 0;
+  padding-inline-start: 1rem;
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
+.seller-hint-list li {
+  margin-bottom: 0.15rem;
+}
+
+/* كرت الملاحظة */
+
+.seller-card-info {
+  background: #f9fafb;
+}
+
+.seller-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.seller-info-row svg {
+  margin-top: 0.1rem;
+  color: #0ea5e9;
+}
+
+/* زر الحفظ */
+
+.seller-settings-footer {
+  margin-top: 0.4rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Responsive */
+
+@media (max-width: 900px) {
+  .seller-settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .seller-address-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .seller-field--full {
+    grid-column: span 1;
+  }
+}

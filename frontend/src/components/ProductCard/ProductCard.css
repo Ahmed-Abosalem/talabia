@@ -1,0 +1,256 @@
+/* src/components/ProductCard/ProductCard.css */
+/* كرت المنتج – 60% للصورة / 40% للمحتوى – حجم ثابت وأيقونة سلة بارزة */
+
+/* الحاوية الأساسية للكرت */
+.product-card {
+  display: grid;
+  grid-template-rows: 3fr 2fr; /* الصف العلوي للصورة ≈ 60% ، الصف السفلي للمحتوى ≈ 40% */
+  width: 100%;
+  height: 340px; /* ارتفاع ثابت لكل الكروت */
+  background: #ffffff;
+  border-radius: 0.9rem;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+}
+
+/* =========================
+   المنطقة العلوية – الصورة (≈ 60%)
+   ========================= */
+
+.product-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%; /* تأخذ كامل صف الصورة (3fr من الكرت) */
+  overflow: hidden;
+  background: #f9fafb;
+}
+
+/* طبقة اختيارية لو كنت تستخدمها في JSX */
+.product-image-overlay {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 40%;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.16), transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.product-card:hover .product-image-overlay {
+  opacity: 1;
+}
+
+/* الصورة نفسها – تتكيف مع المساحة حتى لو تمددت */
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: fill; /* حسب طلبك: تمطيط/تصغير/تكبير لتملأ كل المساحة */
+  object-position: center;
+  transition: transform 0.2s ease;
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.01);
+}
+
+/* =========================
+   المنطقة السفلية – المحتوى (≈ 40%)
+   ========================= */
+
+.product-content {
+  padding: 0.6rem 0.8rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0; /* يمنع تمدد الكرت */
+}
+
+/* اسم المنتج */
+.product-name {
+  margin: 0;
+  margin-bottom: 0.16rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+  display: -webkit-box;
+  line-clamp: 2;         /* الخاصية القياسية */
+  -webkit-line-clamp: 2; /* دعم WebKit */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* الوصف المختصر */
+.product-description {
+  margin: 0.04rem 0 0.2rem 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+  line-height: 1.35;
+  display: -webkit-box;
+  line-clamp: 2;         /* الخاصية القياسية */
+  -webkit-line-clamp: 2; /* دعم WebKit */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* صف السعر */
+.product-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  margin-top: auto; /* يدفع السعر للأسفل ويترك الاسم/الوصف في الأعلى */
+}
+
+/* السعر */
+.product-price {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: #0f766e;
+}
+
+/* الخط الفاصل قبل الأيقونات */
+.product-divider {
+  margin-top: 0.3rem;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+/* =========================
+   صف الأيقونات (سلة / مفضلة / مشاركة)
+   ========================= */
+
+.product-actions-row {
+  margin-top: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+/* الشكل الافتراضي للأيقونات (يُستخدم للمفضلة والمشاركة) */
+.product-icon-circle {
+  border-radius: 999px;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  cursor: pointer;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.1s ease,
+    color 0.16s ease;
+}
+
+.product-icon-circle:hover {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.18);
+}
+
+/* ⭐ السلة: دائرة ممتلئة بلون أزرق ناعم – أبرز أيقونة */
+.product-icon-circle.cart {
+  background: #3b82f6; /* أزرق ناعم */
+  color: #ffffff;      /* الأيقونة باللون الأبيض */
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.35);
+}
+
+/* عند المرور على السلة */
+.product-icon-circle.cart:hover {
+  background: #2563eb; /* أزرق أغمق قليلاً */
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+}
+
+/* حالة التفعيل العامة (تُضاف مع favorite-active / cart-active / share-active) */
+.product-icon-circle-active {
+  border-color: transparent;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.03);
+}
+
+/* مفضلة مفعّلة – هوية خضراء */
+.favorite-active {
+  background-color: #dcfce7; /* أخضر باهت كخلفية */
+  color: #16a34a;           /* أيقونة خضراء واضحة */
+}
+
+/* سلة مفعّلة – تتحول لهوية خضراء مع حركة نبض خفيفة */
+.cart-active {
+  background-color: #16a34a; /* أخضر واضح */
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.45);
+  animation: icon-pulse 0.4s ease;
+}
+
+/* مشاركة مفعّلة */
+.share-active {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+/* حركة نبض اختيارية */
+@keyframes icon-pulse {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-1px) scale(1.08);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* نص حالة السلة تحت الأيقونات */
+.product-cart-status {
+  margin: 0.15rem 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+/* =========================
+   📱 على الجوال – نفس الشكل تقريباً
+   ========================= */
+
+@media (max-width: 640px) {
+  .product-card {
+    height: 340px; /* يبقى ثابت أيضاً على الجوال */
+    border-radius: 0.85rem;
+  }
+
+  .product-content {
+    padding: 0.55rem 0.75rem 0.6rem;
+  }
+
+  .product-name {
+    font-size: 0.9rem;
+  }
+
+  .product-description {
+    font-size: 0.78rem;
+  }
+
+  .product-price {
+    font-size: 0.92rem;
+  }
+
+  .product-actions-row {
+    padding-inline: 0.2rem;
+  }
+}

@@ -1,0 +1,28 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.*
+backend/.env
+frontend/.env
+
+# Logs
+logs
+*.log
+
+# Build
+dist/
+build/
+frontend/dist/
+frontend/build/
+
+# OS
+.DS_Store
+
+# Uploads
+uploads/
+backend/uploads/

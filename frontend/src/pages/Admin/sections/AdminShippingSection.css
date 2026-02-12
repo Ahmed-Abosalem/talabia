@@ -1,0 +1,696 @@
+/* AdminShippingSection.css */
+/* تنسيقات خاصة بقسم إدارة شركات الشحن في لوحة الأدمن */
+
+/* ────────────────────────────────────────────────
+   🎛 أزرار وأجزاء عامة لقسم الأدمن
+   ──────────────────────────────────────────────── */
+
+.admin-section-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1rem 1.2rem 1.2rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+}
+
+.admin-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-section-header-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-section-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-section-title {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.admin-section-subtitle {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.admin-section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* أزرار عليا عامة */
+.admin-button {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #f9fafb;
+  cursor: pointer;
+  color: #111827;
+  font-weight: 500;
+}
+
+.admin-button span {
+  color: inherit;
+}
+
+/* زر أساسي – مثل "إضافة شركة شحن" */
+/* الحالة العادية: المستطيل أبيض والنص غامق */
+.admin-button-primary {
+  background-color: #ffffff;
+  border-color: #2563eb;
+  color: #111827 !important;
+}
+
+/* عند تمرير الماوس: المستطيل أزرق والنص أبيض */
+.admin-button-primary:hover {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.admin-button svg {
+  flex-shrink: 0;
+}
+
+.admin-button-ghost {
+  background: #ffffff;
+  color: #111827;
+}
+
+.admin-button-ghost:hover {
+  background: #f3f4f6;
+}
+
+/* رسالة خطأ داخل القسم */
+.admin-error {
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.6rem;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
+/* حالة عدم وجود بيانات */
+.users-empty-state {
+  margin-top: 0.9rem;
+  padding: 1.1rem 1rem;
+  border-radius: 0.8rem;
+  border: 1px dashed #e5e7eb;
+  background: #f9fafb;
+  text-align: center;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+/* ────────────────────────────────────────────────
+   🧭 المودال + الـ Stepper
+   ──────────────────────────────────────────────── */
+
+.admin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.admin-modal {
+  width: min(720px, 96vw);
+  max-height: 90vh;
+  background: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.admin-modal-header {
+  padding: 0.9rem 1.4rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-modal-header h2 {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.admin-modal-close {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.admin-modal-close:hover {
+  color: #111827;
+}
+
+.admin-modal-steps {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.6rem 1.4rem 0.8rem;
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+.admin-modal-step {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  opacity: 0.5;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.admin-modal-step-number {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  font-size: 0.72rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-modal-step-label {
+  white-space: nowrap;
+}
+
+.admin-modal-step-active {
+  opacity: 1;
+  color: #111827;
+}
+
+.admin-modal-step-active .admin-modal-step-number {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.admin-modal-step-done {
+  opacity: 0.9;
+  color: #16a34a;
+}
+
+.admin-modal-step-done .admin-modal-step-number {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #15803d;
+}
+
+.admin-modal-body {
+  padding: 0.9rem 1.4rem 1rem;
+  overflow-y: auto;
+  max-height: 55vh;
+}
+
+.admin-modal-footer {
+  padding: 0.7rem 1.4rem 0.9rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* أزرار المودال */
+.admin-profile-btn {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 0.35rem 0.95rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  background: #f9fafb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  color: #111827;
+}
+
+.admin-profile-btn.ghost {
+  background: #ffffff;
+  color: #111827;
+}
+
+.admin-profile-btn.primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.admin-profile-btn.primary:hover {
+  background: #1d4ed8;
+}
+
+/* ────────────────────────────────────────────────
+   🎯 نموذج الحقول
+   ──────────────────────────────────────────────── */
+
+.admin-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.admin-profile-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+.admin-profile-field {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.admin-profile-field label {
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.admin-profile-field input,
+.admin-profile-field select {
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.6rem;
+  border: 1px solid #e5e7eb;
+  font-size: 0.82rem;
+  outline: none;
+  background-color: #ffffff;
+}
+
+.admin-profile-field input:focus,
+.admin-profile-field select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.18);
+}
+
+.field-help-text {
+  font-size: 0.74rem;
+  color: #6b7280;
+}
+
+/* ────────────────────────────────────────────────
+   🌐 نطاق عمل الشركة (القائمة المنسدلة المحسّنة)
+   ──────────────────────────────────────────────── */
+
+.shipping-scope-wrapper {
+  position: relative;
+  margin-top: 0.25rem;
+}
+
+.shipping-scope-summary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.7rem;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #111827;
+}
+
+.shipping-scope-summary svg {
+  flex-shrink: 0;
+}
+
+/* اللوحة المنسدلة */
+.shipping-scope-panel {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  left: 0;
+  z-index: 30;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+  padding: 0.6rem 0.75rem 0.7rem;
+  max-height: 340px;
+  display: flex;
+  flex-direction: column;
+}
+
+.shipping-scope-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.4rem;
+}
+
+.shipping-scope-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.15rem;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  color: #374151;
+}
+
+.shipping-scope-mode input[type="radio"] {
+  width: 14px;
+  height: 14px;
+}
+
+.shipping-scope-mode-active {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+
+/* البحث داخل القائمة */
+.shipping-scope-search {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  margin-bottom: 0.45rem;
+}
+
+.shipping-scope-search svg {
+  color: #9ca3af;
+}
+
+.shipping-scope-search input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.8rem;
+  width: 100%;
+}
+
+/* قائمة البائعين */
+.shipping-scope-list {
+  max-height: 210px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.shipping-scope-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  padding: 0.3rem 0.25rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.shipping-scope-item:hover {
+  background-color: #f9fafb;
+}
+
+.shipping-scope-item input[type="checkbox"] {
+  margin-top: 0.15rem;
+}
+
+.shipping-scope-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.shipping-scope-item-title {
+  font-weight: 500;
+  color: #111827;
+}
+
+.shipping-scope-item-sub {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.shipping-scope-empty {
+  font-size: 0.8rem;
+  color: #6b7280;
+  padding: 0.4rem 0.2rem;
+}
+
+/* زر تم في أسفل اللوحة */
+.shipping-scope-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.45rem;
+}
+
+.shipping-scope-done {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 0.25rem 0.8rem;
+  font-size: 0.78rem;
+  background: #f9fafb;
+  cursor: pointer;
+}
+
+.shipping-scope-done:hover {
+  background-color: #eff6ff;
+  border-color: #dbeafe;
+}
+
+/* ────────────────────────────────────────────────
+   🎨 كروت شركات الشحن
+   ──────────────────────────────────────────────── */
+
+.shipping-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.shipping-card {
+  position: relative;
+  background-color: #ffffff;
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.shipping-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  transform: translateY(-2px);
+}
+
+.shipping-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.1rem;
+}
+
+.shipping-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.shipping-card-title svg {
+  padding: 0.35rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+}
+
+.shipping-card-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.shipping-card-scope {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.shipping-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.shipping-info-card {
+  background-color: #f9fafb;
+  border-radius: 0.75rem;
+  border: 1px solid #f3f4f6;
+  padding: 0.55rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.shipping-info-title {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.shipping-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.82rem;
+  color: #111827;
+}
+
+.shipping-info-text {
+  font-size: 0.82rem;
+}
+
+.shipping-info-secondary {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.shipping-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.35rem;
+}
+
+.shipping-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+/* أزرار الجدول/الكرت الصغيرة */
+.users-inline-button {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 0.78rem;
+  padding: 0.2rem 0.7rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    color 0.15s ease;
+  color: #374151;
+}
+
+.users-inline-button:hover {
+  background-color: #eff6ff;
+  border-color: #dbeafe;
+}
+
+.users-inline-button.danger {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.users-inline-button.danger:hover {
+  background: #fee2e2;
+}
+
+/* حالة الشركة (نشط / غير نشط) */
+.users-status-pill {
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.users-status-pill.active {
+  background-color: #ecfdf5;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.users-status-pill.inactive {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* ────────────────────────────────────────────────
+   📱 تحسينات للجوال
+   ──────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .admin-section-card {
+    padding-inline: 0.8rem;
+  }
+
+  .admin-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .shipping-card {
+    padding-inline: 0.75rem;
+  }
+
+  .admin-modal {
+    width: 96vw;
+  }
+
+  .admin-modal-body {
+    max-height: 60vh;
+  }
+
+  .shipping-scope-panel {
+    left: auto;
+    right: 0;
+    width: min(100%, 320px);
+  }
+}
+
+/* ضمان ظهور نص أزرار .admin-button-primary في كل الحالات */
+.admin-button-primary span {
+  color: #111827 !important;
+}
+
+.admin-button-primary:hover span {
+  color: #ffffff !important;
+}

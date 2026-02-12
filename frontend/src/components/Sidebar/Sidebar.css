@@ -1,0 +1,18 @@
+.sidebar-root {
+  background: #ffffff;
+  border-radius: 0.9rem;
+  padding: 0.7rem 0.8rem;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.07);
+}
+
+.sidebar-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-item {
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+  cursor: pointer;
+}

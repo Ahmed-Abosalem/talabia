@@ -1,0 +1,171 @@
+import React, { useEffect, useMemo, useState } from "react";
+
+/**
+ * بطاقة تنزيل تطبيق PWA:
+ * - تظهر فقط إذا لم يكن التطبيق مثبتًا ولم يتم إخفاؤها يدويًا مؤقتًا
+ * - زر التثبيت يفتح نافذة التثبيت الرسمية (beforeinstallprompt) إن توفرت
+ * - تختفي تلقائيًا بعد التثبيت (appinstalled) أو إذا المستخدم داخل التطبيق (standalone)
+ */
+export default function PwaInstallBanner() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [canInstall, setCanInstall] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [hint, setHint] = useState("");
+
+  const isStandalone = useMemo(() => {
+    // Android/Chrome: matchMedia
+    const mql = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+    // iOS Safari: navigator.standalone
+    const iosStandalone = typeof window.navigator !== "undefined" && window.navigator.standalone === true;
+    return !!(mql || iosStandalone);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const until = localStorage.getItem("pwa_install_hide_until");
+      if (until && Date.now() < Number(until)) setHidden(true);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (isStandalone) {
+      setHidden(true);
+      return;
+    }
+
+    const onBeforeInstallPrompt = (e) => {
+      // مهم: منع ظهور prompt الافتراضي حتى نتحكم فيه بزرنا
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setCanInstall(true);
+    };
+
+    const onAppInstalled = () => {
+      setHidden(true);
+      setDeferredPrompt(null);
+      setCanInstall(false);
+      setHint("");
+      try {
+        localStorage.removeItem("pwa_install_hide_until");
+      } catch {}
+    };
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("appinstalled", onAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onAppInstalled);
+    };
+  }, [isStandalone]);
+
+  const hideForDays = (days) => {
+    setHidden(true);
+    try {
+      const ms = days * 24 * 60 * 60 * 1000;
+      localStorage.setItem("pwa_install_hide_until", String(Date.now() + ms));
+    } catch {}
+  };
+
+  const onInstallClick = async () => {
+    setHint("");
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      // accepted/dismissed
+      if (choice && choice.outcome === "accepted") {
+        setHidden(true);
+      } else {
+        // لو رفض، نخفيها يوم واحد حتى لا نزعج المستخدم
+        hideForDays(1);
+      }
+      setDeferredPrompt(null);
+      setCanInstall(false);
+      return;
+    }
+
+    // ما في prompt (iOS أو كروم لم يجهزه): أعطِ إرشادًا بسيطًا
+    setHint("إذا لم يظهر زر التثبيت: من القائمة ⋮ اختر (تثبيت التطبيق) أو (إضافة إلى الشاشة الرئيسية).");
+  };
+
+  const isDesktop = window.matchMedia && window.matchMedia("(min-width: 768px)").matches;
+  if (hidden || isStandalone || !canInstall || isDesktop) return null;
+
+
+  return (
+    <div style={{ padding: "12px 12px 0 12px" }}>
+      <div
+        style={{
+          borderRadius: 16,
+          background: "#ffffff",
+          border: "1px solid rgba(0,0,0,0.08)",
+          boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+          padding: 14,
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+          direction: "rtl",
+        }}
+      >
+        <img
+          src="/icons/icon-192.png"
+          alt="Talabia"
+          style={{
+            width: 52,
+            height: 52,
+            borderRadius: 14,
+            border: "1px solid rgba(0,0,0,0.08)",
+            background: "#fff",
+            flex: "0 0 auto",
+          }}
+        />
+        <div style={{ flex: "1 1 auto" }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#111" }}>نزل تطبيق طلبية</div>
+          <div style={{ fontSize: 13, color: "#444", marginTop: 2 }}>
+            ثبّت التطبيق لتجربة أسرع وأسهل.
+          </div>
+          {hint ? (
+            <div style={{ fontSize: 12, color: "#666", marginTop: 6, lineHeight: 1.4 }}>
+              {hint}
+            </div>
+          ) : null}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "stretch" }}>
+          <button
+            onClick={onInstallClick}
+            style={{
+              border: "none",
+              cursor: "pointer",
+              borderRadius: 12,
+              padding: "10px 12px",
+              fontWeight: 800,
+              fontSize: 13,
+              background: "#4b502a",
+              color: "#fff",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {canInstall ? "تثبيت التطبيق" : "تنزيل التطبيق"}
+          </button>
+          <button
+            onClick={() => hideForDays(1)}
+            style={{
+              border: "1px solid rgba(0,0,0,0.12)",
+              cursor: "pointer",
+              borderRadius: 12,
+              padding: "8px 12px",
+              fontWeight: 700,
+              fontSize: 12,
+              background: "#fff",
+              color: "#333",
+              whiteSpace: "nowrap",
+            }}
+          >
+            لاحقًا
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,65 @@
+.form-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.09);
+  max-width: 420px;
+  margin-inline: auto;
+}
+
+.form-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+}
+
+.form-subtitle {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 0.9rem;
+}
+
+.form-group {
+  margin-bottom: 0.7rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.form-input:focus,
+.form-select:focus {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 1px rgba(15, 118, 110, 0.15);
+}
+
+.form-submit {
+  width: 100%;
+  border-radius: 999px;
+  border: none;
+  padding: 0.55rem 0.9rem;
+  background: #0f172a;
+  color: #f9fafb;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.form-submit:hover {
+  background: #020617;
+  transform: translateY(-1px);
+}

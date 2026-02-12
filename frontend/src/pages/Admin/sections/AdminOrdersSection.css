@@ -1,0 +1,350 @@
+/* AdminOrdersSection.css */
+/* تنسيقات قسم إدارة الطلبات في لوحة تحكم الأدمن */
+
+/* الحاوية العامة للقسم */
+.admin-orders-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.4rem 1.6rem 1.8rem;
+  background: radial-gradient(circle at top left, #f8fafc 0, #ffffff 40%);
+}
+
+/* ترويسة القسم */
+.admin-orders-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.admin-orders-header-main {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.admin-orders-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  color: #1d4ed8;
+  flex-shrink: 0;
+}
+
+.admin-orders-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.admin-orders-subtitle {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-top: 0.15rem;
+}
+
+/* أزرار الترويسة */
+.admin-orders-actions {
+  display: flex;
+  align-items: center;
+}
+
+.admin-orders-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: #2563eb;
+  color: #ffffff;
+  transition: background 0.15s ease, border-color 0.15s ease,
+    transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.admin-orders-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.admin-orders-btn:hover {
+  background: #1d4ed8;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
+}
+
+.admin-orders-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.28);
+}
+
+.admin-orders-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+  box-shadow: none;
+}
+
+.admin-orders-btn-ghost {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #e2e8f0;
+}
+
+.admin-orders-btn-ghost:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5f5;
+}
+
+/* شريط البحث + الفلترة */
+.admin-orders-toolbar {
+  margin-top: 0.6rem;
+  padding: 0.7rem 0.95rem;
+  border-radius: 0.9rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.admin-orders-search {
+  flex: 1;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.admin-orders-search::placeholder {
+  color: #94a3b8;
+}
+
+.admin-orders-search:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
+}
+
+.admin-orders-filter {
+  min-width: 190px;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.85rem;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.admin-orders-filter:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+/* رسالة الخطأ */
+.admin-orders-error {
+  margin-top: 0.4rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.7rem;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+/* الجدول / حالة عدم وجود بيانات */
+.admin-orders-table-wrapper {
+  margin-top: 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  overflow-x: auto;   /* ✅ نفس الجدول على الجوال مع تمرير أفقي */
+  overflow-y: hidden;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+}
+
+/* لإخفاء سكرول بار مزعج في بعض المتصفحات مع الإبقاء على التمرير */
+.admin-orders-table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+.admin-orders-table-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-orders-table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+/* حالة عدم وجود بيانات */
+.admin-orders-empty-state {
+  padding: 1.6rem 1.2rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+/* جدول الطلبات */
+.admin-orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  min-width: 980px;   /* ✅ يحافظ على عرض الأعمدة كما في الكمبيوتر حتى على الجوال */
+}
+
+/* رأس الجدول ثابت أثناء التمرير العمودي داخل الكرت */
+.admin-orders-table thead {
+  background: #f8fafc;
+}
+
+.admin-orders-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+/* خانات الجدول */
+.admin-orders-table th,
+.admin-orders-table td {
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: right;
+  vertical-align: middle;
+}
+
+.admin-orders-table th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* صفوف الجدول */
+.admin-orders-table tbody tr {
+  transition: background 0.15s ease, box-shadow 0.15s ease,
+    transform 0.08s ease, border-color 0.15s ease;
+}
+
+/* تلوين صفوف بالتناوب لتقليل التشوش البصري */
+.admin-orders-table tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.admin-orders-table tbody tr:nth-child(odd) {
+  background: #ffffff;
+}
+
+.admin-orders-table tbody tr:hover {
+  background: #eef2ff;
+  box-shadow: 0 4px 12px rgba(129, 140, 248, 0.35);
+}
+
+/* عمود رقم الطلب المركب: (#الطلب | رقم العنصر) */
+.admin-orders-order-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.admin-orders-order-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+/* رقم العنصر داخل الطلب بجانب رقم الطلب */
+.admin-orders-order-item-index {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* الخط العمودي الفاصل بين رقم الطلب ورقم العنصر (نفس الشكل في الشحن/المشتري) */
+.shipping-order-id-separator {
+  width: 1px;
+  height: 1rem;
+  background-color: rgba(148, 163, 184, 0.9);
+}
+
+/* خلايا ذات عنوان + سطر فرعي */
+.admin-orders-cell-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.admin-orders-cell-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.admin-orders-cell-sub {
+  font-size: 0.78rem;
+  color: #64748b;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+/* خلية المنتج: صورة + معلومات */
+.admin-orders-product-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.admin-orders-product-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 0.75rem;
+  object-fit: cover;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+/* قائمة الاختيار في الجدول */
+.admin-orders-select {
+  min-width: 170px;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.82rem;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.admin-orders-select:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+/* استجابة بسيطة بدون تغيير شكل الجدول (فقط هوامش) */
+@media (max-width: 960px) {
+  .admin-orders-section {
+    padding-inline: 1.1rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-orders-section {
+    padding-inline: 0.9rem;
+  }
+
+  .admin-orders-table-wrapper {
+    border-radius: 0.9rem;
+  }
+}

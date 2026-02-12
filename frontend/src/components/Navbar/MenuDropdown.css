@@ -1,0 +1,283 @@
+/* src/components/Navbar/MenuDropdown.css */
+
+/* موضع القائمة المنسدلة تحت الشريط العلوي من جهة أيقونة القائمة */
+.menu-dropdown-root {
+  position: absolute;
+  top: 4.2rem;
+  inset-inline-start: 1rem;
+  z-index: 35;
+}
+
+/* الحاوية الداخلية للقائمة المنسدلة */
+.menu-dropdown-inner {
+  background: #f9fafb;
+  border-radius: 1rem;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.2);
+  padding: 0.9rem 1rem 1rem;
+  min-width: 270px;
+
+  width: min(320px, calc(100vw - 2rem));
+  max-height: calc(100vh - 5rem);
+  overflow-y: auto;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+/* شريط التمرير */
+.menu-dropdown-inner::-webkit-scrollbar {
+  width: 6px;
+}
+
+.menu-dropdown-inner::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.menu-dropdown-inner::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+/* هيدر العلامة التجارية */
+.menu-brand {
+  text-align: center;
+  margin-bottom: 0.35rem;
+}
+
+.menu-brand-title {
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #fb923c;
+}
+
+.menu-brand-subtitle {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 0.1rem;
+}
+
+/* فاصل رفيع */
+.menu-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 0.45rem 0 0.6rem;
+}
+
+/* كرت المستخدم */
+.menu-user-card {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.25rem;
+}
+
+.menu-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f172a;
+}
+
+.menu-user-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.menu-user-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* شارة الدور */
+.menu-user-role-pill-wrapper {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 0.55rem;
+}
+
+.menu-user-role-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* الزر الأساسي (تسجيل الدخول / تسجيل الخروج) */
+.menu-primary-cta {
+  width: 100%;
+  border-radius: 0.9rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.95rem;          /* ✅ خط أكبر */
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  margin-bottom: 0.65rem;
+
+  color: #111827;              /* ✅ نص ثابت غامق وواضح */
+  background: #e5e7eb;
+
+  transition:
+    background 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.08s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.menu-primary-cta-icon {
+  flex-shrink: 0;
+}
+
+.menu-primary-cta-label {
+  white-space: nowrap;
+}
+
+/* ضوابط ألوان الزر حسب الدور */
+/* كلها تغيّر الخلفية والحدود والظل فقط، النص يبقى غامق ثابت */
+
+/* زائر */
+.menu-primary-cta--guest {
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border-color: #6ee7b7;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.menu-primary-cta--guest:hover {
+  background: linear-gradient(135deg, #d1fae5, #bbf7d0);
+}
+
+/* مشتري */
+.menu-primary-cta--buyer {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  border-color: #93c5fd;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+}
+
+.menu-primary-cta--buyer:hover {
+  background: linear-gradient(135deg, #bfdbfe, #93c5fd);
+}
+
+/* بائع */
+.menu-primary-cta--seller {
+  background: linear-gradient(135deg, #ffedd5, #fed7aa);
+  border-color: #fdba74;
+  box-shadow: 0 4px 14px rgba(248, 153, 99, 0.35);
+}
+
+.menu-primary-cta--seller:hover {
+  background: linear-gradient(135deg, #fed7aa, #fdba74);
+}
+
+/* شركة شحن */
+.menu-primary-cta--shipping {
+  background: linear-gradient(135deg, #ecfdf5, #ccfbf1);
+  border-color: #5eead4;
+  box-shadow: 0 4px 14px rgba(45, 212, 191, 0.35);
+}
+
+.menu-primary-cta--shipping:hover {
+  background: linear-gradient(135deg, #ccfbf1, #a7f3d0);
+}
+
+/* مدير */
+.menu-primary-cta--admin {
+  background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+  border-color: #c4b5fd;
+  box-shadow: 0 4px 14px rgba(129, 140, 248, 0.35);
+}
+
+.menu-primary-cta--admin:hover {
+  background: linear-gradient(135deg, #ddd6fe, #c4b5fd);
+}
+
+/* حاوية الأقسام */
+.menu-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* كل قسم */
+.menu-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.menu-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+/* عناصر القسم */
+.menu-section-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* كرت العنصر */
+.menu-item-card {
+  width: 100%;
+  text-align: start;
+  border-radius: 0.8rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    transform 0.08s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.menu-item-card:hover {
+  background: #f3f4f6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  border-color: #e5e7eb;
+}
+
+/* محتوى العنصر: أيقونة + نص */
+.menu-item-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.menu-item-icon {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.menu-item-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #0f172a;
+}
+
+/* (اختياري) نمط للخطر إن احتجناه لاحقاً */
+.menu-item-danger {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.menu-item-danger .menu-item-label {
+  color: #b91c1c;
+}

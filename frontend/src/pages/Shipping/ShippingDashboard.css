@@ -1,0 +1,768 @@
+/* src/pages/Shipping/ShippingDashboard.css */
+
+/* الصفحة */
+.shipping-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  padding-block: 1.2rem 2rem;
+}
+
+/* ====== Orders Tab ====== */
+
+.shipping-orders-section {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.shipping-orders-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.shipping-orders-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.shipping-orders-subtitle {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin: 0.25rem 0 0;
+}
+
+.shipping-orders-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.78rem;
+  color: #111827;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease,
+    border-color 0.15s ease, transform 0.07s ease;
+}
+
+.shipping-orders-back-btn:hover:not(:disabled) {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  transform: translateY(-0.5px);
+}
+
+.shipping-orders-back-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.shipping-orders-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.shipping-status-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shipping-status-filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
+.shipping-status-select-wrapper {
+  min-width: 210px;
+}
+
+.shipping-status-select {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.7rem;
+  color: #111827;
+  outline: none;
+}
+
+.shipping-status-select:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.18);
+  background: #ffffff;
+}
+
+/* ====== Orders List ====== */
+
+.shipping-orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.shipping-orders-empty {
+  border-radius: 0.9rem;
+  border: 1px dashed #e5e7eb;
+  padding: 0.7rem 0.8rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ====== Order Card ====== */
+
+.shipping-order-card {
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.03);
+  padding: 0.7rem 0.9rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* === الشريط العلوي للكرت === */
+
+.shipping-order-top-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.shipping-order-top-col {
+  display: flex;
+  align-items: center;
+}
+
+.shipping-order-top-col-id {
+  justify-content: flex-start;
+}
+
+.shipping-order-top-col-date {
+  justify-content: center;
+}
+
+.shipping-order-top-col-status {
+  justify-content: flex-end;
+}
+
+/* رقم الطلب + رقم المنتج */
+.shipping-order-id-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: #111827;
+}
+
+.shipping-order-id-label {
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.shipping-order-id-value {
+  font-weight: 700;
+}
+
+.shipping-order-id-separator {
+  width: 1px;
+  height: 16px;
+  background-color: #e5e7eb;
+  border-radius: 999px;
+}
+
+.shipping-order-item-index {
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
+/* التاريخ: مستطيل ناعم */
+.shipping-order-date-rect {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.9rem;
+  border-radius: 0.55rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  font-size: 0.78rem;
+  color: #111827;
+}
+
+/* شارة الحالة: مستطيل ناعم */
+.shipping-status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.12rem 0.8rem;
+  border-radius: 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.shipping-status-chip-sm {
+  padding-block: 0.05rem;
+  padding-inline: 0.7rem;
+  font-size: 0.72rem;
+}
+
+.shipping-status-chip-lg {
+  padding-block: 0.17rem;
+  padding-inline: 0.95rem;
+}
+
+/* ألوان الحالات */
+.status-chip-pending {
+  background-color: rgba(250, 204, 21, 0.12);
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  color: #854d0e;
+}
+
+.status-chip-processing {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #1d4ed8;
+}
+
+.status-chip-onway {
+  background-color: rgba(45, 212, 191, 0.1);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  color: #0f766e;
+}
+
+.status-chip-delivered {
+  background-color: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.36);
+  color: #166534;
+}
+
+.status-chip-cancelled {
+  background-color: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #4b5563;
+}
+
+/* === الجسم الرئيسي للكرت === */
+
+.shipping-order-main-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+/* شبكة الأعمدة الثلاثة */
+.shipping-order-details-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1.1fr);
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.shipping-order-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.shipping-order-section-card {
+  border-radius: 0.85rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  padding: 0.7rem 0.75rem;
+}
+
+.shipping-order-section-product {
+  background-color: #f3f4ff;
+}
+
+/* العناوين داخل القالب: توسط */
+.shipping-order-section-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* جسم القسم */
+.shipping-order-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* اسم الشخص */
+.shipping-order-person-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* العنوان */
+.shipping-order-person-address {
+  font-size: 0.77rem;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+/* صف جوال + إيميل */
+.shipping-order-inline-row {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.7rem;
+  margin-top: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.shipping-order-inline-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.24rem;
+  font-size: 0.76rem;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+/* ====== بطاقة المنتج ====== */
+
+.shipping-order-product-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.shipping-order-product-image-wrapper {
+  flex-shrink: 0;
+  width: 82px;
+  height: 82px;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shipping-order-product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shipping-order-product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  flex: 1;
+}
+
+/* سطر الكمية: الرقم قريب من الكلمة */
+.shipping-order-qty-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.25rem;
+  font-size: 0.76rem;
+}
+
+.shipping-order-qty-label {
+  color: #6b7280;
+}
+
+.shipping-order-qty-value {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* اسم المنتج */
+.shipping-order-product-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* وصف المنتج */
+.shipping-order-product-desc {
+  font-size: 0.76rem;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+/* السعر */
+.shipping-order-product-price {
+  margin-top: 0.1rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+/* ====== رسوم الشحن + طريقة الدفع ====== */
+
+.shipping-order-section-shippingwide {
+  margin-top: 0.25rem;
+  border-radius: 0.85rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  padding: 0.55rem 0.75rem 0.75rem;
+}
+
+.shipping-order-shipping-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.shipping-order-field-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+}
+
+.shipping-order-field-label {
+  color: #6b7280;
+}
+
+.shipping-order-field-value {
+  color: #111827;
+  font-weight: 500;
+}
+
+/* ====== الشريط السفلي (نسخة فاتحة بدل الداكن) ====== */
+/* 🔧 تغيير مهم: إزالة الخلفية الداكنة حتى تتماشى مع توجه واجهة المشروع */
+.shipping-order-footer-bar {
+  margin-top: 0.55rem;
+  border-radius: 0.9rem;
+  background-color: #f8fafc; /* فاتح */
+  border: 1px solid #e5e7eb;
+  padding: 0.55rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  color: #111827;
+}
+
+.shipping-order-footer-left,
+.shipping-order-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shipping-order-footer-left {
+  flex-wrap: wrap;
+}
+
+/* زر تأكيد التسليم */
+.shipping-order-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 0.55rem;
+  border: 1px solid transparent;
+  padding: 0.32rem 0.95rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.07s ease;
+}
+
+.shipping-order-action-btn.primary {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  color: #ecfdf5;
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.35);
+}
+
+.shipping-order-action-btn.primary:hover:not(:disabled) {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+  box-shadow: 0 3px 8px rgba(22, 163, 74, 0.45);
+  transform: translateY(-0.5px);
+}
+
+/* ✅ زر الطباعة - نسخة فاتحة ومتناسقة */
+.shipping-order-action-btn.secondary {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #e5e7eb;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.shipping-order-action-btn.secondary:hover:not(:disabled) {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+  transform: translateY(-0.5px);
+}
+
+.shipping-order-action-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* زر تغيير حالة الطلب */
+.shipping-order-status-dropdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 0.7rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff; /* فاتح */
+  padding: 0.25rem 0.7rem;
+  font-size: 0.76rem;
+  color: #0f172a;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.07s ease;
+}
+
+.shipping-order-status-dropdown:hover {
+  border-color: #cbd5e1;
+  background-color: #f8fafc;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  transform: translateY(-0.5px);
+}
+
+.shipping-order-status-dropdown-label {
+  color: #0f172a;
+}
+
+/* ====== المودالات ====== */
+
+.shipping-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+}
+
+.shipping-modal {
+  width: min(480px, 96vw);
+  border-radius: 1rem;
+  background: #ffffff;
+  padding: 0.9rem 1rem 0.9rem;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.shipping-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.shipping-modal-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.shipping-modal-close {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 0.18rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shipping-modal-close:hover {
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+
+.shipping-modal-subtitle {
+  margin: 0.15rem 0 0.3rem;
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
+.shipping-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.shipping-modal-status-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.shipping-modal-status-option {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.45rem;
+  border-radius: 0.7rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.shipping-modal-status-option input {
+  margin: 0;
+}
+
+.shipping-modal-status-option-active {
+  background: #ecfdf5;
+  border-color: #22c55e;
+}
+
+.shipping-modal-note {
+  margin: 0.1rem 0 0;
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.shipping-modal-footer {
+  margin-top: 0.6rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.shipping-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 0.28rem 0.85rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.shipping-modal-btn.ghost {
+  background: #f9fafb;
+  color: #111827;
+  border-color: #e5e7eb;
+}
+
+.shipping-modal-btn.primary {
+  background: #16a34a;
+  color: #ecfdf5;
+  border-color: #16a34a;
+}
+
+.shipping-modal-btn.ghost:hover {
+  background: #e5e7eb;
+}
+
+.shipping-modal-btn.primary:hover {
+  background: #15803d;
+}
+
+/* حقول كود التسليم */
+.shipping-profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.shipping-profile-field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.shipping-profile-field-label {
+  font-size: 0.78rem;
+  color: #111827;
+}
+
+.shipping-profile-input {
+  border-radius: 0.7rem;
+  border: 1px solid #e5e7eb;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.shipping-profile-input:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.15);
+}
+
+/* ====== استجابة الشاشات الصغيرة ====== */
+
+@media (max-width: 900px) {
+  .shipping-order-details-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .shipping-orders-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .shipping-order-top-row {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+
+  .shipping-order-top-col-date,
+  .shipping-order-top-col-status,
+  .shipping-order-top-col-id {
+    justify-content: flex-start;
+  }
+
+  .shipping-order-details-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shipping-order-footer-bar {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  /* 🔧 تحسين بسيط للموبايل: بدل space-between (قد يسبب فراغ مبالغ)
+     نخليها تبدأ من البداية مع gap طبيعي */
+  .shipping-order-footer-left,
+  .shipping-order-footer-right {
+    justify-content: flex-start;
+  }
+}

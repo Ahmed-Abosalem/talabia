@@ -1,0 +1,458 @@
+/* src/pages/Notifications/Notifications.css */
+
+.notifications-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-block: 1.5rem 2rem;
+  direction: rtl;
+}
+
+/* ========= Hero / Header ========= */
+
+.notifications-hero {
+  width: 100%;
+  border-radius: 1.2rem;
+  padding: 1.1rem 1.25rem;
+  background: radial-gradient(circle at top right, #22c55e33, transparent 60%),
+    linear-gradient(135deg, #0ea5e9, #22c55e);
+  color: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+}
+
+.notifications-hero-main {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.notifications-hero-icon-wrapper {
+  flex-shrink: 0;
+}
+
+.notifications-hero-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notifications-hero-text h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.notifications-hero-text p {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+  color: #e5e7eb;
+}
+
+.notifications-hero-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.notifications-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.22);
+  font-size: 0.78rem;
+}
+
+.notifications-hero-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #bbf7d0;
+}
+
+.notifications-hero-btn {
+  padding: 0.28rem 0.75rem;
+  border-radius: 999px;
+  border: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #0f172a;
+  background: #f9fafb;
+  cursor: pointer;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.notifications-hero-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.22);
+  background: #e5e7eb;
+}
+
+/* ========= Surface Card (filters + list) ========= */
+
+.notifications-surface {
+  margin-top: 0.3rem;
+  background: #ffffff;
+  border-radius: 1.1rem;
+  border: 1px solid #e5e7eb;
+  padding: 0.9rem 1rem 1.1rem;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ========= Filters ========= */
+
+.notifications-filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.25rem;
+}
+
+.notifications-filter-chip {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.78rem;
+  color: #374151;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.notifications-filter-chip:hover {
+  background: #eef2ff;
+  transform: translateY(-1px);
+}
+
+.notifications-filter-chip.is-active {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
+}
+
+/* ========= Timeline + List ========= */
+
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.notifications-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: stretch;
+}
+
+/* خط زمني رأسي بسيط على اليمين (في وضع RTL) */
+
+.notifications-timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 0.2rem;
+}
+
+.notifications-timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 2px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.notifications-timeline-dot.is-unread {
+  border-color: #22c55e;
+  background: #bbf7d0;
+}
+
+.notifications-timeline-dot.is-read {
+  border-color: #cbd5f5;
+  background: #e5e7eb;
+}
+
+.notifications-timeline-line {
+  flex: 1;
+  width: 2px;
+  margin-top: 0.2rem;
+  background: linear-gradient(
+    to bottom,
+    #e5e7eb,
+    rgba(229, 231, 235, 0.1)
+  );
+}
+
+/* ========= Notification Card ========= */
+
+.notification-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.95rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.18s ease,
+    transform 0.1s ease,
+    border-color 0.15s ease;
+}
+
+/* خط جانبي صغير ملوّن حسب حالة القراءة */
+
+.notification-card.is-unread::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(180deg, #22c55e, #0ea5e9);
+}
+
+.notification-card.is-read::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 0 999px 999px 0;
+  background: #e5e7eb;
+}
+
+.notification-card.is-unread {
+  background: #f8fafc;
+  border-color: #dbeafe;
+}
+
+.notification-card:hover {
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
+/* أيقونة الإشعار */
+
+.notification-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notification-icon-orders {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.notification-icon-shipping {
+  background: #ecfdf3;
+  color: #16a34a;
+}
+
+.notification-icon-offers {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.notification-icon-system {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+/* ✅ أيقونة فئة "الدعم الفني" */
+.notification-icon-support {
+  background: #ecfeff;
+  color: #0ea5e9;
+}
+
+.notification-icon-undefined {
+  background: #e5e7eb;
+  color: #0f172a;
+}
+
+/* محتوى الإشعار */
+
+.notification-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.notification-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.notification-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.notification-time {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.notification-message {
+  margin: 0.15rem 0 0.35rem;
+  font-size: 0.8rem;
+  color: #4b5563;
+  white-space: pre-line; /* ✅ حتى تظهر أسطر الرد بشكل منظم */
+}
+
+/* الصف السفلي */
+
+.notification-row-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.notification-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.notification-pill-orders {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.notification-pill-shipping {
+  background: #ecfdf3;
+  color: #15803d;
+}
+
+.notification-pill-offers {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.notification-pill-system {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+/* ✅ بادج فئة "الدعم الفني" */
+.notification-pill-support {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.notification-new-dot {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+/* ========= Empty State ========= */
+
+.notifications-empty {
+  margin-top: 0.5rem;
+  padding: 1.4rem 1rem;
+  border-radius: 1rem;
+  border: 1px dashed #e5e7eb;
+  background: #f9fafb;
+  text-align: center;
+}
+
+.notifications-empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.6rem;
+}
+
+.notifications-empty-title {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.notifications-empty-text {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* ========= Responsive ========= */
+
+@media (max-width: 768px) {
+  .notifications-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .notifications-hero-meta {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .notifications-surface {
+    padding-inline: 0.8rem;
+  }
+
+  .notifications-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .notification-row-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .notification-time {
+    margin-top: 0.1rem;
+  }
+}

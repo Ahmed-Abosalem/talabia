@@ -1,0 +1,235 @@
+/* src/pages/Admin/AdminProfile.css */
+
+.admin-profile-page {
+  direction: rtl;
+  padding: 1.5rem 1.75rem 2rem;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Tajawal", "Cairo", sans-serif;
+  background-color: #f3f4f6;
+  min-height: calc(100vh - 80px);
+}
+
+.admin-profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-profile-title-group h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.admin-profile-title-group p {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.admin-profile-role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background-color: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #c7d2fe;
+}
+
+.admin-profile-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 1.3rem;
+}
+
+@media (max-width: 900px) {
+  .admin-profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.admin-profile-card {
+  background-color: #ffffff;
+  border-radius: 18px;
+  padding: 1.4rem 1.4rem 1.5rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.admin-profile-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 1.1rem;
+}
+
+.admin-profile-card-title-group h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.admin-profile-card-title-group p {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.admin-profile-card-icon {
+  color: #4b5563;
+  opacity: 0.8;
+}
+
+.admin-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.admin-profile-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+@media (max-width: 700px) {
+  .admin-profile-form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.admin-profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-profile-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.admin-profile-input-wrapper {
+  position: relative;
+}
+
+.admin-profile-input-wrapper input {
+  width: 100%;
+  font-size: 0.9rem;
+  padding: 0.8rem 2.6rem 0.8rem 0.9rem;
+  border-radius: 12px;
+  border: 1.5px solid #e5e7eb;
+  background-color: #ffffff;
+  color: #111827;
+  outline: none;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.admin-profile-input-wrapper input:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25);
+  background-color: #ffffff;
+}
+
+.admin-profile-input-wrapper input::placeholder {
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.admin-profile-input-icon {
+  position: absolute;
+  inset-inline-end: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-profile-svg-icon {
+  display: block;
+}
+
+.admin-profile-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-profile-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  padding: 0.65rem 1.2rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease,
+    opacity 0.15s ease;
+}
+
+.admin-profile-btn.primary {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(22, 163, 74, 0.35);
+}
+
+.admin-profile-btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(22, 163, 74, 0.45);
+}
+
+.admin-profile-btn.ghost {
+  background-color: #f9fafb;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.admin-profile-btn.ghost:hover {
+  background-color: #f3f4f6;
+}
+
+.admin-profile-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+.admin-profile-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid #bbf7d0;
+  border-top-color: #16a34a;
+  animation: admin-profile-spin 0.7s linear infinite;
+}
+
+@keyframes admin-profile-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

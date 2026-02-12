@@ -1,0 +1,226 @@
+/* src/components/Navbar/Navbar.css */
+
+/* شريط علوي ثابت فل وِدث */
+.navbar-root {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 40;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+}
+
+.navbar-inner {
+  width: 100%;
+  margin-inline: 0;
+  padding: 0.55rem 1.2rem; /* ✅ أصغر */
+  min-height: 60px; /* ✅ أصغر */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem; /* ✅ أصغر */
+}
+
+/* زر القائمة + الشعار */
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  flex: 0 0 auto; /* ✅ لا ينكمش لصالح المنتصف */
+}
+
+/* زر القائمة: ثلاثة خطوط عصرية */
+.navbar-menu-button {
+  padding: 0.25rem 0.3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.24rem;
+}
+
+.navbar-menu-line {
+  width: 22px;
+  height: 3px;
+  border-radius: 999px;
+  background-color: #0f172a;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.navbar-menu-button:hover .navbar-menu-line {
+  background-color: #0f766e;
+}
+
+/* الشعار: كلمة طلبية بخط عربي حديث */
+.navbar-logo-text {
+  font-size: 1.22rem; /* ✅ أصغر */
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #fb923c;
+  font-family: "Tajawal", "Cairo", "Noto Sans Arabic", system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* المنتصف: بحث أو عنوان لوحة التحكم */
+.navbar-search {
+  flex: 1 1 auto;
+  min-width: 0; /* ✅ يسمح بانكماش المنتصف بدل دفع أيقونات اليمين خارج الشاشة */
+  display: flex;
+  justify-content: center;
+}
+
+/* العنوان الديناميكي حسب الدور (بائع/أدمن/شركة شحن) */
+.navbar-role-title {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #7f1d1d; /* دم الغزال الهادئ */
+  white-space: nowrap; /* سطر واحد فقط */
+  overflow: hidden; /* ✅ يمنع تمدد العنوان */
+  text-overflow: ellipsis; /* ✅ نقاط بدل التمدد */
+  max-width: 100%;
+}
+
+/* يمين الشريط: الأيقونات + اسم المستخدم */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 0 0 auto; /* ✅ يظل ظاهر دائمًا */
+}
+
+/* الأيقونات (سلة/قلب/جرس) */
+.navbar-icon-button {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  background: transparent;
+  padding: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, transform 0.1s ease;
+}
+
+.navbar-icon-button:hover {
+  color: #0f766e;
+  transform: translateY(-1px);
+}
+
+.navbar-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* البادجات الصغيرة (الأرقام) */
+.navbar-badge {
+  position: absolute;
+  top: -0.35rem;
+  inset-inline-end: -0.4rem;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: badge-pulse 1s infinite ease-out;
+}
+
+/* الألوان حسب النوع */
+.navbar-badge--wishlist {
+  background: #34c759; /* أخضر للمفضلة */
+}
+
+.navbar-badge--cart {
+  background: #007aff; /* أزرق للسلة */
+}
+
+.navbar-badge--notifications {
+  background: #ff3b30; /* أحمر للإشعارات */
+}
+
+/* نبض خفيف للبادجات */
+@keyframes badge-pulse {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 0 rgba(15, 23, 42, 0.18);
+  }
+  70% {
+    transform: translateY(0) scale(1.08);
+    box-shadow: 0 0 0 6px rgba(15, 23, 42, 0);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 0 rgba(15, 23, 42, 0);
+  }
+}
+
+/* اسم المستخدم (اختياري) */
+.navbar-user-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-inline-start: 0.5rem;
+}
+
+/* تجاوب مع الموبايل والتابلت */
+@media (max-width: 768px) {
+  .navbar-inner {
+    padding-inline: 0.65rem; /* ✅ أصغر */
+    gap: 0.45rem; /* ✅ أصغر */
+  }
+
+  /* تقليل فجوة اليسار حتى لا تزاحم الأيقونات */
+  .navbar-left {
+    gap: 0.75rem;
+  }
+
+  .navbar-logo-text {
+    font-size: 1.08rem; /* ✅ أصغر */
+  }
+
+  /* المنتصف يبقى موجود لكن ينكمش أكثر حتى لا يخفي الأيقونات */
+  .navbar-search {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    max-width: 44vw; /* ✅ حتى لا تزاحم الأيقونات */
+  }
+
+  .navbar-search.navbar-search--has-title {
+    justify-content: center;
+  }
+
+  .navbar-role-title {
+    font-size: 0.88rem;
+    max-width: 44vw; /* ✅ قصّ العنوان بدل دفع الأيقونات */
+  }
+
+  .navbar-right {
+    gap: 0.25rem;
+  }
+
+  .navbar-icon-button {
+    padding: 0.24rem;
+  }
+}
+
+/* هواتف صغيرة جداً */
+@media (max-width: 420px) {
+  .navbar-inner {
+    padding-inline: 0.6rem;
+  }
+
+  .navbar-search {
+    max-width: 40vw;
+  }
+
+  .navbar-role-title {
+    max-width: 40vw;
+  }
+}

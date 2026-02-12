@@ -1,0 +1,860 @@
+/* كروت الإحصاءات العلوية */
+
+.admin-staff-overview-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .admin-staff-overview-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-staff-overview-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.admin-staff-stat-card {
+  background: #f9fafb;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  padding: 0.7rem 0.9rem;
+}
+
+.admin-staff-stat-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.admin-staff-stat-icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111827;
+}
+
+.admin-staff-stat-icon.users {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.admin-staff-stat-icon.online {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.admin-staff-stat-icon.active {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.admin-staff-stat-icon.suspended {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.admin-staff-stat-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.admin-staff-stat-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* شريط البحث وأزرار التصفية */
+
+.admin-staff-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.9rem;
+}
+
+.admin-staff-search {
+  flex: 1 1 260px;
+}
+
+.admin-staff-search input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 0.85rem;
+}
+
+.admin-staff-search input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+
+.admin-staff-toolbar-actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.admin-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: #ffffff;
+  cursor: pointer;
+  transition: 0.16s;
+}
+
+.admin-button-rect {
+  border-radius: 10px;
+}
+
+.admin-button-primary-rect {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.admin-button-primary-rect:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.admin-button-outline {
+  background: #ffffff;
+  border-color: #d1d5db;
+  color: #111827;
+}
+
+.admin-button-outline:hover {
+  background: #f3f4f6;
+}
+
+.admin-button-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: #111827;
+}
+
+.admin-button-ghost:hover {
+  background: #f3f4f6;
+}
+
+/* جدول الموظفين – شكل عصري مع خطوط رفيعة بين الخلايا */
+
+.admin-staff-table-wrapper {
+  margin-top: 0.9rem;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.admin-staff-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.82rem;
+}
+
+.admin-staff-table thead {
+  background: #f9fafb;
+}
+
+.admin-staff-table th,
+.admin-staff-table td {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.admin-staff-table th {
+  text-align: center;
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.85rem;
+}
+
+.admin-staff-table td {
+  text-align: right;
+}
+
+/* خطوط عامودية رفيعة بين الأعمدة */
+.admin-staff-table th + th,
+.admin-staff-table td + td {
+  border-right: 1px solid #e5e7eb;
+}
+
+/* آخر صف بدون خط سفلي */
+.admin-staff-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* تدرّج ألوان للصفوف + هوفر عصري */
+.admin-staff-table tbody tr:nth-child(even) {
+  background: #fcfcff;
+}
+
+.admin-staff-table tbody tr:hover {
+  background: #eef2ff;
+}
+
+/* عمود الموظف والوظيفة */
+
+.admin-staff-name-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.admin-avatar-circle {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.admin-staff-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.admin-staff-title {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 0.1rem;
+}
+
+/* زر المهام تحت الاسم */
+
+.admin-staff-tasks-chip {
+  margin-top: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #2563eb;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.admin-staff-tasks-chip svg {
+  flex-shrink: 0;
+}
+
+.admin-staff-tasks-chip:hover {
+  background: #e0ecff;
+  border-color: #bfdbfe;
+}
+
+/* عمود بيانات الاتصال والصلاحية */
+
+.admin-staff-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+.admin-staff-contact-item svg {
+  color: #6b7280;
+}
+
+.admin-staff-contact-item + .admin-staff-contact-item {
+  margin-top: 0.15rem;
+}
+
+.admin-staff-code-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 0.78rem;
+  background: #f9fafb;
+}
+
+/* عمود الحالة والنشاط – مستطيلات ناعمة بدل كبسولات */
+
+.admin-status-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.admin-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.65rem;
+  border-radius: 8px; /* مستطيل بحواف ناعمة */
+  font-size: 0.78rem;
+  border: 1px solid transparent;
+  min-width: 5.5rem;
+  justify-content: center;
+}
+
+.admin-status-badge-active {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.admin-status-badge-inactive {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.admin-status-badge-activity {
+  font-size: 0.76rem;
+}
+
+.admin-status-badge-online {
+  background: #e0f2fe;
+  border-color: #bae6fd;
+  color: #1d4ed8;
+}
+
+.admin-status-badge-offline {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #4b5563;
+}
+
+/* عمود لوحة التحكم والإجراءات – أزرار داخل قوالب عصرية */
+
+.admin-staff-actions-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-start;
+}
+
+.admin-staff-action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 0.2rem 0.6rem;
+  background: #f9fafb;
+  cursor: pointer;
+  color: #2563eb;
+  transition: 0.16s;
+}
+
+.admin-staff-action-link svg {
+  flex-shrink: 0;
+}
+
+.admin-staff-action-link:hover {
+  background: #e0ecff;
+  border-color: #bfdbfe;
+}
+
+.admin-staff-action-warning {
+  color: #c05621;
+}
+
+.admin-staff-action-warning:hover {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.admin-staff-action-danger {
+  color: #b91c1c;
+}
+
+.admin-staff-action-danger:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+/* مودالات وإدخال البيانات */
+
+.admin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+/* هنا نضبط شكل المودال ليشبه نوافذ تسجيل الدخول */
+.admin-modal {
+  background: #fff;
+  width: min(640px, 100% - 2rem); /* أضيق قليلاً ليكون أنيقاً */
+  max-height: 92vh;
+  border-radius: 18px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
+  padding: 1.4rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+/* تخطيط قديم (لم يعد يستخدم لكن نتركه إن احتجناه لاحقًا) */
+.admin-add-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) 230px;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .admin-add-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.admin-add-main {
+  min-width: 0;
+}
+
+.admin-add-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* شريط الخطوات في أعلى مودال إضافة الموظف (ستايل معالج) */
+
+.admin-add-main--wizard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.admin-add-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.admin-add-step-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.admin-add-step-number {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #e5e7eb;
+  color: #111827;
+}
+
+/* الحالة النشطة */
+.admin-add-step-pill.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.admin-add-step-pill.active .admin-add-step-number {
+  background: rgba(15, 23, 42, 0.12);
+  color: #ffffff;
+}
+
+/* حالة "تمّت" لخطوة سابقة */
+.admin-add-step-pill.done {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.admin-add-step-pill.done .admin-add-step-number {
+  background: #bbf7d0;
+  color: #166534;
+}
+
+/* على الشاشات الصغيرة يمكن أن تلتف الخطوات */
+@media (max-width: 640px) {
+  .admin-add-stepper {
+    flex-wrap: wrap;
+  }
+}
+
+/* الحاوية الداخلية لكل خطوة (البيانات / الصلاحيات) */
+
+.admin-add-step-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.admin-modal-title-block {
+  margin-bottom: 0.1rem;
+}
+
+.admin-modal-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.admin-modal-subtitle {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* شبكة البيانات الشخصية */
+
+.admin-add-personal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .admin-add-personal-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.2rem;
+}
+
+.admin-field label {
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
+.admin-field input,
+.admin-field select {
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 0.84rem;
+}
+
+.admin-field input:focus,
+.admin-field select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.admin-modal-note {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-top: 0.1rem;
+}
+
+/* جدول الصلاحيات في خطوة الإضافة */
+
+.admin-permissions-matrix {
+  margin-top: 0.3rem;
+}
+
+.admin-permissions-matrix-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  background: #fffbeb;
+  border-radius: 12px;
+  border: 1px solid #fed7aa;
+  padding: 0.5rem 0.7rem;
+  margin-bottom: 0.6rem;
+}
+
+/* حاوية أيقونات التحكم (عرض الكل / تحرير الكل / إلغاء الكل) */
+.admin-permissions-matrix-header-icons {
+  display: flex;
+  flex-direction: row;      /* الأيقونات بجانب بعضها أفقياً */
+  gap: 0.3rem;              /* مسافة بسيطة بين الأيقونات */
+  align-items: center;      /* محاذاة عمودية جميلة */
+  justify-content: flex-end;/* تبقى ملتصقة بطرف الهيدر */
+}
+
+/* زر أيقونة دائري صغير */
+.admin-icon-button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.16s;
+  padding: 0;
+}
+
+.admin-icon-button svg {
+  width: 1rem;
+  height: 1rem;
+  color: #111827;
+}
+
+.admin-icon-button:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+/* زر نصي قديم (لا يُستخدم هنا لكن أبقيناه للاحتياط) */
+.admin-permissions-clear {
+  font-size: 0.78rem;
+  padding-inline: 0.7rem;
+}
+
+.admin-permissions-matrix-table-wrapper {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: auto;
+  background: #fff;
+}
+
+/* جعل الجدول أضيق مع تقليل الهوامش بين الأعمدة */
+.admin-permissions-matrix-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8rem;
+  min-width: 480px; /* كان 640، أصبح أضيق ليتناسب مع المحتوى فقط */
+}
+
+.admin-permissions-matrix-table thead {
+  background: #f3f4f6;
+}
+
+.admin-permissions-matrix-table th,
+.admin-permissions-matrix-table td {
+  padding: 0.35rem 0.5rem; /* تقليل الهوامش بين الأعمدة */
+  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.admin-permissions-matrix-table th:last-child,
+.admin-permissions-matrix-table td:last-child {
+  border-right: none;
+}
+
+.admin-permissions-matrix-table tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+/* عمود اسم الإدارة فقط، بعرض صغير يناسب النص */
+.admin-permission-group-cell {
+  text-align: right;
+  min-width: 140px; /* كان 180، لتصغير الفراغ */
+}
+
+.admin-permission-group-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* وصف الإدارة في أماكن أخرى – يمكن إخفاؤه عند الحاجة */
+/* .admin-permission-group-sub {
+  font-size: 0.76rem;
+  color: #6b7280;
+  margin-top: 0.1rem;
+} */
+
+.admin-permissions-matrix-table input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+/* شبكة صلاحيات التعديل (المودال الثاني) */
+
+.security-permissions-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.security-permission-row {
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.security-permission-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* وصف الصلاحية – يمكن تقليله أو إخفاؤه إن رغبت لاحقًا */
+.security-permission-description {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-top: 0.1rem;
+}
+
+.security-permission-levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.security-radio-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  cursor: pointer;
+  transition: 0.18s;
+}
+
+.security-radio-pill input {
+  accent-color: #2563eb;
+}
+
+.security-radio-pill.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.admin-permissions-title {
+  margin-bottom: 0.3rem;
+}
+
+/* رسائل الخطأ والحالات الفارغة */
+
+.admin-error {
+  font-size: 0.78rem;
+  color: #b91c1c;
+}
+
+.admin-error--spaced {
+  margin-top: 0.5rem;
+}
+
+.admin-error--top {
+  margin-top: 0.4rem;
+}
+
+.admin-empty-state--spaced {
+  margin-top: 1rem;
+}
+
+/* أزرار أسفل المودال */
+
+.admin-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+/* قائمة مهام الموظف في المودال */
+
+.admin-staff-tasks-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+.admin-staff-tasks-list li + li {
+  margin-top: 0.2rem;
+}
+
+/* تحسينات للجوال: تصغير النصوص والأيقونات بدون تغيير البنية */
+
+@media (max-width: 640px) {
+  .admin-staff-stat-value {
+    font-size: 1rem;
+  }
+
+  .admin-staff-stat-label {
+    font-size: 0.75rem;
+  }
+
+  .admin-staff-stat-icon {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+
+  .admin-staff-table {
+    font-size: 0.78rem;
+  }
+
+  .admin-staff-table th,
+  .admin-staff-table td {
+    padding: 0.5rem 0.6rem;
+  }
+
+  .admin-staff-name {
+    font-size: 0.9rem;
+  }
+
+  .admin-staff-title {
+    font-size: 0.76rem;
+  }
+
+  .admin-staff-tasks-chip {
+    font-size: 0.75rem;
+    padding: 0.1rem 0.5rem;
+  }
+
+  .admin-modal {
+    width: min(100%, 100% - 1rem);
+    padding: 1.1rem 1.1rem;
+  }
+}

@@ -1,0 +1,44 @@
+/* frontend/src/styles/global.css */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  /* ✅ مصدر واحد لارتفاع الشريط العلوي */
+  --navbar-height: 60px;
+}
+
+body {
+  margin: 0;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 1rem;
+  padding-block: 1rem 2rem;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+/* ⬇⬇⬇ التعويض العام لارتفاع الشريط العلوي الثابت ⬇⬇⬇ */
+.app-root {
+  min-height: 100vh;
+}
+
+/* كل الصفحات تمر من هنا لأن App.jsx يلف جميع الصفحات بـ <main> داخل .app-root */
+.app-root main {
+  margin-top: calc(var(--navbar-height) + env(safe-area-inset-top));
+}

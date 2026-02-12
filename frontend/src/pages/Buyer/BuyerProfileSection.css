@@ -1,0 +1,468 @@
+/* frontend/src/pages/Buyer/BuyerProfileSection.css */
+
+/* الحاوية العامة لتبويب الملف الشخصي */
+.buyer-profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+/* رأس القسم */
+.buyer-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.buyer-section-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.01em;
+}
+
+.buyer-section-subtitle {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+/* شبكة الكروت (كرت البيانات + كرت العناوين) */
+.buyer-profile-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr);
+  gap: 1.1rem;
+  align-items: flex-start;
+}
+
+/* كرت عام داخل الملف الشخصي */
+.buyer-profile-card {
+  border-radius: 1.1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  padding: 1rem 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+/* هيدر الكرت */
+.buyer-profile-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.buyer-profile-card-icon {
+  width: 1.45rem;
+  height: 1.45rem;
+  color: #0f766e;
+  flex-shrink: 0;
+}
+
+.buyer-profile-card-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.buyer-profile-card-subtitle {
+  margin: 0.13rem 0 0;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* جسم الكرت */
+.buyer-profile-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* فوتر الكرت (مثل زر حفظ البيانات) */
+.buyer-profile-card-footer {
+  margin-top: 0.4rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* مجموعات الحقول */
+.buyer-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.buyer-form-label {
+  font-size: 0.76rem;
+  color: #4b5563;
+}
+
+/* حقول الإدخال */
+.buyer-form-input,
+.buyer-form-textarea {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.7rem;
+  outline: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease,
+    background 0.12s ease, transform 0.06s ease;
+}
+
+.buyer-form-input:focus,
+.buyer-form-textarea:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.16);
+  background: #ffffff;
+  transform: translateY(-0.5px);
+}
+
+/* في حالة الخطأ */
+.buyer-form-input.has-error,
+.buyer-form-textarea.has-error {
+  border-color: #f97373;
+  background: #fef2f2;
+}
+
+.buyer-form-error {
+  font-size: 0.74rem;
+  color: #b91c1c;
+}
+
+/* أزرار عامة داخل تبويب الملف الشخصي */
+.buyer-primary-btn,
+.buyer-secondary-btn,
+.buyer-danger-btn,
+.buyer-text-btn {
+  border-radius: 999px;
+  font-size: 0.78rem;
+  padding: 0.32rem 0.95rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  transition: background 0.15s ease, color 0.15s ease,
+    border-color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+}
+
+/* زر أساسي */
+.buyer-primary-btn {
+  background: #111827;
+  color: #f9fafb;
+  border-color: #111827;
+}
+
+.buyer-primary-btn:hover:not(:disabled) {
+  background: #0f172a;
+  border-color: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.2);
+}
+
+/* زر ثانوي */
+.buyer-secondary-btn {
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #e5e7eb;
+}
+
+.buyer-secondary-btn:hover:not(:disabled) {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+/* زر تحذيري (لحذف عنوان مثلاً) */
+.buyer-danger-btn {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.buyer-danger-btn:hover:not(:disabled) {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+/* زر نصي بسيط */
+.buyer-text-btn {
+  background: transparent;
+  border-color: transparent;
+  color: #0f766e;
+  padding-inline: 0.1rem;
+}
+
+.buyer-text-btn:hover {
+  color: #0e7490;
+}
+
+.buyer-danger-text {
+  color: #b91c1c;
+}
+
+.buyer-text-btn.buyer-danger-text:hover {
+  color: #991b1b;
+}
+
+/* حالة التعطيل */
+.buyer-primary-btn:disabled,
+.buyer-secondary-btn:disabled,
+.buyer-danger-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+/* عناوين الشحن – القائمة */
+.buyer-addresses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.buyer-addresses-empty {
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.85rem;
+  background: #f9fafb;
+  border: 1px dashed #e5e7eb;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* كرت عنوان */
+.buyer-address-card {
+  border-radius: 0.95rem;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: flex-start;
+}
+
+.buyer-address-card.is-default {
+  border-color: #0ea5e9;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.16);
+  background: linear-gradient(
+    135deg,
+    #f0f9ff 0%,
+    #ffffff 40%,
+    #ecfeff 100%
+  );
+}
+
+.buyer-address-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.buyer-address-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.buyer-address-title {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.buyer-address-badge {
+  font-size: 0.72rem;
+  border-radius: 999px;
+  padding: 0.08rem 0.55rem;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.buyer-address-text {
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
+.buyer-address-details,
+.buyer-address-details-extra {
+  font-size: 0.76rem;
+  color: #6b7280;
+}
+
+/* أزرار العنوان (تعديل / حذف) */
+.buyer-address-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-items: flex-end;
+}
+
+/* نموذج العنوان */
+.buyer-address-form {
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px dashed #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.buyer-address-form-title {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.buyer-address-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.55rem;
+}
+
+/* مربع الاختيار */
+.buyer-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
+.buyer-checkbox input[type="checkbox"] {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+/* أزرار نموذج العنوان */
+.buyer-address-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+/* تفضيلات الإشعارات – منطق محفوظ لو استخدمناه لاحقًا */
+.buyer-notify-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.3rem;
+}
+
+.buyer-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+.buyer-switch {
+  border: none;
+  outline: none;
+  border-radius: 999px;
+  width: 2.2rem;
+  height: 1.2rem;
+  padding: 0.12rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  background: #e5e7eb;
+  transition: background 0.15s ease;
+}
+
+.buyer-switch-handle {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.3);
+  transform: translateX(0);
+  transition: transform 0.15s ease;
+}
+
+.buyer-switch.is-on {
+  background: #22c55e;
+}
+
+.buyer-switch.is-on .buyer-switch-handle {
+  transform: translateX(0.95rem);
+}
+
+.buyer-switch.is-off {
+  background: #e5e7eb;
+}
+
+/* فاصل بسيط بين جزء البيانات وجزء الأمان */
+.buyer-profile-card-divider {
+  margin-block: 0.55rem;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    #e5e7eb,
+    transparent
+  );
+}
+
+/* قسم أمان الحساب */
+.buyer-profile-security {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.buyer-profile-security-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+/* نموذج كلمة المرور */
+.buyer-password-form {
+  margin-top: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.buyer-password-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  margin-top: 0.2rem;
+}
+
+/* استجابة الشاشات المتوسطة والصغيرة */
+@media (max-width: 1100px) {
+  .buyer-profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .buyer-address-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .buyer-address-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .buyer-address-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

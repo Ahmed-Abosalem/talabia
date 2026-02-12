@@ -1,0 +1,605 @@
+/* =========================================
+   تبويب "طلباتي" في صفحة المشتري
+   frontend/src/pages/Buyer/BuyerOrdersSection.css
+   ========================================= */
+
+/* الحاوية العامة للتبويب */
+.buyer-orders-section {
+  direction: rtl;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 1.75rem;
+  background-color: transparent;
+}
+
+/* هيدر الصفحة */
+.buyer-orders-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* كل شيء يتجه لأقصى اليمين */
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* يمين الهيدر: الفلتر + الأزرار */
+.buyer-orders-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* أزرار التحديث والمسح (أيقونات فقط) */
+.buyer-orders-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+}
+
+.buyer-orders-header-btn {
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease,
+    border-color 0.15s ease, transform 0.08s ease;
+}
+
+/* شكل الأزرار الأيقونية */
+.buyer-orders-header-btn--icon {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.buyer-orders-header-btn svg {
+  flex-shrink: 0;
+}
+
+.buyer-orders-header-btn--icon:hover:not(:disabled) {
+  background-color: #f9fafb;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15);
+  transform: translateY(-1px);
+}
+
+.buyer-orders-header-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* زر المسح */
+.buyer-orders-header-btn--danger {
+  border-color: #fecaca;
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.buyer-orders-header-btn--danger:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
+/* فلتر الحالة: قائمة منسدلة مستطيلة بحواف ناعمة، محاذية لأقصى اليمين */
+.buyer-orders-filters {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* السلكت نفسه */
+.buyer-orders-filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 0.35rem 1.9rem 0.35rem 0.75rem; /* مساحة للسهم على اليمين */
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #374151;
+  outline: none;
+  cursor: pointer;
+  min-width: 140px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+/* سهم صغير للنافذة المنسدلة داخل المستطيل */
+.buyer-orders-filters::after {
+  content: "▾";
+  position: absolute;
+  right: 0.6rem; /* السهم داخل يمين المستطيل */
+  font-size: 0.75rem;
+  color: #9ca3af;
+  pointer-events: none;
+  transform: translateY(1px);
+}
+
+/* الرسائل الفارغة / التحميل */
+.buyer-orders-empty {
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.85rem;
+  background: #f9fafb;
+  border: 1px dashed #e5e7eb;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* قائمة الكروت */
+.buyer-orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+/* ============================
+   تصميم كرت الطلب للمشتري
+   ============================ */
+
+.buyer-order-card {
+  position: relative;
+  background: radial-gradient(circle at top left, #f9fafb, #ffffff);
+  border-radius: 14px;
+  padding: 16px 16px 14px;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.03);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.18s ease, transform 0.18s ease,
+    border-color 0.18s ease, background-color 0.18s ease;
+}
+
+/* خط علوي متدرج */
+.buyer-order-card::before {
+  content: "";
+  position: absolute;
+  inset-inline: 18px;
+  top: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #bfdbfe, #a5b4fc, #bef264);
+  opacity: 0.4;
+}
+
+.buyer-order-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  border-color: #d1d5db;
+  background: radial-gradient(circle at top left, #f3f4ff, #ffffff);
+}
+
+/* الهيدر داخل الكرت */
+.buyer-order-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+}
+
+.buyer-order-header-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #0f172a;
+}
+
+.buyer-order-header-main-text {
+  white-space: nowrap;
+}
+
+.buyer-order-header-strong {
+  font-weight: 700;
+}
+
+.buyer-order-header-separator {
+  width: 1px;
+  height: 16px;
+  background-color: #e5e7eb;
+  border-radius: 999px;
+}
+
+.buyer-order-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.buyer-order-date {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* خط فاصل بين الهيدر وباقي الكرت */
+.buyer-order-divider {
+  margin-top: 4px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* القسم الأوسط */
+.buyer-order-main {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: stretch;
+}
+
+/* صورة المنتج */
+.buyer-order-product-image {
+  width: 96px;
+  border-radius: 18px;
+  background: #f3f4f6;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.buyer-order-product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.buyer-order-product-placeholder {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+.buyer-order-product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* اسم المنتج + حالة الطلب */
+.buyer-order-product-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.buyer-order-product-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #020617;
+  margin: 0;
+}
+
+/* كبسولة حالة الطلب – شكل عام */
+.buyer-order-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  margin-inline-start: auto;
+  border: 1px solid transparent;
+}
+
+/* ألوان الحالات المختلفة */
+.buyer-order-status-pill--processing {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #c2410c;
+}
+
+.buyer-order-status-pill--shipping {
+  background: #e0f2fe;
+  border-color: #bae6fd;
+  color: #0369a1;
+}
+
+.buyer-order-status-pill--completed {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.buyer-order-status-pill--cancelled {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+/* سطر اسم المتجر */
+.buyer-order-store-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.buyer-order-store-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6366f1;
+}
+
+.buyer-order-store-name {
+  white-space: nowrap;
+}
+
+/* حالة الدفع تحت اسم المتجر */
+.buyer-order-payment-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+}
+
+.buyer-order-payment-label {
+  color: #4b5563;
+}
+
+.buyer-order-payment-value {
+  color: #b91c1c;
+  background: #fef2f2;
+  padding: 0.18rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+}
+
+/* حالة الشحن تحت حالة الدفع */
+.buyer-order-shipping-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
+}
+
+.buyer-order-shipping-label {
+  color: #4b5563;
+}
+
+.buyer-order-shipping-value {
+  color: #0369a1;
+  background: #e0f2fe;
+  padding: 0.18rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+}
+
+/* الفوتر: الأرقام */
+.buyer-order-footer {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.buyer-order-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  align-items: center;
+  text-align: center;
+}
+
+.buyer-meta-label {
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+
+.buyer-meta-value {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.buyer-order-meta-item--code {
+  align-items: center;
+}
+
+.buyer-meta-value--code {
+  color: #2563eb;
+}
+
+/* التقييم أسفل الكرت */
+.buyer-order-rating {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+}
+
+.buyer-order-rating-label {
+  color: #4b5563;
+}
+
+/* نجوم التقييم */
+.buyer-rating-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.buyer-rating-star-btn {
+  border: none;
+  background: transparent;
+  padding: 0.1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.buyer-rating-star-btn--filled svg {
+  transform: scale(1.02);
+}
+
+.buyer-rating-star {
+  stroke: #d1d5db;
+  fill: transparent;
+  transition: fill 0.12s ease, stroke 0.12s ease, transform 0.08s ease;
+}
+
+.buyer-rating-star--filled {
+  fill: #f59e0b;
+  stroke: #f59e0b;
+}
+
+.buyer-rating-star-btn:hover .buyer-rating-star:not(.buyer-rating-star--filled) {
+  stroke: #fbbf24;
+}
+
+/* زر إرسال التقييم */
+.buyer-order-rating-submit {
+  border: none;
+  background: #111827;
+  color: #ffffff;
+  padding: 0.3rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease,
+    transform 0.08s ease;
+}
+
+.buyer-order-rating-submit:hover:not(:disabled) {
+  background: #020617;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.25);
+  transform: translateY(-0.5px);
+}
+
+.buyer-order-rating-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* ====================
+   استجابة الشاشات الصغيرة
+   (نفس التصميم، فقط تصغير بسيط في الأحجام والمسافات)
+   ==================== */
+
+@media (max-width: 768px) {
+  .buyer-orders-section {
+    padding-inline: 1rem;
+  }
+
+  .buyer-orders-header-right {
+    justify-content: flex-end;
+  }
+
+  .buyer-orders-filter-select {
+    font-size: 0.76rem;
+    padding: 0.3rem 1.7rem 0.3rem 0.6rem;
+    min-width: 130px;
+  }
+
+  .buyer-orders-header-btn--icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .buyer-order-card {
+    padding: 12px 12px 12px;
+    gap: 8px;
+  }
+
+  .buyer-order-header {
+    font-size: 0.78rem;
+  }
+
+  .buyer-order-date {
+    font-size: 0.74rem;
+  }
+
+  .buyer-order-main {
+    gap: 0.7rem; /* نفس الأعمدة، فقط مسافة أقل */
+  }
+
+  .buyer-order-product-name {
+    font-size: 0.86rem;
+  }
+
+  .buyer-order-status-pill {
+    font-size: 0.74rem;
+    padding: 0.16rem 0.6rem;
+  }
+
+  .buyer-order-store-row {
+    font-size: 0.76rem;
+  }
+
+  .buyer-order-payment-inline {
+    font-size: 0.76rem;
+  }
+
+  .buyer-order-payment-value {
+    font-size: 0.74rem;
+    padding: 0.15rem 0.6rem;
+  }
+
+  .buyer-meta-label {
+    font-size: 0.68rem;
+  }
+
+  .buyer-meta-value {
+    font-size: 0.78rem;
+  }
+
+  .buyer-order-rating {
+    font-size: 0.76rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .buyer-orders-section {
+    padding-inline: 0.75rem;
+  }
+
+  .buyer-orders-header-right {
+    gap: 0.5rem;
+  }
+
+  .buyer-orders-filter-select {
+    min-width: 120px;
+    font-size: 0.74rem;
+  }
+
+  .buyer-order-card {
+    border-radius: 12px;
+  }
+
+  .buyer-order-product-name {
+    font-size: 0.84rem;
+  }
+
+  .buyer-meta-label {
+    font-size: 0.66rem;
+  }
+
+  .buyer-meta-value {
+    font-size: 0.76rem;
+  }
+}

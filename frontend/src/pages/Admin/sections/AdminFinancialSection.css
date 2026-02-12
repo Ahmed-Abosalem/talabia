@@ -1,0 +1,695 @@
+/* ================================
+   كرت قسم الإدارة المالية – تصميم نظيف
+   ================================ */
+
+.admin-section-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 0.9rem 1rem 1rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
+}
+
+/* ================================
+   الهيدر العلوي للقسم
+   ================================ */
+
+.admin-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.admin-section-header-main {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.admin-section-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+.admin-section-title {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.admin-section-subtitle {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-top: 0.15rem;
+}
+
+.admin-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ================================
+   أزرار عامة – مستطيلة بحواف ناعمة
+   ================================ */
+
+.admin-button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  background: #2563eb;
+  color: #ffffff;
+  transition: all 0.16s ease-in-out;
+  white-space: nowrap;
+}
+
+.admin-button:hover:not(:disabled) {
+  background: #1d4ed8;
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.25);
+  transform: translateY(-1px);
+}
+
+.admin-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+}
+
+/* زر شفاف (يُستخدم في بعض الأماكن) */
+
+.admin-button-ghost {
+  background: #ffffff;
+  color: #111827;
+  border-color: #e5e7eb;
+}
+
+.admin-button-ghost:hover:not(:disabled) {
+  background: #f3f4f6;
+  box-shadow: 0 6px 12px rgba(15, 23, 42, 0.08);
+}
+
+.admin-button-xs {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.76rem;
+}
+
+/* رسالة الخطأ */
+
+.admin-error {
+  border-radius: 10px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.78rem;
+}
+
+/* لا نستخدم كروت إجماليات في هذه الصفحة */
+
+.financial-cards {
+  display: none;
+}
+
+/* ================================
+   شريط الفلاتر – البحث يمين، الفلاتر يسار
+   ================================ */
+
+.financial-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.9rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+/* البحث (أقصى اليمين) */
+
+.financial-toolbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.financial-search-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+}
+
+.financial-search-icon {
+  position: absolute;
+  inset-inline-start: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+}
+
+/* الفلاتر على يسار البحث */
+
+.financial-toolbar-left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.financial-filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.financial-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.financial-inline-icon {
+  color: #6b7280;
+}
+
+/* الحقول – مستطيلات بحواف ناعمة (ليست كبسولات) */
+
+.financial-select,
+.financial-input {
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  padding: 0 0.8rem;
+  font-size: 0.8rem;
+  background: #ffffff;
+  color: #111827;
+}
+
+.financial-input {
+  padding-inline-start: 26px; /* مساحة لأيقونة البحث */
+}
+
+.financial-select:focus,
+.financial-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+}
+
+/* ================================
+   عنوان جدول الحسابات
+   ================================ */
+
+.financial-section-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin: 0.4rem 0 0.4rem;
+}
+
+.financial-section-title-row h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.financial-section-title-row span {
+  font-size: 0.76rem;
+  color: #6b7280;
+}
+
+.financial-small-note {
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+
+/* خلايا الجهة / المعلومات الشخصية */
+
+.financial-entity-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.financial-entity-name {
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.financial-contact-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.financial-contact-email,
+.financial-contact-phone {
+  font-size: 0.78rem;
+  color: #4b5563;
+  direction: ltr;
+  text-align: right;
+}
+
+/* أزرار الإجراءات داخل الجدول */
+
+.financial-actions-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: stretch;
+}
+
+/* ✅ حل مشكلة اختفاء النص في عمود الإجراءات:
+   - خلفية بيضاء، نص غامق.
+   - عند الـ hover: خلفية زرقاء، نص أبيض. */
+
+.financial-actions-cell .admin-button,
+.financial-actions-cell .admin-button-ghost {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+  color: #111827 !important;
+  box-shadow: none;
+  transform: none;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.76rem;
+}
+
+.financial-actions-cell .admin-button span,
+.financial-actions-cell .admin-button-ghost span {
+  color: #111827 !important;
+}
+
+.financial-actions-cell .admin-button:hover,
+.financial-actions-cell .admin-button-ghost:hover {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.25);
+  transform: translateY(-1px);
+}
+
+.financial-actions-cell .admin-button:hover span,
+.financial-actions-cell .admin-button-ghost:hover span {
+  color: #ffffff !important;
+}
+
+/* ================================
+   البادجات (وسوم الدور)
+   ================================ */
+
+.financial-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.16rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.financial-badge-seller {
+  background: #eef2ff;
+  border-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.financial-badge-shipping {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.financial-badge-platform {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.financial-badge-sales {
+  background: #e0f2fe;
+  border-color: #bfdbfe;
+  color: #075985;
+}
+
+/* ================================
+   غلاف الجدول – احترافي + سحب أفقي
+   ================================ */
+
+.users-table-wrapper {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 0;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.04);
+  overflow-x: auto; /* سحب أفقي على الشاشات الصغيرة */
+  overflow-y: hidden;
+}
+
+/* ================================
+   جدول الحسابات – احترافي
+   ================================ */
+
+.users-table {
+  width: 100%;
+  min-width: 850px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.78rem;
+  direction: rtl;
+}
+
+/* رأس الجدول */
+
+.users-table thead {
+  background: #f5f7fb;
+}
+
+.users-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.6rem 0.9rem;
+  text-align: right;
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.76rem;
+  border-bottom: 1px solid #d7dfec;
+  border-inline-start: 1px solid #e5e7eb;
+}
+
+.users-table th:first-child {
+  border-inline-start: none;
+  border-top-right-radius: 16px;
+}
+
+.users-table th:last-child {
+  border-top-left-radius: 16px;
+}
+
+/* جسم الجدول */
+
+.users-table td {
+  padding: 0.55rem 0.9rem;
+  text-align: right;
+  border-bottom: 1px solid #edf2f7;
+  border-inline-start: 1px solid #f1f5f9;
+  background: #ffffff;
+}
+
+/* محاذاة الأعمدة الرقمية إلى المنتصف (من العمود الثالث فصاعدًا) */
+
+.users-table th:nth-child(n + 3),
+.users-table td:nth-child(n + 3) {
+  text-align: center;
+}
+
+/* Zebra striping (صفوف متناوبة) */
+
+.users-table tbody tr:nth-child(odd) td {
+  background: #ffffff;
+}
+
+.users-table tbody tr:nth-child(even) td {
+  background: #f9fafb;
+}
+
+/* تأثير Hover احترافي */
+
+.users-table tbody tr {
+  transition: background-color 0.14s ease, box-shadow 0.14s ease,
+    transform 0.08s ease;
+}
+
+.users-table tbody tr:hover td {
+  background: #eef3ff;
+}
+
+.users-table tbody tr:hover {
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+}
+
+/* إزالة الحد الأخير */
+
+.users-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* حالة عدم وجود بيانات */
+
+.users-empty-state {
+  padding: 0.7rem 0.5rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* إخفاء العنوان الثاني / الجدول الثاني لو كانا من النسخة القديمة */
+
+.admin-section-card > .users-table-wrapper:nth-of-type(2),
+.admin-section-card > .financial-section-title-row:nth-of-type(2) {
+  display: none;
+}
+
+/* ================================
+   مودال التسوية والسجل
+   ================================ */
+
+.settlement-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  backdrop-filter: blur(3px);
+}
+
+/* المودال العادي (التسوية) */
+
+.settlement-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 24px 55px rgba(15, 23, 42, 0.35);
+  width: 100%;
+  max-width: 440px;
+}
+
+/* المودال الواسع للسجل */
+
+.settlement-modal--wide {
+  max-width: 960px;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* هيدر المودال */
+
+.settlement-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.settlement-modal-header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.16rem;
+}
+
+.settlement-modal-header-title h2 {
+  margin: 0;
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.settlement-modal-header-title span {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.settlement-modal-close {
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  padding: 0.18rem;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.14s ease;
+}
+
+.settlement-modal-close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+/* جسم المودال */
+
+.settlement-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.25rem;
+}
+
+/* جسم مودال السجل: يأخذ أغلب ارتفاع الشاشة مع سحب أفقي وعمودي */
+
+.log-modal-body {
+  flex: 1;
+  overflow: auto;
+  margin-top: 0.45rem;
+}
+
+/* غلاف جدول السجل داخل المودال */
+
+.log-table-wrapper {
+  min-width: 100%;
+  overflow-x: auto;
+}
+
+/* حقول المودال – مستطيلات بحواف ناعمة */
+
+.settlement-input,
+.settlement-select,
+.settlement-textarea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  background: #ffffff;
+  color: #111827;
+}
+
+.settlement-input:focus,
+.settlement-select:focus,
+.settlement-textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.28);
+}
+
+.settlement-textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+/* عناوين الحقول في المودال */
+
+.settlement-field-label {
+  font-size: 0.8rem;
+  color: #374151;
+  margin-bottom: 0.16rem;
+}
+
+.settlement-field-hint {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin-top: 0.16rem;
+}
+
+/* أزرار المودال */
+
+.settlement-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+}
+
+.settlement-btn {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.33rem 0.9rem;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.settlement-btn-cancel {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+.settlement-btn-cancel:hover {
+  background: #f3f4f6;
+}
+
+.settlement-btn-save {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.settlement-btn-save:hover {
+  background: #1d4ed8;
+}
+
+/* ================================
+   استجابة للجوال
+   ================================ */
+
+@media (max-width: 768px) {
+  .admin-section-card {
+    padding: 0.75rem 0.7rem 0.9rem;
+  }
+
+  .admin-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .financial-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .financial-toolbar-right {
+    justify-content: flex-start;
+  }
+
+  .financial-search-wrapper {
+    max-width: 100%;
+  }
+
+  .users-table {
+    min-width: 720px;
+  }
+
+  .settlement-modal {
+    max-width: 95%;
+  }
+
+  .settlement-modal--wide {
+    max-width: 95%;
+  }
+}

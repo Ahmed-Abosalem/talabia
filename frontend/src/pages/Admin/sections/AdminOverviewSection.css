@@ -1,0 +1,488 @@
+/* ─────────────────────────────────────────────
+   Admin Overview - Light, Clean, Modern UI
+   تصميم فاتح جداً، منظم، بسيط، أنيق، بدون ألوان معتمة
+   ───────────────────────────────────────────── */
+
+/* متغيرات الألوان العامة للتوحيد */
+:root {
+  --overview-bg: linear-gradient(135deg, #f9fafb 0%, #f3f4ff 40%, #f9fafb 100%);
+  --overview-card-bg: #ffffff;
+  --overview-card-border: #e5e7eb;
+  --overview-card-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+
+  --overview-primary: #2563eb;   /* أزرق هادئ */
+  --overview-primary-soft: #eff6ff;
+  --overview-teal: #06b6d4;      /* فيروزي */
+  --overview-amber: #f59e0b;     /* برتقالي ناعم */
+  --overview-emerald: #10b981;   /* أخضر لطيف */
+  --overview-rose: #f97373;      /* وردي */
+
+  --overview-text-main: #111827;   /* غامق قليلاً للقراءة */
+  --overview-text-muted: #6b7280;
+  --overview-text-soft: #9ca3af;
+
+  --overview-radius-large: 1.1rem;
+  --overview-radius-medium: 0.8rem;
+  --overview-radius-small: 0.55rem;
+
+  --overview-bg-soft: #f3f4f6;
+}
+
+/* الحاوية الرئيسية لقسم النظرة العامة */
+.admin-section-card {
+  position: relative;
+  border-radius: var(--overview-radius-large);
+  padding: 1.4rem 1.6rem 1.8rem;
+  background: var(--overview-bg);
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 14px 35px rgba(148, 163, 184, 0.25);
+}
+
+/* رأس القسم */
+
+.admin-section-header {
+  margin-bottom: 0.8rem;
+}
+
+.admin-section-header-main {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.admin-section-icon {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.45);
+}
+
+.admin-section-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--overview-text-main);
+}
+
+.admin-section-subtitle {
+  font-size: 0.9rem;
+  color: var(--overview-text-muted);
+  margin-top: 0.15rem;
+}
+
+/* ─────────────────────────────────────────────
+   شريط اختيار الفترة الزمنية
+   ───────────────────────────────────────────── */
+
+.admin-overview-toolbar {
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--overview-radius-medium);
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-overview-period-label {
+  font-size: 0.9rem;
+  color: var(--overview-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.admin-overview-period-current {
+  font-weight: 600;
+  color: var(--overview-text-main);
+}
+
+.admin-overview-period-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.admin-overview-period-button {
+  position: relative;
+  min-width: 90px;
+  padding: 0.38rem 0.85rem;
+  border-radius: 0.6rem; /* مستطيل بحواف ناعمة */
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  font-size: 0.84rem;
+  color: var(--overview-text-muted);
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease,
+    border-color 0.18s ease, box-shadow 0.18s ease, transform 0.08s ease;
+}
+
+.admin-overview-period-button:hover {
+  background-color: #f3f4ff;
+  border-color: #c7d2fe;
+  color: var(--overview-text-main);
+  box-shadow: 0 4px 12px rgba(129, 140, 248, 0.25);
+  transform: translateY(-1px);
+}
+
+.admin-overview-period-button.is-active {
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4);
+}
+
+/* ─────────────────────────────────────────────
+   تنبيهات حرجة
+   ───────────────────────────────────────────── */
+
+.admin-overview-alerts {
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.admin-overview-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.7rem 0.95rem;
+  border-radius: 0.8rem;
+  border: 1px solid #fee2e2;
+  background-color: #fff7ed;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+/* مستويات الألوان */
+
+.admin-overview-alert-info {
+  border-color: #bfdbfe;
+  background-color: #eff6ff;
+}
+
+.admin-overview-alert-warning {
+  border-color: #facc15;
+  background-color: #fef9c3;
+}
+
+.admin-overview-alert-danger {
+  border-color: #fecaca;
+  background-color: #fee2e2;
+}
+
+.admin-overview-alert-icon {
+  margin-inline-start: 0.1rem;
+  color: #f97316;
+  flex-shrink: 0;
+}
+
+.admin-overview-alert-text {
+  color: var(--overview-text-main);
+}
+
+/* ─────────────────────────────────────────────
+   الشبكات العامة للكروت
+   ───────────────────────────────────────────── */
+
+.admin-overview-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+/* الأرقام الرئيسية */
+.admin-overview-grid-main {
+  margin-bottom: 1.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+/* ملخص الإدارات */
+.admin-overview-grid-sections {
+  margin-top: 0.4rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+/* ─────────────────────────────────────────────
+   الكروت العامة
+   ───────────────────────────────────────────── */
+
+.admin-overview-card {
+  background-color: var(--overview-card-bg);
+  border-radius: 1rem;
+  border: 1px solid var(--overview-card-border);
+  padding: 0.9rem 1.05rem 0.95rem;
+  box-shadow: var(--overview-card-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: box-shadow 0.16s ease, transform 0.12s ease, border-color 0.16s ease;
+}
+
+.admin-overview-card:hover {
+  transform: translateY(-2px);
+  border-color: #d1d5db;
+  box-shadow: 0 16px 35px rgba(148, 163, 184, 0.35);
+}
+
+/* الأيقونات داخل الكروت */
+
+.admin-overview-icon {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--overview-primary-soft);
+  color: var(--overview-primary);
+  flex-shrink: 0;
+}
+
+/* تلوين ناعم حسب النوع */
+.admin-overview-icon.users {
+  background-color: #eef2ff;
+  color: #4f46e5;
+}
+.admin-overview-icon.stores {
+  background-color: #ecfdf3;
+  color: #16a34a;
+}
+.admin-overview-icon.orders {
+  background-color: #fffbeb;
+  color: #f59e0b;
+}
+.admin-overview-icon.products {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+}
+.admin-overview-icon.shipping {
+  background-color: #e0f2fe;
+  color: #0284c7;
+}
+.admin-overview-icon.financial {
+  background-color: #ecfdf5;
+  color: #22c55e;
+}
+.admin-overview-icon.support {
+  background-color: #eef2ff;
+  color: #2563eb;
+}
+.admin-overview-icon.ads {
+  background-color: #fff7ed;
+  color: #ea580c;
+}
+.admin-overview-icon.notifications {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+.admin-overview-icon.activity {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+/* القيم الرئيسية */
+
+.admin-overview-label {
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  color: var(--overview-text-muted);
+}
+
+.admin-overview-value {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--overview-text-main);
+  margin-top: 0.15rem;
+}
+
+.admin-overview-meta {
+  font-size: 0.8rem;
+  color: var(--overview-text-soft);
+  margin-top: 0.15rem;
+}
+
+/* رأس كروت الأقسام */
+
+.admin-overview-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+
+.admin-overview-section-title {
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--overview-text-main);
+}
+
+/* جسم الكرت - الصفوف */
+
+.admin-overview-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  margin-top: 0.05rem;
+}
+
+.admin-overview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--overview-text-main);
+}
+
+.admin-overview-row span {
+  color: var(--overview-text-muted);
+}
+
+.admin-overview-row strong {
+  font-weight: 600;
+  color: var(--overview-text-main);
+}
+
+/* ─────────────────────────────────────────────
+   آخر الأنشطة (Recent Activity)
+   ───────────────────────────────────────────── */
+
+.admin-overview-activity {
+  margin-top: 1.9rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.admin-overview-activity-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+
+.admin-overview-activity-header .admin-overview-section-title {
+  font-size: 1rem;
+}
+
+.admin-overview-activity-empty {
+  font-size: 0.84rem;
+  color: var(--overview-text-soft);
+  padding: 0.4rem 0.2rem;
+}
+
+.admin-overview-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.admin-overview-activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.5rem 0.25rem;
+  border-radius: 0.7rem;
+  transition: background-color 0.12s ease, transform 0.08s ease;
+}
+
+.admin-overview-activity-item:hover {
+  background-color: #f3f4ff;
+  transform: translateY(-1px);
+}
+
+.admin-overview-activity-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.75rem;
+  background-color: #eef2ff;
+  color: #4f46e5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.admin-overview-activity-content {
+  flex: 1;
+}
+
+.admin-overview-activity-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--overview-text-main);
+}
+
+.admin-overview-activity-meta {
+  margin-top: 0.1rem;
+  font-size: 0.78rem;
+  color: var(--overview-text-soft);
+}
+
+/* ─────────────────────────────────────────────
+   حالات عدم الصلاحية / التحميل
+   ───────────────────────────────────────────── */
+
+.admin-empty-state {
+  margin-top: 1rem;
+  padding: 1rem 0.9rem;
+  border-radius: 0.9rem;
+  border: 1px dashed #d1d5db;
+  background-color: #f9fafb;
+  color: var(--overview-text-muted);
+  font-size: 0.9rem;
+}
+
+/* ─────────────────────────────────────────────
+   أنيميشن خفيفة عند ظهور الكروت
+   ───────────────────────────────────────────── */
+
+@keyframes overview-card-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-overview-card {
+  animation: overview-card-fade-in 0.28s ease-out;
+}
+
+/* ─────────────────────────────────────────────
+   استجابة الشاشات الصغيرة
+   ───────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .admin-section-card {
+    padding: 1.1rem 1rem 1.4rem;
+  }
+
+  .admin-overview-toolbar {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .admin-overview-period-label,
+  .admin-overview-period-toggle {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .admin-overview-card {
+    padding-inline: 0.85rem;
+  }
+}

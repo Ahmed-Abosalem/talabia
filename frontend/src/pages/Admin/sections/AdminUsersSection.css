@@ -1,0 +1,785 @@
+/* AdminUsersSection.css */
+/* تنسيقات احترافية وعصرية لصفحة إدارة المستخدمين في لوحة الأدمن */
+/* تركيز على المستطيلات بحواف ناعمة (بدلاً من الكبسولات) */
+
+/* الجذر */
+.admin-users-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* خطأ عام للسكشن */
+.users-error {
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+}
+
+/* ───────────────────────────────
+   شريط الأدوات (بحث + فلاتر + إجمالي)
+   ─────────────────────────────── */
+
+.users-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+}
+
+.users-toolbar-left,
+.users-toolbar-right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.users-search-wrapper {
+  position: relative;
+  min-width: 240px;
+  max-width: 360px;
+  width: 100%;
+}
+
+.users-search-input {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  background: #ffffff;
+  color: #111827;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease,
+    background-color 0.16s ease, transform 0.12s ease;
+}
+
+.users-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.users-search-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.16);
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* شارة إجمالي المستخدمين – مستطيل بحواف ناعمة */
+.users-total-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 10px;
+  background: #eef2ff;
+  border: 1px solid rgba(129, 140, 248, 0.6);
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #111827;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+}
+
+.users-total-chip-number {
+  font-weight: 700;
+  color: #2563eb;
+}
+
+/* فلتر الدور – مستطيل */
+.users-filter-select {
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  padding: 0.38rem 0.9rem;
+  font-size: 0.84rem;
+  background: #ffffff;
+  color: #111827;
+  min-width: 150px;
+  cursor: pointer;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease,
+    background-color 0.16s ease, transform 0.12s ease;
+}
+
+.users-filter-select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.16);
+  transform: translateY(-1px);
+}
+
+.users-toolbar-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* ───────────────────────────────
+   جدول المستخدمين
+   ─────────────────────────────── */
+
+.users-table-container {
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+}
+
+.users-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+  min-width: 780px;
+}
+
+.users-table thead {
+  background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
+}
+
+.users-table th,
+.users-table td {
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid #f3f4f6;
+  text-align: right;
+  vertical-align: middle;
+}
+
+.users-table th {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.users-table tbody tr:nth-child(even) {
+  background: #fcfcfd;
+}
+
+.users-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* أعمدة محددة العرض تقريبية لتحسين الترتيب */
+.col-user {
+  width: 22%;
+}
+.col-email {
+  width: 18%;
+}
+.col-phone {
+  width: 12%;
+}
+.col-role {
+  width: 15%;
+}
+.col-status {
+  width: 18%;
+}
+.col-created {
+  width: 12%;
+}
+.col-actions {
+  width: 18%;
+}
+
+/* خلايا المستخدم */
+.cell-user .user-main {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+/* صورة المستخدم – تبقى دائرية كأفاتار */
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #eef2ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4f46e5;
+  font-size: 0.82rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.user-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.user-id {
+  font-size: 0.73rem;
+  color: #9ca3af;
+  direction: ltr;
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}
+
+/* بقية الأعمدة */
+.cell-email,
+.cell-phone,
+.cell-role,
+.cell-status,
+.cell-created,
+.cell-actions {
+  font-size: 0.83rem;
+  color: #374151;
+}
+
+/* ───────────────────────────────
+   عناصر التحكم داخل الجدول
+   ─────────────────────────────── */
+
+/* اختيار الدور – مستطيل */
+.users-role-select {
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  padding: 0.32rem 0.8rem;
+  font-size: 0.8rem;
+  background: #ffffff;
+  color: #111827;
+  min-width: 130px;
+  cursor: pointer;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease,
+    background-color 0.16s ease, transform 0.12s ease;
+}
+
+.users-role-select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.16);
+  transform: translateY(-1px);
+}
+
+/* مجموعة الحالة */
+.users-status-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Badge الحالة – مستطيل بحافة ناعمة */
+.users-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.26rem;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.74rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.users-status-pill .users-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+/* نشط */
+.users-status-pill.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.users-status-pill.active .users-status-dot {
+  background: #16a34a;
+}
+
+/* غير نشط */
+.users-status-pill.inactive {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.users-status-pill.inactive .users-status-dot {
+  background: #ef4444;
+}
+
+/* مجموعة الأزرار في عمود الإجراءات */
+.users-actions-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* زر صغير أنيق – مستطيل */
+.users-inline-button {
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  padding: 0.28rem 0.75rem;
+  font-size: 0.78rem;
+  background: #ffffff;
+  color: #374151;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  transition: background-color 0.16s ease, color 0.16s ease,
+    border-color 0.16s ease, box-shadow 0.16s ease, transform 0.12s ease;
+}
+
+.users-inline-button svg {
+  flex-shrink: 0;
+}
+
+.users-inline-button:hover:not(:disabled) {
+  background: #f3f4f6;
+  transform: translateY(-1px);
+}
+
+/* Primary */
+.users-inline-button.primary {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.users-inline-button.primary:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+/* Secondary */
+.users-inline-button.secondary {
+  border-color: #e5e7eb;
+  background: #f9fafb;
+  color: #374151;
+}
+
+/* Ghost */
+.users-inline-button.ghost {
+  border-color: transparent;
+  background: transparent;
+  color: #4b5563;
+}
+
+.users-inline-button.ghost:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+/* Disabled */
+.users-inline-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+}
+
+/* حالة فارغة */
+.users-empty-state {
+  padding: 1.2rem 1rem;
+  font-size: 0.84rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.users-empty-inline {
+  padding: 0.9rem 0.4rem;
+}
+
+/* ───────────────────────────────
+   مودال تفاصيل المستخدم / مودال التنبيه
+   ─────────────────────────────── */
+
+.users-details-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.users-details-modal {
+  background: #ffffff;
+  border-radius: 18px;
+  max-width: 980px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22);
+  display: flex;
+  flex-direction: column;
+}
+
+/* هيدر المودال */
+.users-details-header {
+  padding: 0.95rem 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.users-details-header-main {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.users-details-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #eef2ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4f46e5;
+}
+
+.users-details-header-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.users-details-header-subtitle {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* زر إغلاق المودال – مستطيل */
+.users-details-close-btn {
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #374151;
+  transition: background-color 0.16s ease, border-color 0.16s ease,
+    transform 0.12s ease;
+}
+
+.users-details-close-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+}
+
+/* محتوى المودال */
+.users-details-body {
+  padding: 0.9rem 1.2rem 1rem;
+  overflow-y: auto;
+}
+
+/* شبكة البطاقات الأساسية */
+.users-details-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.4fr);
+  gap: 0.9rem;
+}
+
+/* الشبكة الثانوية (عنوان + متاجر/شحن) */
+.users-details-grid-secondary {
+  margin-top: 0.9rem;
+}
+
+/* البطاقة */
+.users-details-card {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 0.7rem 0.8rem;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+}
+
+.users-details-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.users-details-card-body {
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+/* حقل داخل البطاقة */
+.users-details-field {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.28rem;
+}
+
+.users-details-field-label {
+  color: #6b7280;
+}
+
+.users-details-field-value {
+  font-weight: 500;
+  color: #111827;
+  text-align: left;
+}
+
+.users-details-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.75rem;
+  direction: ltr;
+  text-align: right;
+}
+
+/* قوائم */
+.users-details-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+}
+
+/* عناوين */
+.users-details-address {
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  padding: 0.45rem 0.55rem;
+  background: #ffffff;
+}
+
+.users-details-address-header {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.15rem;
+}
+
+.users-details-address-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.users-details-address-line {
+  color: #4b5563;
+}
+
+.users-details-address-details {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.05rem;
+}
+
+.users-details-address-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.18rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Tag بسيط – مستطيل بحافة ناعمة */
+.users-details-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+/* مساعدة */
+.users-details-empty {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.users-details-block {
+  margin-bottom: 0.6rem;
+}
+
+.users-details-block-title {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.18rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.users-details-note {
+  font-size: 0.76rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+/* فوتر المودال */
+.users-details-footer {
+  padding: 0.65rem 1.2rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.users-details-footer button {
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  background: #ffffff;
+  cursor: pointer;
+  color: #374151;
+  transition: background-color 0.16s ease, border-color 0.16s ease,
+    transform 0.12s ease;
+}
+
+.users-details-footer button:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+}
+
+/* ───────────────────────────────
+   عناصر خاصة بمودال تنبيه المستخدم
+   ─────────────────────────────── */
+
+/* شريط يوضح المستخدم المستهدف */
+.users-details-target {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 0.5rem 0.7rem;
+  margin-bottom: 0.7rem;
+  font-size: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.users-details-target strong {
+  color: #111827;
+}
+
+/* حقل النص في مودال التنبيه */
+.users-textarea {
+  width: 100%;
+  min-height: 110px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.8rem;
+  resize: vertical;
+  background: #ffffff;
+  color: #111827;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease,
+    transform 0.12s ease;
+}
+
+.users-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.users-textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.16);
+  transform: translateY(-1px);
+}
+
+/* ───────────────────────────────
+   حركات بسيطة
+   ─────────────────────────────── */
+
+.spin {
+  animation: users-spin 0.9s linear infinite;
+}
+
+@keyframes users-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ───────────────────────────────
+   استجابة (Responsive)
+   ─────────────────────────────── */
+
+@media (max-width: 900px) {
+  .users-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .users-toolbar-left,
+  .users-toolbar-right {
+    justify-content: space-between;
+  }
+
+  .users-details-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .users-details-modal {
+    max-width: 95vw;
+  }
+}
+
+@media (max-width: 640px) {
+  .users-toolbar-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .users-filter-select {
+    width: 100%;
+  }
+
+  .users-table-container {
+    border-radius: 10px;
+  }
+
+  .users-table {
+    font-size: 0.8rem;
+  }
+
+  .users-details-header {
+    padding-inline: 0.9rem;
+  }
+
+  .users-details-body {
+    padding-inline: 0.85rem;
+  }
+}
