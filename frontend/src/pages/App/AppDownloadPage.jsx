@@ -38,11 +38,15 @@ const AppDownloadPage = () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     
     if (isIOS) {
-      showToast("لمستخدمي الآيفون: استخدم خيار 'إضافة إلى الشاشة الرئيسية' من قائمة المشاركة.", "info");
+      showToast("يرجى قراءة تعليمات التثبيت للآيفون بالأسفل.", "info");
+      const iosSection = document.getElementById('ios-instructions');
+      if (iosSection) iosSection.scrollIntoView({ behavior: 'smooth' });
     } else {
       showToast("خيار التثبيت المباشر غير متاح حالياً. يرجى التأكد من استخدام متصفح 'Chrome' أو استخدامه يدوياً من قائمة المتصفح.", "warning");
     }
   };
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
   return (
     <div className="adm-page-root download-page animate-fade-in">
@@ -96,35 +100,54 @@ const AppDownloadPage = () => {
               </section>
 
               {/* Other Phones Card */}
-              <section className="adm-card download-option-card">
+              <section className="adm-card download-option-card" id="ios-instructions">
                 <div className="option-visual-container">
                   <div className="mobile-app-icon-preview" style={{ background: '#f8fafc' }}>
                     <Smartphone size={60} className="apple-logo-large" strokeWidth={1.5} />
                   </div>
                 </div>
-                <h3 className="option-title">بقية الهواتف</h3>
+                <h3 className="option-title">{isIOS ? "تثبيت للآيفون" : "بقية الهواتف"}</h3>
                 <p className="option-desc">
-                  ثبّت التطبيق الذكي بمجرد الضغط على الزر، ليعمل كأنه تطبيق أصلي على هاتفك.
+                  {isIOS 
+                    ? "ثبّت التطبيق يدوياً ليعمل كأنه تطبيق أصلي تماماً."
+                    : "ثبّت التطبيق الذكي بمجرد الضغط على الزر، ليعمل كأنه تطبيق أصلي على هاتفك."
+                  }
                 </p>
-                <div className="option-action">
-                  <button 
-                    onClick={handleInstallClick} 
-                    className="adm-btn-mgmt primary w-full"
-                    style={{ 
-                      height: '60px', 
-                      borderRadius: '15px', 
-                      fontSize: '1.2rem',
-                      opacity: pwaReady ? 1 : 0.7,
-                      cursor: pwaReady ? 'pointer' : 'wait'
-                    }}
-                    disabled={!pwaReady}
-                  >
-                    {!pwaReady ? "جاري التحقق..." : "تثبيت التطبيق الآن"}
-                  </button>
-                </div>
+                
+                {isIOS ? (
+                  <div className="ios-manual-steps" style={{ textAlign: 'right', padding: '15px', background: '#f0f4f8', borderRadius: '15px', border: '1px solid #dbeafe' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', color: '#1e40af' }}>
+                      <Apple size={20} />
+                      <strong>خطوات التثبيت للآيفون:</strong>
+                    </div>
+                    <ol style={{ paddingRight: '20px', margin: 0, fontSize: '0.9rem', lineHeight: '1.6', color: '#334155' }}>
+                      <li>افتح الموقع في متصفح <strong>Safari</strong></li>
+                      <li>اضغط على زر المشاركة <strong>(Share)</strong> <img src="https://upload.wikimedia.org/wikipedia/commons/d/da/Apple_Safari_share_icon.svg" width="18" style={{verticalAlign:'middle'}} /> بالأسفل</li>
+                      <li>اختر <strong>"إضافة إلى الشاشة الرئيسية"</strong></li>
+                      <li>اضغط <strong>"إضافة"</strong> الموجودة بالأعلى</li>
+                    </ol>
+                  </div>
+                ) : (
+                  <div className="option-action">
+                    <button 
+                      onClick={handleInstallClick} 
+                      className="adm-btn-mgmt primary w-full"
+                      style={{ 
+                        height: '60px', 
+                        borderRadius: '15px', 
+                        fontSize: '1.2rem',
+                        opacity: pwaReady ? 1 : 0.7,
+                        cursor: pwaReady ? 'pointer' : 'wait'
+                      }}
+                      disabled={!pwaReady}
+                    >
+                      {!pwaReady ? "جاري التحقق..." : "تثبيت التطبيق الآن"}
+                    </button>
+                  </div>
+                )}
 
                 {/* 🔧 Troubleshooting help */}
-                {!deferredPrompt && !isAppInstalled && pwaReady && (
+                {!deferredPrompt && !isAppInstalled && pwaReady && !isIOS && (
                   <div style={{ marginTop: '15px', padding: '10px', background: '#fff9f9', borderRadius: '10px', fontSize: '11px', border: '1px dashed #ffa6a6', color: '#a30000' }}>
                     <strong>تواجه مشكلة في التثبيت؟</strong><br />
                     قد يتأخر ظهور خيار التثبيت لعدة ثوانٍ. إذا استمرت المشكلة، جرب استخدام خيار "تثبيت التطبيق" أو "إضافة للشاشة الرئيسية" من قائمة إعدادات متصفحك (النقاط الثلاث بالأعلى).
