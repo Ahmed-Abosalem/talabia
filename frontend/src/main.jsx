@@ -16,6 +16,10 @@ import "./styles/animations.css";
 import { AppProvider } from "@/context/AppContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { registerSW } from 'virtual:pwa-register';
+
+// ✅ Register Service Worker for PWA (Automatic Updates)
+registerSW({ immediate: true });
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
