@@ -62,10 +62,12 @@ export default function AdminPrivacyPolicySection() {
       );
 
       setLastUpdated(response.data.lastUpdated);
-      showMessage("success", "تم حفظ التغييرات بنجاح");
+      showMessage("success", "تم حفظ وتحديث بنود السياسة في قاعدة البيانات بنجاح");
     } catch (error) {
       console.error("Error saving privacy policy:", error);
-      showMessage("error", error.response?.data?.message || "فشل حفظ التغييرات");
+      const status = error.response?.status;
+      const errorMsg = error.response?.data?.message || error.message;
+      showMessage("error", `فشل الحفظ: [${status || 'Network Error'}] ${errorMsg}`);
     } finally {
       setSaving(false);
     }

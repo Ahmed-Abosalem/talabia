@@ -24,7 +24,7 @@ const notificationSchema = new mongoose.Schema(
     // all / buyers / sellers / shipping
     audience: {
       type: String,
-      enum: ['all', 'buyers', 'sellers', 'shipper'],
+      enum: ['all', 'buyers', 'sellers', 'shippers'],
       default: undefined,
     },
 

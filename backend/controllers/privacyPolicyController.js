@@ -29,22 +29,21 @@ export const updatePrivacyPolicy = asyncHandler(async (req, res) => {
         throw new Error("المحتوى مطلوب");
     }
 
-    let policy = await PrivacyPolicy.findOne();
-
-    if (!policy) {
-        policy = await PrivacyPolicy.create({
+    // ✅ التحسين الإنتاجي: استخدام findOneAndUpdate مع upsert لضمان الحفظ دائماً
+    const policy = await PrivacyPolicy.findOneAndUpdate(
+        {}, // البحث عن السجل الوحيد
+        {
             content: content.trim(),
             lastUpdated: new Date(),
             updatedBy: req.user._id,
-            version: 1,
-        });
-    } else {
-        policy.content = content.trim();
-        policy.lastUpdated = new Date();
-        policy.updatedBy = req.user._id;
-        policy.version += 1;
-        await policy.save();
-    }
+            $inc: { version: 1 } // زيادة الإصدار تلقائياً
+        },
+        { 
+            new: true,      // إرجاع المستند المحدث
+            upsert: true,   // إنشاؤه إذا لم يكن موجوداً
+            setDefaultsOnInsert: true 
+        }
+    );
 
     res.status(200).json({
         message: "تم تحديث سياسة الخصوصية بنجاح",
@@ -74,8 +73,8 @@ export const sendPrivacyPolicyNotification = asyncHandler(async (req, res) => {
         all: "all",
         buyer: "buyers",
         seller: "sellers",
-        shipping: "shipper",
-        admin: "all", // يمكن للأدمن رؤية التنبيهات العامة أيضاً
+        shipping: "shippers", // ✅ تم التصحيح إلى الجمع ليتوافق مع الـ Enum
+        admin: "all", 
     };
 
     const notificationData = {
