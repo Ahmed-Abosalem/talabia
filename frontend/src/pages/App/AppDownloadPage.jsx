@@ -1,5 +1,6 @@
 /* s:\Talabia_new\frontend\src\pages\App\AppDownloadPage.jsx */
-import React, { useState } from 'react';
+import React from 'react';
+import { useApp } from '@/context/AppContext';
 import { Smartphone, Apple, Bell, Zap, CloudOff, ArrowRight, Store } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from "@/assets/logo.png";
@@ -7,27 +8,32 @@ import './AppDownloadPage.css';
 
 const AppDownloadPage = () => {
   const navigate = useNavigate();
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-
-  React.useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
+  const { deferredPrompt, isAppInstalled, setDeferredPrompt, showToast } = useApp();
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      // Logic for when prompt is not available (e.g. already installed or iOS)
-      alert("التطبيق مثبت بالفعل أو يمكنك استخدامه مباشرة عبر المتصفح. لمستخدمي الآيفون: استخدم خيار 'إضافة إلى الشاشة الرئيسية' من قائمة المشاركة.");
+    // 1. التحقق إذا كان التطبيق مثبتاً بالفعل (Standalone Mode)
+    if (isAppInstalled) {
+      showToast("التطبيق مثبت بالفعل على جهازك. استمتع بالتجربة!", "success");
       return;
     }
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
+
+    // 2. التحقق من وجود إشارة التثبيت (للمتصفحات المدعومة)
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+      return;
+    }
+
+    // 3. التعامل مع الحالات الأخرى (iOS أو متصفحات غير مدعومة حالياً)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    
+    if (isIOS) {
+      showToast("لمستخدمي الآيفون: استخدم خيار 'إضافة إلى الشاشة الرئيسية' من قائمة المشاركة.", "info");
+    } else {
+      showToast("خيار التثبيت المباشر غير متاح حالياً. يرجى التأكد من أنك تستخدم متصفح كروم أو الضغط على 'إضافة للشاشة الرئيسية' من إعدادات المتصفح.", "warning");
     }
   };
 

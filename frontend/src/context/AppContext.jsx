@@ -74,6 +74,10 @@ export function AppProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState(null); // { type, message }
 
+  // 🌍 PWA Installation State
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
+
   // ✅ السلة والمفضلة: التحميل يتم مرة واحدة من localStorage هنا
   const [cartItems, setCartItems] = useState(() =>
     loadArrayFromLocalStorage("talabia_cart_items")
@@ -252,6 +256,42 @@ export function AppProvider({ children }) {
     return () => window.removeEventListener("storage", onStorage);
   }, [refreshNotificationsCount]);
 
+  // =========================================================
+  // 📱 PWA Global Installation Listener
+  // =========================================================
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      // 🛡️ الممارسات الذهبية: منع المتصفح من إظهار النافذة الافتراضية
+      e.preventDefault();
+      // تخزين الحدث لاستخدامه لاحقاً في صفحة التحميل
+      setDeferredPrompt(e);
+      console.log("✅ PWA: 'beforeinstallprompt' event captured globally.");
+    };
+
+    const handleAppInstalled = () => {
+      setIsAppInstalled(true);
+      setDeferredPrompt(null);
+      console.log("🎉 PWA: App installed successfully!");
+    };
+
+    // التحقق الفوري إذا كان يعمل كـ "Standalone" (مثبت بالفعل)
+    const checkIsStandalone = () => {
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || 
+                          window.navigator.standalone || 
+                          document.referrer.includes("android-app://");
+      setIsAppInstalled(isStandalone);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+    checkIsStandalone();
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
+
   const value = {
     isLoading,
     setIsLoading,
@@ -274,6 +314,11 @@ export function AppProvider({ children }) {
     notificationsCount,
     setNotificationsCount,
     refreshNotificationsCount,
+
+    // PWA
+    deferredPrompt,
+    setDeferredPrompt,
+    isAppInstalled,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
