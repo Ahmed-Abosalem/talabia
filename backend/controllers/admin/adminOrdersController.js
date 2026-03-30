@@ -10,7 +10,11 @@ import {
   mapAdminStatusInputToCode,
   mapLegacyArabicStatusToCode,
   mapStatusCodeToLegacyArabic,
+  syncOrderStatus,
+  syncItemStatus,
+  isCompleted,
 } from "../../utils/orderStatus.js";
+import { returnStock } from "../../utils/inventoryUtils.js";
 
 // ✅ توحيد populate المستخدم في getAdminOrders حتى تكون الاستجابات متسقة بعد التحديث
 function buildAdminOrderQuery(filterOrId) {
@@ -130,11 +134,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   }
 
   // لو أصبحت الحالة "تم التسليم" نحدّث deliveredAt
-  if (
-    order.status === "مكتمل" ||
-    order.status === "completed" ||
-    order.statusCode === ORDER_STATUS_CODES.DELIVERED
-  ) {
+  if (isCompleted(order)) {
     order.deliveredAt = Date.now();
   }
 
@@ -157,20 +157,23 @@ export const cancelOrderAsAdmin = asyncHandler(async (req, res) => {
   }
 
   // ✅ استخدام الكود الموحّد للإلغاء من قبل الإدارة على مستوى الطلب
-  order.statusCode = ORDER_STATUS_CODES.CANCELLED_BY_ADMIN;
-  order.status = "ملغى";
+  syncOrderStatus(order, ORDER_STATUS_CODES.CANCELLED_BY_ADMIN);
   order.cancellationReason = (reason || "").trim();
 
   // ✅ إلغاء كل المنتجات داخل الطلب بنفس الكود الموحد
   if (Array.isArray(order.orderItems)) {
     order.orderItems.forEach((item) => {
       if (!item) return;
-      item.statusCode = ORDER_STATUS_CODES.CANCELLED_BY_ADMIN;
-      item.itemStatus = "ملغى";
+      syncItemStatus(item, ORDER_STATUS_CODES.CANCELLED_BY_ADMIN);
     });
   }
 
   await order.save();
+
+  // ✅ إعادة المخزون للمنتجات عند إلغاء الطلب بالكامل من قبل الإدارة
+  if (Array.isArray(order.orderItems)) {
+    await returnStock(order.orderItems);
+  }
 
   // ✅ نرجع نفس شكل getAdminOrders (populate كامل)
   const populated = await getPopulatedAdminOrderById(order._id);
@@ -237,11 +240,7 @@ export const updateOrderItemStatusAsAdmin = asyncHandler(async (req, res) => {
   }
 
   // ✅ تحديث حالة هذا المنتج فقط داخل الطلب
-  item.statusCode = nextStatusCode;
-  const legacyItem = mapStatusCodeToLegacyArabic(nextStatusCode);
-  if (legacyItem) {
-    item.itemStatus = legacyItem;
-  }
+  syncItemStatus(item, nextStatusCode);
 
   await order.save();
 
@@ -281,13 +280,7 @@ export const cancelOrderItemAsAdmin = asyncHandler(async (req, res) => {
   }
 
   // ✅ إلغاء هذا المنتج فقط باستخدام الكود الموحّد
-  item.statusCode = ORDER_STATUS_CODES.CANCELLED_BY_ADMIN;
-  const legacyItem = mapStatusCodeToLegacyArabic(
-    ORDER_STATUS_CODES.CANCELLED_BY_ADMIN
-  );
-  if (legacyItem) {
-    item.itemStatus = legacyItem;
-  }
+  syncItemStatus(item, ORDER_STATUS_CODES.CANCELLED_BY_ADMIN);
 
   // يمكن استخدام سبب الإلغاء على مستوى الطلب ككل (للتوافق مع الحقل الحالي)
   if (typeof reason === "string" && reason.trim()) {
@@ -296,8 +289,69 @@ export const cancelOrderItemAsAdmin = asyncHandler(async (req, res) => {
 
   await order.save();
 
+  // ✅ إعادة المخزون لهذا المنتج الملغى من قبل الإدارة
+  await returnStock([item]);
+
   // ✅ نرجع نفس شكل getAdminOrders (populate كامل)
   const populated = await getPopulatedAdminOrderById(order._id);
 
   res.json({ order: populated });
+});
+
+// ────────────────────────────────────────────────
+// 🚨 DELETE /api/admin/orders/:id - حذف الطلب نهائياً
+// ────────────────────────────────────────────────
+// ⚠️ تنبيه: هذه العملية خطيرة جداً ولا يمكن التراجع عنها
+// - متاح فقط لـ Super Admin (isOwner = true)
+// - يحذف الطلب من جميع السجلات والتقارير والإحصائيات
+// - لا يمكن استرجاع البيانات بعد الحذف
+export const deleteOrderPermanently = asyncHandler(async (req, res) => {
+  const orderId = req.params.id;
+
+  if (!orderId) {
+    res.status(400);
+    throw new Error("معرّف الطلب مطلوب");
+  }
+
+  // ✅ التحقق من أن المستخدم هو Super Admin فقط
+  const user = req.user;
+  if (!user || user.role !== "admin" || user.isOwner !== true) {
+    res.status(403);
+    throw new Error(
+      "غير مصرح لك بهذه العملية. هذه الصلاحية متاحة فقط للمدير الأعلى (Super Admin)"
+    );
+  }
+
+  // البحث عن الطلب
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    res.status(404);
+    throw new Error("الطلب غير موجود");
+  }
+
+  // حفظ معلومات الطلب قبل الحذف للسجل
+  const orderInfo = {
+    orderId: order._id,
+    orderNumber: order.orderNumber || String(order._id).slice(-6),
+    buyerName: order.buyer?.name || "غير محدد",
+    totalPrice: order.totalPrice,
+    itemsCount: order.orderItems?.length || 0,
+  };
+
+  // 🗑️ حذف الطلب نهائياً من قاعدة البيانات
+  await Order.findByIdAndDelete(orderId);
+
+  // ملاحظة: إذا كان لديك جداول أخرى مرتبطة بالطلب (مثل جدول المعاملات المالية،
+  // السجلات، التقارير، العمولات، إلخ)، يجب حذف السجلات المرتبطة هنا أيضاً.
+  // مثال:
+  // await Transaction.deleteMany({ order: orderId });
+  // await Commission.deleteMany({ order: orderId });
+  // await FinancialRecord.deleteMany({ order: orderId });
+
+  res.json({
+    success: true,
+    message: "تم حذف الطلب نهائياً من النظام بنجاح",
+    deletedOrder: orderInfo,
+  });
 });

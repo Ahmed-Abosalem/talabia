@@ -1,519 +1,493 @@
-/* frontend/src/pages/Seller/SellerDashboard.css */
+:root {
+  --seller-primary: #4b502a;
+  --seller-secondary: #a30000;
+  --seller-accent: #ff7f00;
 
-/* ===== صفحة البائع العامة ===== */
+  /* Brand Tones */
+  --brand-olive: #4b502a;
+  --brand-red: #a30000;
+  --brand-orange: #ff7f00;
+
+  /* Base Colors */
+  --seller-bg: #f8fafc;
+  --seller-card-bg: #ffffff;
+
+  /* Unified Radii */
+  --rad-xs: 4px;
+  --rad-sm: 6px;
+  --rad-md: 8px;
+  /* Brand Golden Standard */
+  --rad-lg: 12px;
+  --rad-xl: 16px;
+}
 
 .seller-page {
   direction: rtl;
-  padding-block: 1.2rem 2rem;
   color: #0f172a;
+  min-height: 100vh;
+  background: var(--seller-bg);
 }
 
-/* ===== البلوك العلوي: اسم المتجر + حالة + تبويبات ===== */
-
-.seller-top {
-  margin-bottom: 1.1rem;
-  padding: 0.9rem 1.4rem 0.8rem;
-  border-radius: 1.25rem;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
-  backdrop-filter: blur(8px);
+/* ===== الهيدر العلوي المتطور (Sticky) ===== */
+.seller-top-header {
+  position: sticky;
+  top: calc(var(--navbar-height) + var(--safe-inset-top));
+  z-index: 900;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
 }
 
-/* صف المتجر */
-
-.seller-store-row {
+.seller-header-main {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.7rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.seller-store-id {
-  display: inline-flex;
+/* معلومات المتجر */
+.seller-store-info {
+  display: flex;
   align-items: center;
-  gap: 0.65rem;
-  max-width: 100%;
+  gap: 0.85rem;
 }
-
-/* أيقونة المتجر الصغيرة */
 
 .seller-store-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 0.9rem;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--rad-md, 8px);
   background: linear-gradient(135deg, #fed7aa, #fecaca);
   color: #7f1d1d;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 6px 14px rgba(248, 113, 113, 0.25);
+  box-shadow: 0 4px 12px rgba(248, 113, 113, 0.2);
 }
 
-/* اسم المتجر في نفس السطر */
+.seller-name-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
 
-.seller-store-name {
-  font-size: 0.95rem;
+.seller-store-display-name {
+  font-size: 1.1rem;
   font-weight: 800;
   color: #0f172a;
-  white-space: nowrap;
+  margin: 0;
+  line-height: 1.2;
 }
 
-/* حالة مفعل – مستطيل بحواف ناعمة (ليس كابسولة كاملة) */
-
-.seller-store-status-chip {
+.seller-status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.14rem 0.6rem;
-  border-radius: 0.55rem; /* مستطيل بحواف ناعمة */
-  background: rgba(220, 252, 231, 0.9);
-  border: 1px solid #86efac;
+  gap: 0.35rem;
   font-size: 0.72rem;
   color: #166534;
-  white-space: nowrap;
+  background: rgba(220, 252, 231, 0.8);
+  padding: 0.1rem 0.6rem;
+  border-radius: var(--rad-md, 8px);
+  width: fit-content;
 }
 
-.seller-store-status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
+.seller-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   background: #22c55e;
-  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
 }
 
-/* مكان فارغ لأي معلومات مستقبلية */
-
-.seller-store-extra {
-  font-size: 0.78rem;
-  color: #6b7280;
+/* معلومات المالك */
+.seller-owner-info {
+  text-align: left;
 }
 
-.seller-store-user {
-  white-space: nowrap;
+.seller-owner-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
-/* ===== Tabs (عصرية، في الوسط) ===== */
+.seller-owner-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b;
+}
 
-.seller-tabs {
+.seller-owner-email {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-family: inherit;
+}
+
+/* ===== التبويبات (للكمبيوتر فقط) ===== */
+.seller-nav-tabs {
   display: flex;
   justify-content: center;
-  gap: 1.6rem;
-  border-top: 1px solid rgba(226, 232, 240, 0.8);
-  margin-top: 0.6rem;
+  gap: 2rem;
+  margin-top: 0.75rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.5);
   padding-top: 0.5rem;
-  padding-inline: 0.2rem;
-  overflow-x: auto;
 }
 
-.seller-tab {
-  position: relative;
+.seller-tab-btn {
+  background: none;
   border: none;
-  background: transparent;
-  border-radius: 0;
-  padding: 0.45rem 0.1rem 0.6rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: #4b5563;
+  padding: 0.5rem 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
   cursor: pointer;
-  white-space: nowrap;
-  transition:
-    color 0.15s ease,
-    transform 0.1s ease,
-    opacity 0.15s ease;
-  opacity: 0.85;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  transition: all 0.2s ease;
 }
 
-.seller-tab svg {
-  flex-shrink: 0;
-}
-
-.seller-tab:hover {
+.seller-tab-btn:hover {
   color: #0f172a;
-  transform: translateY(-0.5px);
-  opacity: 1;
 }
 
-.seller-tab-active {
-  color: #b91c1c;
-  font-weight: 700;
-  opacity: 1;
+.seller-tab-btn.is-active {
+  color: var(--seller-primary);
 }
 
-.seller-tab-active::after {
+.seller-tab-btn.is-active::after {
   content: "";
   position: absolute;
-  inset-inline: 0;
-  bottom: -1px;
+  bottom: -0.5rem;
+  left: 0;
+  right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #b91c1c, #f97316);
-  border-radius: 999px;
+  background: linear-gradient(90deg, var(--seller-primary), var(--seller-accent));
+  border-radius: 8px 8px 0 0;
+  animation: tabSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* ===== شريط الفلتر الزمني ===== */
-
-.seller-date-filter {
-  margin-top: 0.6rem;
-  padding-top: 0.55rem;
-  border-top: 1px dashed rgba(226, 232, 240, 0.9);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.78rem;
-}
-
-.seller-date-filter-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: #6b7280;
-}
-
-.seller-date-filter-label svg {
-  color: #9ca3af;
-}
-
-.seller-date-filter-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  justify-content: flex-end;
-}
-
-.seller-date-pill {
-  border: 1px solid #e5e7eb;
-  border-radius: 999px;
-  padding: 0.25rem 0.7rem;
-  background: #f9fafb;
-  font-size: 0.76rem;
-  color: #4b5563;
-  cursor: pointer;
-  transition:
-    background-color 0.16s ease,
-    color 0.16s ease,
-    border-color 0.16s ease,
-    box-shadow 0.16s ease;
-}
-
-.seller-date-pill:hover {
-  background: #eef2ff;
-  border-color: #c7d2fe;
-  color: #1d4ed8;
-}
-
-.seller-date-pill-active {
-  background: linear-gradient(135deg, #0ea5e9, #22c55e);
-  border-color: transparent;
-  color: #ffffff;
-  box-shadow: 0 8px 20px rgba(14, 165, 233, 0.35);
-}
-
-.seller-date-filter-custom {
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.4rem;
-  font-size: 0.76rem;
-  color: #4b5563;
-}
-
-.seller-date-filter-custom label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.seller-date-filter-custom input[type="date"] {
-  border-radius: 0.6rem;
-  border: 1px solid #e5e7eb;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.76rem;
-  background: #f9fafb;
-  color: #111827;
-}
-
-/* ===== باقي الأقسام كما هي من قبل ===== */
-
-.seller-section {
-  border-radius: 1.1rem;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  padding: 1.25rem 1.25rem 1.4rem;
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
-}
-
-.seller-section-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.8rem;
-  margin-bottom: 1rem;
-  align-items: flex-start;
-}
-
-.seller-section-header h2 {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #111827;
-}
-
-.seller-section-header p {
-  margin: 0.3rem 0 0;
-  font-size: 0.8rem;
-  color: #6b7280;
-}
-
-.seller-header-actions {
-  display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.seller-section-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-/* أزرار، تولبار، حالات تحميل... (كما في النسخة السابقة) */
-
-.seller-btn-primary,
-.seller-btn-ghost,
-.seller-btn-outline,
-.seller-btn-ghost-small {
-  border-radius: 0.9rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.5rem 0.9rem;
-  cursor: pointer;
-  transition:
-    background-color 0.16s ease,
-    color 0.16s ease,
-    box-shadow 0.16s ease,
-    transform 0.12s ease,
-    border-color 0.16s ease;
-  border: 1px solid transparent;
-}
-
-.seller-btn-primary {
-  background: linear-gradient(135deg, #0ea5e9, #22c55e);
-  color: #ffffff;
-  box-shadow: 0 10px 24px rgba(14, 165, 233, 0.35);
-}
-
-.seller-btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 30px rgba(14, 165, 233, 0.4);
-}
-
-.seller-btn-ghost {
-  background: #f9fafb;
-  border-color: #e5e7eb;
-  color: #374151;
-}
-
-.seller-btn-ghost:hover {
-  background: #f3f4f6;
-}
-
-.seller-btn-outline {
-  background: #ffffff;
-  border-color: #e5e7eb;
-  color: #0f172a;
-}
-
-.seller-btn-outline:hover {
-  background: #f9fafb;
-}
-
-.seller-btn-ghost-small {
-  padding: 0.3rem 0.7rem;
-  font-size: 0.75rem;
-  background: #f9fafb;
-  border-color: #e5e7eb;
-  color: #374151;
-}
-
-.seller-btn-ghost-small:hover {
-  background: #f3f4f6;
-}
-
-.seller-btn-danger {
-  color: #b91c1c;
-}
-
-.seller-btn-danger:hover {
-  background: rgba(248, 113, 113, 0.1);
-}
-
-.seller-toolbar {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.6rem;
-  align-items: center;
-  margin-bottom: 0.9rem;
-  flex-wrap: wrap;
-}
-
-.seller-search {
-  position: relative;
-  max-width: 260px;
-  width: 100%;
-}
-
-.seller-search svg {
-  position: absolute;
-  inset-inline-end: 0.65rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
-  pointer-events: none;
-}
-
-.seller-search input {
-  width: 100%;
-  padding: 0.55rem 2.3rem 0.55rem 0.8rem;
-  border-radius: 0.9rem;
-  border: 1px solid #e5e7eb;
-  font-size: 0.8rem;
-  outline: none;
-  background: #f9fafb;
-  color: #111827;
-  transition:
-    border-color 0.16s ease,
-    background-color 0.16s ease,
-    box-shadow 0.16s ease;
-}
-
-.seller-search input:focus {
-  border-color: #0ea5e9;
-  background: #ffffff;
-  box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.25);
-}
-
-.seller-select {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.25rem 0.6rem;
-  border-radius: 0.7rem;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  font-size: 0.78rem;
-  color: #4b5563;
-}
-
-.seller-select select {
-  border: none;
-  background: transparent;
-  font-size: 0.78rem;
-  color: #111827;
-  outline: none;
-}
-
-.seller-filter-summary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.76rem;
-  color: #4b5563;
-  margin-bottom: 0.5rem;
-}
-
-.seller-filter-reset {
-  border: none;
-  background: none;
-  font-size: 0.75rem;
-  color: #0ea5e9;
-  cursor: pointer;
-}
-
-.seller-loading {
-  padding: 1.4rem 1rem;
-  font-size: 0.85rem;
-  color: #4b5563;
-}
-
-.seller-empty {
-  padding: 2rem 1.2rem;
-  text-align: center;
-}
-
-.seller-empty-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  margin: 0 auto 0.6rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #eff6ff;
-  color: #2563eb;
-}
-
-.seller-empty h3 {
-  margin: 0 0 0.35rem;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-.seller-empty p {
-  margin: 0;
-  font-size: 0.8rem;
-  color: #6b7280;
-}
-
-/* ===== Responsive ===== */
-
-@media (max-width: 900px) {
-  .seller-top {
-    padding-inline: 1rem;
+@keyframes tabSlideIn {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
   }
 
-  .seller-store-row {
-    gap: 0.7rem;
+  to {
+    transform: scaleX(1);
+    opacity: 1;
   }
 }
 
-@media (max-width: 640px) {
-  .seller-top {
-    padding-inline: 0.9rem;
+/* ===== Responsive Logic ===== */
+
+/* للهواتف والتابلت: إخفاء التبويبات العلوية تماماً لأنها في BottomNav */
+@media (max-width: 1023px) {
+  .seller-nav-tabs {
+    display: none;
   }
 
-  .seller-section {
-    padding: 1rem 0.85rem 1.1rem;
+  .seller-top-header {
+    padding: 0.6rem 1rem;
+    padding-inline: var(--safe-inset-right) var(--safe-inset-left);
   }
 
-  .seller-section-header {
-    flex-direction: column;
+  .seller-owner-info {
+    display: flex;
+    align-items: center;
+    background: rgba(241, 245, 249, 0.6);
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--rad-md, 8px);
+    border: 1px solid rgba(226, 232, 240, 0.5);
   }
 
-  .seller-section-actions {
-    justify-content: flex-start;
-  }
-
-  .seller-date-filter {
-    flex-direction: column;
+  .seller-owner-details {
     align-items: flex-start;
   }
 
-  .seller-date-filter-controls {
-    justify-content: flex-start;
+  .seller-owner-name {
+    font-size: 0.72rem;
+    color: #334155;
   }
+
+  .seller-owner-email {
+    font-size: 0.6rem;
+    color: #64748b;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .seller-page {
+    padding-bottom: calc(90px + var(--safe-inset-bottom));
+  }
+}
+
+/* تحسينات عامة للأقسام */
+/* تحسينات عامة للأقسام - FLAT LAYOUT UPDATE */
+.seller-section {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  width: 100%;
+}
+
+
+/* New Utility: Standard Layout Container */
+.seller-layout-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* New Utility: When we DO want a white box */
+.seller-card {
+  background: #fff;
+  border-radius: var(--rad-md, 8px);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 640px) {
+  .seller-section {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .seller-layout-container {
+    gap: 0.75rem;
+  }
+
+  /* Force Edge-to-Edge for Cards on Mobile with SHARP EDGES */
+  .seller-hero-action,
+  .seller-tool-bar,
+  .seller-card {
+    border-radius: 0 !important;
+    /* Sharp edges for fluid immersion */
+    margin-left: 0;
+    margin-right: 0;
+    border-left: none;
+    border-right: none;
+    width: 100%;
+    margin-bottom: 0.75rem;
+    /* Reduce bottom margin */
+  }
+
+  .seller-hero-action {
+    margin-bottom: 0;
+    /* Attach directly to top if desired, or keep small gap */
+    padding: 1.25rem 1rem;
+    /* Adjust padding inside */
+  }
+
+  .seller-tool-bar {
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+}
+
+/* ───────────────── Modern UI Design System ───────────────── */
+
+/* 1. Seller Tool Bar: Modern flex container for filters and search */
+.seller-tool-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: white;
+  border-radius: var(--rad-md, 8px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+/* 2. Modern Search Box */
+.seller-search-box {
+  flex: 1;
+  position: relative;
+  max-width: 500px;
+}
+
+.seller-search-box .search-icon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  transition: color 0.3s ease;
+}
+
+.seller-search-box input {
+  width: 100%;
+  height: 46px;
+  padding: 0 3rem 0 1rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: var(--rad-md, 8px);
+  font-size: 0.95rem;
+  color: #1e293b;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.seller-search-box input:focus {
+  outline: none;
+  border-color: var(--seller-primary);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(75, 80, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.seller-search-box input:focus+.search-icon {
+  color: var(--seller-primary);
+}
+
+/* 3. Modern Select / Filter Group */
+.seller-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.seller-modern-select-wrap {
+  position: relative;
+  min-width: 160px;
+}
+
+.seller-modern-select-wrap select {
+  width: 100%;
+  height: 46px;
+  padding: 0 1rem 0 2.5rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: var(--rad-md, 8px);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  appearance: none;
+  transition: all 0.3s ease;
+}
+
+.seller-modern-select-wrap select:focus {
+  outline: none;
+  border-color: var(--seller-primary);
+  background: white;
+}
+
+.seller-modern-select-wrap .filter-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+/* 4. Hero Action Block: Premium button container */
+.seller-hero-action {
+  background: var(--seller-primary) !important;
+  border-radius: var(--rad-md, 8px);
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  color: #ffffffcc;
+  box-shadow: 0 10px 25px rgba(75, 80, 42, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.seller-hero-action:hover {
+  transform: translateY(-3px);
+}
+
+.seller-hero-info h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+  color: #ffffff;
+}
+
+.seller-hero-info p {
+  font-size: 0.85rem;
+  color: #ffffffcc;
+  margin: 0;
+}
+
+.seller-hero-btn {
+  background: var(--seller-accent);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--rad-md, 8px);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 127, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.seller-hero-btn:hover {
+  background: #e67300;
+  box-shadow: 0 6px 20px rgba(255, 127, 0, 0.4);
+}
+
+@media (max-width: 768px) {
+  .seller-tool-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .seller-search-box {
+    max-width: none;
+  }
+
+  .seller-hero-action {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.25rem;
+  }
+}
+
+/* ───────────────── Global Premium Feedback ───────────────── */
+button:active {
+  transform: scale(0.97) !important;
+  transition: transform 0.1s ease !important;
+}
+
+.seller-card-clickable {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.seller-card-clickable:hover {
+  transform: translateY(-4px) scale(1.005);
+  box-shadow: 0 12px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.seller-modern-field:focus-within label {
+  color: var(--seller-primary);
+  transform: translateX(-4px);
+  transition: all 0.3s ease;
 }

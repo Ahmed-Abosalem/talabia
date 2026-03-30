@@ -7,26 +7,19 @@ import {
   ShoppingCart,
   Trash2,
   ArrowLeft,
+  ArrowRight,
   Plus,
   Minus,
   Info,
   Tag,
   ShieldCheck,
+  ChevronRight,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { formatCurrency, formatNumber } from "@/utils/formatters";
+import { getPublicMinOrderSettings } from "@/services/settingsService";
+import { useAuth } from "@/context/AuthContext";
 
-function formatStatus(status) {
-  switch (status) {
-    case "available":
-      return "متوفر";
-    case "limited":
-      return "كمية محدودة";
-    case "unavailable":
-      return "غير متوفر";
-    default:
-      return "متوفر";
-  }
-}
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -37,44 +30,69 @@ export default function Cart() {
     showToast,
     updateCartItemQuantity,
   } = useApp();
+  const { isLoggedIn } = useAuth();
 
-  const [rows, setRows] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [rows, setRows] = useState(
+    cartItems.map((item) => ({
+      ...item,
+      quantity: typeof item.quantity === "number" && item.quantity > 0 ? item.quantity : 1,
+      status: item.status || "available",
+      stockLeft: typeof item.stockLeft === "number" ? item.stockLeft : null,
+    }))
+  );
 
   const [discountCode, setDiscountCode] = useState("");
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountMessage, setDiscountMessage] = useState("");
 
+  const [minOrder, setMinOrder] = useState({ active: false, value: 0 });
+  const [removingId, setRemovingId] = useState(null);
+
+  // جلب إعدادات الحد الأدنى للطلب
+  useEffect(() => {
+    async function loadMinOrder() {
+      try {
+        const data = await getPublicMinOrderSettings();
+        setMinOrder({ active: !!data.active, value: Number(data.value) || 0 });
+      } catch (err) {
+        console.error("فشل جلب إعدادات الحد الأدنى للطلب", err);
+      }
+    }
+    loadMinOrder();
+  }, []);
+
   // مزامنة عناصر السلة من الـ Context مع صفوف الصفحة مع الحفاظ على الكميات
   useEffect(() => {
-    setRows((prevRows) =>
-      cartItems.map((item) => {
+    if (!cartItems.length) {
+      setRows([]);
+      return;
+    }
+
+    setRows((prevRows) => {
+      const newRows = cartItems.map((item) => {
         const existing = prevRows.find((r) => r.id === item.id);
         const quantity =
           existing && typeof existing.quantity === "number"
             ? Math.max(1, existing.quantity)
             : typeof item.quantity === "number" && item.quantity > 0
-            ? item.quantity
-            : 1;
+              ? item.quantity
+              : 1;
 
         return {
           ...item,
           quantity,
-          status: item.status || "available", // available | limited | unavailable
+          status: item.status || "available",
           stockLeft: typeof item.stockLeft === "number" ? item.stockLeft : null,
         };
-      })
-    );
+      });
 
-    // تنظيف التحديد من العناصر المحذوفة
-    setSelectedIds((prev) =>
-      prev.filter((id) => cartItems.some((item) => item.id === id))
-    );
+      // منع التحديث إذا كانت البيانات متطابقة تماماً (تجنب الومضات العشوائية)
+      if (JSON.stringify(newRows) === JSON.stringify(prevRows)) return prevRows;
+      return newRows;
+    });
   }, [cartItems]);
 
   const hasItems = rows.length > 0;
-  const hasSelection = selectedIds.length > 0;
-  const allSelected = hasItems && rows.every((row) => selectedIds.includes(row.id));
 
   // ملخص الأرقام (بدون شحن، فقط إجمالي + خصم)
   const summary = useMemo(() => {
@@ -87,21 +105,35 @@ export default function Cart() {
       };
     }
 
-    const itemsCount = rows.reduce((sum, row) => sum + row.quantity, 0);
-    const subtotal = rows.reduce((sum, row) => sum + row.price * row.quantity, 0);
+    const filteredRows = rows.map(row => ({
+      ...row,
+      quantity: (row.quantity === "" || isNaN(parseInt(row.quantity, 10))) ? 0 : parseInt(row.quantity, 10)
+    }));
+
+    const itemsCount = filteredRows.reduce((sum, row) => sum + row.quantity, 0);
+    const subtotal = filteredRows.reduce((sum, row) => sum + row.price * row.quantity, 0);
 
     const discount = Math.min(discountAmount, subtotal);
     const total = Math.max(subtotal - discount, 0);
 
-    return { itemsCount, subtotal, discount, total };
-  }, [rows, discountAmount]);
+    const isBelowMinOrder = minOrder.active && subtotal < minOrder.value;
+
+    return { itemsCount, subtotal, discount, total, isBelowMinOrder };
+  }, [rows, discountAmount, minOrder]);
 
   // تغيير الكمية بالأزرار
   const handleQtyChange = (id, delta) => {
     setRows((prev) =>
       prev.map((row) => {
         if (row.id !== id) return row;
+        const stock = typeof row.stock === "number" ? row.stock : 999;
         const newQuantity = Math.max(1, row.quantity + delta);
+
+        if (newQuantity > stock) {
+          showToast(`الكمية المتاحة هي فقط (${stock})`, "error");
+          return row;
+        }
+
         updateCartItemQuantity(id, newQuantity);
         return { ...row, quantity: newQuantity };
       })
@@ -109,52 +141,61 @@ export default function Cart() {
   };
 
   // تعديل الكمية يدويًا بالحقل
+  // تعديل الكمية يدويًا بالحقل (يسمح بالفراغ المؤقت للكتابة)
   const handleQtyInput = (id, value) => {
+    // إذا كان المدخل فارغاً، نقبله في الحالة (State) ليتمكن المستخدم من الكتابة
+    if (value === "") {
+      setRows((prev) => prev.map((row) => (row.id === id ? { ...row, quantity: "" } : row)));
+      return;
+    }
+
+    const parsed = parseInt(value, 10);
+    if (isNaN(parsed)) return;
+
     setRows((prev) =>
       prev.map((row) => {
         if (row.id !== id) return row;
-        const parsed = parseInt(value, 10);
-        const newQuantity = !isNaN(parsed) && parsed > 0 ? parsed : 1;
+        const stock = typeof row.stock === "number" ? row.stock : 999;
+        let newQuantity = Math.max(0, parsed); // نسمح بالصفر مؤقتاً أثناء المسح
+
+        if (newQuantity > stock) {
+          showToast(`الكمية المتاحة هي فقط (${stock})`, "error");
+          newQuantity = stock;
+        }
+
         updateCartItemQuantity(id, newQuantity);
         return { ...row, quantity: newQuantity };
       })
     );
   };
 
-  // تحديد/إلغاء تحديد عنصر واحد
-  const toggleSelectOne = (id) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+  // معالجة فقدان التركيز (Blur) لضمان عدم بقاء الحقل فارغاً أو صفر
+  const handleQtyBlur = (id, value) => {
+    const parsed = parseInt(value, 10);
+    if (isNaN(parsed) || parsed < 1) {
+      setRows((prev) =>
+        prev.map((row) => {
+          if (row.id !== id) return row;
+          updateCartItemQuantity(id, 1);
+          return { ...row, quantity: 1 };
+        })
+      );
+    }
   };
 
-  // تحديد/إلغاء الكل
-  const toggleSelectAll = () => {
-    if (allSelected) setSelectedIds([]);
-    else setSelectedIds(rows.map((row) => row.id));
-  };
-
-  // حذف عنصر واحد
   const handleRemoveItem = (row) => {
-    toggleCartItem(row);
-    setSelectedIds((prev) => prev.filter((id) => id !== row.id));
-    showToast("تمت إزالة المنتج من السلة", "success");
-  };
-
-  // حذف المحدد
-  const handleRemoveSelected = () => {
-    if (!hasSelection) return;
-    const toRemove = rows.filter((row) => selectedIds.includes(row.id));
-    toRemove.forEach((row) => toggleCartItem(row));
-    setSelectedIds([]);
-    showToast("تم حذف المنتجات المحددة من السلة", "success");
+    setRemovingId(row.id);
+    setTimeout(() => {
+      toggleCartItem(row);
+      setRemovingId(null);
+      showToast("تمت إزالة المنتج من السلة", "success");
+    }, 300);
   };
 
   // إفراغ السلة بالكامل
   const handleClearCart = () => {
     if (!hasItems) return;
     clearCart();
-    setSelectedIds([]);
     showToast("تم إفراغ السلة بالكامل", "success");
   };
 
@@ -208,6 +249,16 @@ export default function Cart() {
       showToast("سلتك فارغة، أضف منتجات أولاً", "info");
       return;
     }
+    if (summary.isBelowMinOrder) {
+      showToast(`الحد الأدنى للطلب هو ${minOrder.value} ر.ي. يرجى إضافة المزيد من المنتجات.`, "error");
+      return;
+    }
+
+    if (!isLoggedIn) {
+      navigate("/login?redirect=/checkout&message=guest_checkout");
+      return;
+    }
+
     navigate("/checkout");
   };
 
@@ -236,340 +287,199 @@ export default function Cart() {
   };
 
   return (
-    <div className="page-container cart-page">
-      {/* الهيدر الأزرق العلوي */}
-      <header className="cart-header">
-        <div className="cart-header-main">
-          <div className="cart-title-row">
-            <div className="cart-icon-circle">
-              <ShoppingCart size={22} />
-            </div>
-            <div className="cart-title-text">
-              <h1 className="cart-title">سلة مشترياتي</h1>
-              <p className="cart-subtitle">
-                {hasItems
-                  ? `لديك ${summary.itemsCount} منتج في السلة`
-                  : "سلتك فارغة حاليًا – أضف بعض المنتجات وابدأ التسوق"}
-              </p>
-            </div>
+    <div className="adm-page-root cart-page">
+      <header className="adm-header">
+        <div className="adm-header-inner">
+          <div className="adm-header-right">
+            <button onClick={() => navigate("/")} className="adm-btn-back" title="العودة للتسوق">
+              <ArrowRight size={20} />
+            </button>
+            <h1 className="adm-page-title buyer-page-title">
+              <ShoppingCart size={24} />
+              <span>السلة</span>
+              <span className="cart-items-count">
+                ({summary.itemsCount} منتجات)
+              </span>
+            </h1>
           </div>
-        </div>
-
-        <div className="cart-header-actions">
-          <button
-            type="button"
-            className="cart-header-btn ghost"
-            onClick={() => navigate("/")}
-          >
-            <ArrowLeft size={15} />
-            <span>مواصلة التسوق</span>
-          </button>
-
-          {hasItems && (
-            <button
-              type="button"
-              className="cart-header-btn danger"
-              onClick={handleClearCart}
-            >
-              <Trash2 size={15} />
+          <div className="adm-header-left">
+            <button type="button" className="header-clear-cart-btn" onClick={handleClearCart}>
+              <Trash2 size={18} />
               <span>إفراغ السلة</span>
             </button>
-          )}
+          </div>
         </div>
       </header>
 
-      {/* حالة السلة الفارغة */}
-      {!hasItems && (
-        <section className="cart-empty-state">
-          <div className="cart-empty-icon">
-            <ShoppingCart size={30} />
-          </div>
-          <h2 className="cart-empty-title">سلتك تنتظر منتجاتك المفضلة</h2>
-          <p className="cart-empty-text">
-            يمكنك إضافة المنتجات إلى السلة من خلال الضغط على أيقونة السلة في بطاقة المنتج.
-          </p>
-          <button
-            type="button"
-            className="cart-empty-btn"
-            onClick={() => navigate("/")}
-          >
-            <ArrowLeft size={16} />
-            <span>العودة للصفحة الرئيسية</span>
-          </button>
-        </section>
-      )}
-
-      {/* التخطيط الرئيسي عند وجود عناصر */}
-      {hasItems && (
-        <>
-          <section className="cart-layout">
-            {/* قائمة المنتجات في السلة */}
-            <main className="cart-items-card">
-              <div className="cart-items-header">
-                <h2>منتجات السلة</h2>
-                <span className="cart-items-count">{rows.length} منتج مختلف</span>
+      <div className="adm-main-container">
+        <main className="adm-details-grid">
+          {!hasItems ? (
+            <section className="span-12 cart-empty-state">
+              <div className="cart-empty-icon">
+                <ShoppingCart size={48} />
               </div>
-
-              {/* شريط الأدوات أعلى قائمة المنتجات */}
-              <div className="cart-table-toolbar">
-                <label className="cart-checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={toggleSelectAll}
-                  />
-                  <span className="cart-checkbox-custom" />
-                  <span className="cart-checkbox-label-text">تحديد الكل</span>
-                </label>
-
-                <div className="cart-table-toolbar-actions">
-                  <button
-                    type="button"
-                    className="cart-toolbar-btn danger"
-                    disabled={!hasSelection}
-                    onClick={handleRemoveSelected}
-                  >
-                    <Trash2 size={14} />
-                    <span>حذف المحدد</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="cart-items-list">
+              <h2 className="cart-empty-title">سلتك تنتظر منتجاتك المفضلة</h2>
+              <p className="cart-empty-text">
+                ابدأ بإضافة المنتجات التي تنال إعجابك لتتمكن من إتمام عملية الشراء لاحقاً.
+              </p>
+              <button type="button" className="adm-btn primary" onClick={() => navigate("/")}>
+                <ArrowLeft size={18} />
+                العودة للصفحة الرئيسية
+              </button>
+            </section>
+          ) : (
+            <>
+              {/* Items List */}
+              <div className="span-12 cart-items-list">
                 {rows.map((row) => {
-                  const isSelected = selectedIds.includes(row.id);
                   const isUnavailable = row.status === "unavailable";
 
                   return (
                     <article
                       key={row.id}
-                      className={"cart-item" + (isUnavailable ? " cart-item-unavailable" : "")}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handleGoToProduct(row)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          handleGoToProduct(row);
-                        }
-                      }}
+                      className={`adm-card buyer-item-card ${isUnavailable ? 'is-unavailable' : ''} ${removingId === row.id ? 'removing' : ''}`}
                     >
-                      <div className="cart-item-main">
-                        {/* checkbox لكل منتج */}
-                        <label className="cart-checkbox-label cart-item-select" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleSelectOne(row.id)}
-                          />
-                          <span className="cart-checkbox-custom" />
-                        </label>
+                      {/* Column 1: Image & Action Overlay (4:5 AR) */}
+                      <div className="item-card-col-visual">
+                        <div className="item-image-container" onClick={() => handleGoToProduct(row)}>
+                          {row.image ? (
+                            <img src={row.image} alt={row.name} className="item-card-img" />
+                          ) : (
+                            <div className="adm-empty-center"><ShoppingCart size={32} /></div>
+                          )}
+                          {isUnavailable && <div className="unavailable-overlay">غير متوفر</div>}
 
-                        {/* صورة المنتج */}
-                        {row.image && (
-                          <div className="cart-item-image-wrapper">
-                            <img
-                              src={row.image}
-                              alt={row.name}
-                              className="cart-item-image"
-                              loading="lazy"
-                            />
-                          </div>
-                        )}
-
-                        {/* تفاصيل المنتج */}
-                        <div className="cart-item-info">
-                          <h3 className="cart-item-name">{row.name}</h3>
-                          <p className="cart-item-meta"></p>
-
-                          <div className="cart-item-extra">
-                            <span className={"cart-status-pill status-" + row.status}>
-                              {formatStatus(row.status)}
-                            </span>
-
-                            {typeof row.stockLeft === "number" && row.stockLeft <= 5 && (
-                              <span className="cart-stock-warning">
-                                {row.stockLeft <= 0
-                                  ? "انتهى المخزون لهذا المنتج"
-                                  : `متبقي ${row.stockLeft} فقط في المخزون`}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="cart-item-controls">
-                            <div className="cart-item-qty">
-                              <button
-                                type="button"
-                                className="cart-qty-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleQtyChange(row.id, -1);
-                                }}
-                                disabled={row.quantity <= 1}
-                              >
-                                <Minus size={14} />
-                              </button>
-
-                              <input
-                                type="number"
-                                min="1"
-                                className="cart-qty-input"
-                                value={row.quantity}
-                                onClick={(e) => e.stopPropagation()}
-                                onKeyDown={(e) => e.stopPropagation()}
-                                onChange={(e) => handleQtyInput(row.id, e.target.value)}
-                              />
-
-                              <button
-                                type="button"
-                                className="cart-qty-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleQtyChange(row.id, 1);
-                                }}
-                              >
-                                <Plus size={14} />
-                              </button>
-                            </div>
-
-                            <div className="cart-item-actions">
-                              <button
-                                type="button"
-                                className="cart-item-action danger"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemoveItem(row);
-                                }}
-                              >
-                                <Trash2 size={14} />
-                                <span>حذف</span>
-                              </button>
-                            </div>
-                          </div>
+                          {/* Delete Overlay */}
+                          <button
+                            type="button"
+                            className="item-delete-overlay"
+                            onClick={(e) => { e.stopPropagation(); handleRemoveItem(row); }}
+                            title="حذف من السلة"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </div>
 
-                      <div className="cart-item-price-block">
-                        <div className="cart-item-unit">
-                          <span className="cart-item-unit-label">سعر الوحدة</span>
-                          <span className="cart-item-unit-value">
-                            {row.price.toLocaleString()} ر.ي
-                          </span>
+                      {/* Column 2: Info & Controls Stack */}
+                      <div className="item-card-col-info">
+                        <div className="info-main" onClick={() => handleGoToProduct(row)}>
+                          <div className="info-header">
+                            <h3 className="item-name">{row.name}</h3>
+                            {row.storeName && <span className="item-store">متجر: {row.storeName}</span>}
+                          </div>
+
+                          <div className="item-meta-stack">
+                            <div className="meta-row">
+                              <span className="label">سعر الوحدة:</span>
+                              <span className="value">{formatCurrency(row.price)}</span>
+                            </div>
+                            <div className="meta-row total-highlight">
+                              <span className="label">الإجمالي:</span>
+                              <span className="value">{formatCurrency(row.price * row.quantity)}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="cart-item-total">
-                          <span className="cart-item-total-label">الإجمالي</span>
-                          <span className="cart-item-total-value">
-                            {(row.price * row.quantity).toLocaleString()} ر.ي
-                          </span>
+
+                        <div className="info-controls">
+                          <div className="qty-rect-group">
+                            <button
+                              type="button"
+                              className="qty-rect-btn"
+                              onClick={(e) => { e.stopPropagation(); handleQtyChange(row.id, -1); }}
+                              disabled={row.quantity <= 1 || isUnavailable}
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <input
+                              type="number"
+                              className="qty-rect-input"
+                              value={row.quantity}
+                              lang="en"
+                              dir="ltr"
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => handleQtyInput(row.id, e.target.value)}
+                              onBlur={(e) => handleQtyBlur(row.id, e.target.value)}
+                              onFocus={(e) => e.target.select()}
+                              disabled={isUnavailable}
+                              min="1"
+                            />
+                            <button
+                              type="button"
+                              className="qty-rect-btn"
+                              onClick={(e) => { e.stopPropagation(); handleQtyChange(row.id, 1); }}
+                              disabled={isUnavailable}
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </article>
                   );
                 })}
               </div>
-            </main>
 
-            {/* ملخص الطلب (كمبيوتر) */}
-            <aside className="cart-summary">
-              <div className="cart-summary-header">
-                <h2>ملخص الطلب</h2>
-                <span className="cart-summary-tag">
-                  <Info size={14} />
-                </span>
-              </div>
-
-              <div className="cart-summary-card">
-                <div className="cart-summary-row">
-                  <span>إجمالي ({summary.itemsCount} منتج)</span>
-                  <span>{summary.subtotal.toLocaleString()} ر.ي</span>
+              {/* Summary Section */}
+              <section className="adm-card span-12 cart-summary-card">
+                <div className="adm-card-header">
+                  <Info size={20} />
+                  <h2>ملخص الطلب النهائي</h2>
                 </div>
+                <div className="adm-card-body">
+                  {summary.isBelowMinOrder && (
+                    <div className="adm-notice-box">
+                      <Info size={20} />
+                      <span>
+                        عذراً، يجب أن يكون مجموع المنتجات لا يقل عن <strong>{formatCurrency(minOrder.value)}</strong>. أضف منتجات بقيمة <strong>{formatCurrency(minOrder.value - summary.subtotal)}</strong> لإتمام طلبك.
+                      </span>
+                    </div>
+                  )}
 
-                <div className="cart-summary-row">
-                  <span>
-                    <Tag size={14} />
-                    <span>الخصم</span>
-                  </span>
-                  <span>
-                    {summary.discount > 0
-                      ? `- ${summary.discount.toLocaleString()} ر.ي`
-                      : "لا يوجد"}
-                  </span>
+                  <div className="summary-grid">
+                    {/* Block 1: Calc */}
+                    <div className="summary-block">
+                      <div className="summary-row">
+                        <span className="label">إجمالي المنتجات ({summary.itemsCount}):</span>
+                        <span className="value">{formatCurrency(summary.subtotal)}</span>
+                      </div>
+                      <div className="summary-row">
+                        <span className="label">الخصم المطبق:</span>
+                        <span className={`value ${summary.discount > 0 ? "num-accent" : ""}`}>
+                          {summary.discount > 0 ? `- ${formatCurrency(summary.discount)}` : "0 ر.ي"}
+                        </span>
+                      </div>
+                      <div className="summary-row total-row">
+                        <span className="label">المبلغ الإجمالي:</span>
+                        <span className="value">{formatCurrency(summary.total)}</span>
+                      </div>
+                    </div>
+
+                    {/* Block 2: Coupon */}
+                    <div className="summary-block">
+                      <span className="label" style={{ marginBottom: '8px', display: 'block' }}>هل لديك كود خصم؟</span>
+                      <div className="coupon-input-group">
+                        <input type="text" className="adm-form-input" placeholder="أدخل الكود هنا" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} />
+                        <button type="button" className="adm-btn primary" onClick={handleApplyDiscount}>تطبيق</button>
+                      </div>
+                      {discountMessage && <p className="adm-form-hint" style={{ color: 'var(--adm-success)', fontWeight: '700' }}>{discountMessage}</p>}
+                    </div>
+
+                    {/* Block 3: Action */}
+                    <div className={`summary-block action-block ${summary.isBelowMinOrder ? 'disabled' : ''}`}>
+                      <button type="button" className="checkout-btn" onClick={handleCheckout} disabled={summary.isBelowMinOrder}>
+                        <span>إتمام عملية الشراء</span>
+                        <ArrowLeft size={24} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
+              </section>
 
-                <div className="cart-summary-divider" />
-
-                <div className="cart-summary-row total">
-                  <span>الإجمالي النهائي</span>
-                  <span>{summary.total.toLocaleString()} ر.ي</span>
-                </div>
-
-                <div className="cart-summary-discount">
-                  <input
-                    type="text"
-                    className="cart-discount-input"
-                    placeholder="أدخل كود الخصم (مثال: SAVE20 / SAVE10)"
-                    value={discountCode}
-                    onChange={(e) => setDiscountCode(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="cart-discount-apply"
-                    onClick={handleApplyDiscount}
-                  >
-                    تطبيق
-                  </button>
-                </div>
-
-                {discountMessage && (
-                  <p className="cart-discount-message">{discountMessage}</p>
-                )}
-
-                <button
-                  type="button"
-                  className="cart-summary-btn"
-                  onClick={handleCheckout}
-                >
-                  إتمام الشراء
-                </button>
-
-                <p className="cart-summary-note">
-                  <ShieldCheck size={14} />
-                  <span></span>
-                </p>
-              </div>
-            </aside>
-          </section>
-
-          {/* ✅ شريط ملخص سفلي للهاتف فقط */}
-          <div className="cart-summary-mobile" role="region" aria-label="ملخص الطلب">
-            <div className="cart-summary-mobile-top">
-              <div className="cart-summary-mobile-part cart-summary-mobile-items">
-                <span className="cart-summary-mobile-part-label">
-                  {summary.itemsCount} منتجات
-                </span>
-              </div>
-
-              <div className="cart-summary-mobile-divider" />
-
-              <div className="cart-summary-mobile-part cart-summary-mobile-total">
-                <span className="cart-summary-mobile-part-label">الإجمالي</span>
-                <span className="cart-summary-mobile-part-value">
-                  {summary.total.toLocaleString()} ر.ي
-                </span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              className="cart-summary-mobile-btn"
-              onClick={handleCheckout}
-            >
-              <span>إتمام الشراء</span>
-              <ArrowLeft size={16} />
-            </button>
-          </div>
-        </>
-      )}
+            </>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

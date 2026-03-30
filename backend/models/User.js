@@ -34,6 +34,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['admin', 'seller', 'buyer', 'shipper'],
       default: 'buyer',
+      index: true,
     },
     phone: {
       type: String,
@@ -46,8 +47,28 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // 🌍 الدولة (تُستخدم مع الملف الشخصي للمستخدم – خاصة المشتري)
+    // 🌍 الدولة والمدينة (تُستخدم مع الملف الشخصي للمستخدم – خاصة المشتري)
     country: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    city: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    district: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    neighborhood: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    addressDetails: {
       type: String,
       trim: true,
       default: '',
@@ -132,6 +153,15 @@ const userSchema = new mongoose.Schema(
 
     // ⏱️ آخر دخول / آخر ظهور (يُستخدم في "متصل الآن" و "آخر ظهور")
     lastLoginAt: {
+      type: Date,
+    },
+
+    // ⚖️ الموافقة على الشروط والخصوصية
+    agreedToTerms: {
+      type: Boolean,
+      default: false,
+    },
+    termsAcceptedAt: {
       type: Date,
     },
 

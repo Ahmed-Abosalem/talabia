@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import "./MenuDropdown.css";
+import logo from "@/assets/logo.png";
 
 import {
   Home,
@@ -14,6 +15,8 @@ import {
   LogIn,
   LogOut,
   LayoutDashboard,
+  Wallet,
+  Smartphone,
 } from "lucide-react";
 
 export default function MenuDropdown({ role, onClose }) {
@@ -24,6 +27,11 @@ export default function MenuDropdown({ role, onClose }) {
   // إغلاق القائمة عند الضغط خارجها
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // ✅ تجاهل الضغط على زر القائمة نفسه لتجنب تضارب الأحداث
+      if (event.target.closest(".navbar-menu-button")) {
+        return;
+      }
+
       if (
         containerRef.current &&
         !containerRef.current.contains(event.target)
@@ -41,6 +49,7 @@ export default function MenuDropdown({ role, onClose }) {
     };
   }, [onClose]);
 
+
   const handleItemClick = (action) => {
     action?.();
     onClose?.();
@@ -56,17 +65,17 @@ export default function MenuDropdown({ role, onClose }) {
     // نحاول أخذ الدور من الـ props، وإن لم يوجد فمن كائن المستخدم
     const rawRole = (role || user?.role || "guest")?.toString().toLowerCase();
 
-    if (["buyer", "seller", "shipping", "admin"].includes(rawRole)) {
+    if (["buyer", "seller", "shipper", "admin"].includes(rawRole)) {
       effectiveRole = rawRole;
     } else {
-      // لو الدور غير معروف (مثلاً shipper أو shipping_company)
-      // نعامله افتراضياً كـ "شركة شحن" لو احتوى على ship أو deliver
+      // لو الدور غير معروف (مثلاً shipping_company أو delivery)
+      // نعامله افتراضياً كـ "شركة شحن" (shipper) لو احتوى على ship أو deliver
       if (
         rawRole.includes("ship") ||
         rawRole.includes("delivery") ||
         rawRole.includes("transport")
       ) {
-        effectiveRole = "shipping";
+        effectiveRole = "shipper";
       } else {
         effectiveRole = "guest";
       }
@@ -77,7 +86,7 @@ export default function MenuDropdown({ role, onClose }) {
     guest: { label: "زائر", color: "#22c55e" },
     buyer: { label: "مشتري", color: "#0ea5e9" },
     seller: { label: "بائع", color: "#f97316" },
-    shipping: { label: "شركة شحن", color: "#14b8a6" },
+    shipper: { label: "شركة شحن", color: "#14b8a6" },
     admin: { label: "مدير", color: "#a855f7" },
   };
 
@@ -92,7 +101,7 @@ export default function MenuDropdown({ role, onClose }) {
   const isCtaLogin = !isLoggedIn;
   const CtaIcon = isCtaLogin ? LogIn : LogOut;
   const ctaLabel = isCtaLogin ? "تسجيل الدخول" : "تسجيل الخروج";
-  const ctaClassName = `menu-item-card menu-primary-cta menu-primary-cta--${roleKey}`;
+  const ctaClassName = `menu-primary-cta menu-primary-cta--${roleKey}`;
 
   const handleCtaClick = () => {
     if (isCtaLogin) {
@@ -106,7 +115,6 @@ export default function MenuDropdown({ role, onClose }) {
   const sections = [];
 
   if (!isLoggedIn) {
-    // الزائر
     sections.push(
       {
         title: "التصفح",
@@ -115,6 +123,11 @@ export default function MenuDropdown({ role, onClose }) {
             label: "الصفحة الرئيسية",
             icon: Home,
             onClick: () => navigate("/"),
+          },
+          {
+            label: "تطبيق المتجر",
+            icon: Smartphone,
+            onClick: () => navigate("/download-app"),
           },
           {
             label: "من نحن",
@@ -137,9 +150,9 @@ export default function MenuDropdown({ role, onClose }) {
             onClick: () => navigate("/register?role=seller"),
           },
           {
-            label: "كن شريك شحن",
+            label: "أنشئ حساب مشتري",
             icon: Truck,
-            onClick: () => navigate("/register?role=shipping"),
+            onClick: () => navigate("/register?role=buyer"),
           },
         ],
       }
@@ -152,12 +165,17 @@ export default function MenuDropdown({ role, onClose }) {
           {
             label: "ملفي الشخصي",
             icon: User,
-            onClick: () => navigate("/buyer"),
+            onClick: () => navigate("/buyer/profile"),
           },
           {
             label: "طلباتي",
             icon: Truck,
-            onClick: () => navigate("/buyer"),
+            onClick: () => navigate("/buyer/orders"),
+          },
+          {
+            label: "محفظتي",
+            icon: Wallet,
+            onClick: () => navigate("/buyer/wallet"),
           },
         ],
       },
@@ -168,6 +186,11 @@ export default function MenuDropdown({ role, onClose }) {
             label: "الصفحة الرئيسية",
             icon: Home,
             onClick: () => navigate("/"),
+          },
+          {
+            label: "تطبيق المتجر",
+            icon: Smartphone,
+            onClick: () => navigate("/download-app"),
           },
           {
             label: "من نحن",
@@ -192,6 +215,11 @@ export default function MenuDropdown({ role, onClose }) {
             icon: LayoutDashboard,
             onClick: () => navigate("/seller"),
           },
+          {
+            label: "محفظتي",
+            icon: Wallet,
+            onClick: () => navigate("/seller/wallet"),
+          },
         ],
       },
       {
@@ -201,6 +229,11 @@ export default function MenuDropdown({ role, onClose }) {
             label: "الصفحة الرئيسية",
             icon: Home,
             onClick: () => navigate("/"),
+          },
+          {
+            label: "تطبيق المتجر",
+            icon: Smartphone,
+            onClick: () => navigate("/download-app"),
           },
           {
             label: "من نحن",
@@ -215,7 +248,7 @@ export default function MenuDropdown({ role, onClose }) {
         ],
       }
     );
-  } else if (roleKey === "shipping") {
+  } else if (roleKey === "shipper") {
     sections.push(
       {
         title: "إدارة الشحن",
@@ -230,6 +263,16 @@ export default function MenuDropdown({ role, onClose }) {
       {
         title: "التصفح",
         items: [
+          {
+            label: "الصفحة الرئيسية",
+            icon: Home,
+            onClick: () => navigate("/"),
+          },
+          {
+            label: "تطبيق المتجر",
+            icon: Smartphone,
+            onClick: () => navigate("/download-app"),
+          },
           {
             label: "من نحن",
             icon: Info,
@@ -263,6 +306,21 @@ export default function MenuDropdown({ role, onClose }) {
             icon: Home,
             onClick: () => navigate("/"),
           },
+          {
+            label: "تطبيق المتجر",
+            icon: Smartphone,
+            onClick: () => navigate("/download-app"),
+          },
+          {
+            label: "من نحن",
+            icon: Info,
+            onClick: () => navigate("/about"),
+          },
+          {
+            label: "تواصل معنا",
+            icon: Phone,
+            onClick: () => navigate("/contact"),
+          },
         ],
       }
     );
@@ -273,7 +331,7 @@ export default function MenuDropdown({ role, onClose }) {
       <div className="menu-dropdown-inner" ref={containerRef}>
         {/* هيدر العلامة التجارية */}
         <div className="menu-brand">
-          <div className="menu-brand-title">طلبية</div>
+          <img src={logo} alt="طلبية" className="menu-brand-logo" />
           <div className="menu-brand-subtitle">منصة التجارة الإلكترونية</div>
         </div>
 
@@ -282,7 +340,7 @@ export default function MenuDropdown({ role, onClose }) {
         {/* كرت المستخدم */}
         <div className="menu-user-card">
           <div className="menu-user-avatar">
-            <User size={18} />
+            <User size={16} />
           </div>
           <div className="menu-user-text">
             <div className="menu-user-name">{displayName}</div>
@@ -304,7 +362,7 @@ export default function MenuDropdown({ role, onClose }) {
 
         {/* زر رئيسي ثابت: تسجيل الدخول / تسجيل الخروج */}
         <button className={ctaClassName} onClick={handleCtaClick}>
-          <CtaIcon size={18} className="menu-primary-cta-icon" />
+          <CtaIcon size={16} className="menu-primary-cta-icon" />
           <span className="menu-primary-cta-label">{ctaLabel}</span>
         </button>
 
@@ -323,7 +381,7 @@ export default function MenuDropdown({ role, onClose }) {
                       onClick={() => handleItemClick(item.onClick)}
                     >
                       <div className="menu-item-main">
-                        <Icon size={17} className="menu-item-icon" />
+                        <Icon size={15} className="menu-item-icon" />
                         <span className="menu-item-label">{item.label}</span>
                       </div>
                     </button>

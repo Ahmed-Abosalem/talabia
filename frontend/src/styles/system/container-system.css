@@ -1,0 +1,48 @@
+/* 
+ * Responsive Core System - Container Governance
+ * Centralized container logic
+ */
+
+.app-container {
+    width: 100%;
+    margin-inline: auto;
+    /* Centering */
+    padding-inline: var(--container-padding-mobile);
+
+    /* Dynamic Max Widths based on Breakpoints (Mobile First) */
+    max-width: 100%;
+}
+
+/* Tablet & Desktop - FLUID UNLOCKED */
+@media (min-width: 768px) {
+    .app-container {
+        padding-inline: var(--container-padding-desktop);
+        /* 
+         * PROFESSIONAL FLUID LOGIC:
+         * We allow the container to grow to fill the screen (1920px+).
+         * We only cap it at a very high value (e.g. 2400px) to prevent 
+         * content from stretching too thin on ultra-wide 4k/5k monitors.
+         */
+        max-width: 2400px;
+    }
+}
+
+/* 
+ * No more fixed caps at 1024px or 1280px. 
+ * The container will naturally fill the available space.
+ */
+
+/* Full Width Variant - UNBOUNDED */
+.app-container-fluid {
+    width: 100%;
+    padding-inline: 0 !important;
+    max-width: none !important;
+    /* Total freedom */
+}
+
+/* Fluid containers remain 0-padded at all breakpoints for edge-to-edge integrity */
+@media (min-width: 768px) {
+    .app-container-fluid {
+        padding-inline: 0 !important;
+    }
+}

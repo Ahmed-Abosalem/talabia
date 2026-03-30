@@ -1,0 +1,151 @@
+/* HScrollWrap Component Styles */
+
+/* Wrapper */
+.hscroll-wrap {
+    position: relative;
+    width: 100%;
+}
+
+/* Smart Minimal Arrows */
+.nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    /* Force above all product cards */
+    pointer-events: auto;
+    /* Ensure they are clickable */
+
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    color: #4b502a;
+    opacity: 0;
+    visibility: hidden;
+
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-arrow:hover {
+    background: #ffffff;
+    transform: translateY(-50%) scale(1.15);
+    opacity: 1 !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.nav-arrow svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2.5px;
+}
+
+/* Positions */
+.nav-arrow-left {
+    left: 12px;
+}
+
+.nav-arrow-right {
+    right: 12px;
+}
+
+/* Visibility Logic */
+.hscroll-wrap.show-left .nav-arrow-left {
+    opacity: 0.7;
+    visibility: visible;
+    pointer-events: auto;
+    animation: slideInLeft 0.5s ease-out forwards, nudgeLeft 2s ease-in-out infinite 0.5s;
+}
+
+.hscroll-wrap.show-right .nav-arrow-right {
+    opacity: 0.7;
+    visibility: visible;
+    pointer-events: auto;
+    animation: slideInRight 0.5s ease-out forwards, nudgeRight 2s ease-in-out infinite 0.5s;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(-15px);
+    }
+
+    to {
+        opacity: 0.7;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(15px);
+    }
+
+    to {
+        opacity: 0.7;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+/* 🧭 Nudge Hint Animations (Subtle guide for user) */
+@keyframes nudgeLeft {
+
+    0%,
+    100% {
+        transform: translateY(-50%) translateX(0);
+    }
+
+    50% {
+        transform: translateY(-50%) translateX(-6px);
+    }
+}
+
+@keyframes nudgeRight {
+
+    0%,
+    100% {
+        transform: translateY(-50%) translateX(0);
+    }
+
+    50% {
+        transform: translateY(-50%) translateX(6px);
+    }
+}
+
+/* Hover overrules nudge for precision */
+.nav-arrow:hover {
+    background: #ffffff;
+    transform: translateY(-50%) scale(1.15) !important;
+    opacity: 1 !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    animation: none !important;
+    /* Stop nudging on hover */
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .nav-arrow {
+        width: 28px;
+        height: 28px;
+        background: rgba(255, 255, 255, 0.85);
+    }
+
+    .nav-arrow-left {
+        left: 8px;
+    }
+
+    .nav-arrow-right {
+        right: 8px;
+    }
+}

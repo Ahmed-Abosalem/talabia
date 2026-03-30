@@ -3,6 +3,7 @@
 // منطق + JSX فقط (التنسيقات في ملف CSS مستقل)
 
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Package,
   Store,
@@ -18,16 +19,22 @@ import {
   ShoppingBag,
   Heart,
   Clock,
+  XCircle,
+  ListChecks,
+  Image as ImageIcon,
 } from "lucide-react";
 // ✅ تعديل هنا: استخدام خدمات الأدمن بدلاً من productService
 import {
   getAdminProducts as listAdminProducts,
   getAdminProductDetails,
   updateProductStatus as updateProductStatusByAdmin,
+  updateProductFeatureStatus, // ✅ استيراد الدالة الجديدة
   deleteProductAsAdmin,
 } from "@/services/adminService";
 import { listCategories } from "@/services/categoryService";
+import { formatCurrency, formatDate, formatNumber } from "@/utils/formatters";
 import { useApp } from "@/context/AppContext";
+import useGrabScroll from "@/hooks/useGrabScroll";
 
 import "./AdminProductsSection.css";
 
@@ -61,38 +68,37 @@ const resolveImageUrl = (imagePath) => {
   return `${API_BASE_URL}${normalized}`;
 };
 
-const formatDateTime = (value) => {
-  if (!value) return "—";
-  try {
-    const d = new Date(value);
-    return d.toLocaleString("ar-SA");
-  } catch {
-    return "—";
-  }
-};
+
 
 export default function AdminProductsSection() {
   const { showToast } = useApp() || {};
+  const navigate = useNavigate();
+  const scrollRef = useGrabScroll();
 
   const [isLoading, setIsLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
 
+  // ✅ باراميترات الصفحات (Pagination Status)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [sortBySales, setSortBySales] = useState("none"); // ترتيب حسب المبيعات
+  const [filterFeatured, setFilterFeatured] = useState("all");
+  const [sortBySales, setSortBySales] = useState("none");
 
   const [togglingIds, setTogglingIds] = useState({});
+  const [togglingFeatureIds, setTogglingFeatureIds] = useState({}); // loading state for feature toggle
   const [deletingIds, setDeletingIds] = useState({});
 
-  // نافذة التفاصيل
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [details, setDetails] = useState(null);
-  const [detailsLoading, setDetailsLoading] = useState(false);
-  const [detailsError, setDetailsError] = useState("");
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  // حالة للتعديل السريع لترتيب المميز
+  const [editingOrderProductId, setEditingOrderProductId] = useState(null);
+  const [editingOrderValue, setEditingOrderValue] = useState("");
 
+  // نافذة التفاصيل
   useEffect(() => {
     let isMounted = true;
 
@@ -100,8 +106,23 @@ export default function AdminProductsSection() {
       try {
         setIsLoading(true);
 
+        // ✅ إرسال كافة باراميترات الفلترة والبحث للسيرفر (Server-side Filtering & Pagination)
+        const params = {
+          page: currentPage,
+          limit: 20,
+        };
+
+        if (searchQuery.trim()) params.search = searchQuery.trim();
+        if (filterStatus !== "all") params.status = filterStatus;
+        if (filterCategory) params.storeId = filterCategory; // في السيرفر storeId يستخدم كبديل للقسم حالياً أو للتوسعة
+        if (filterCategory) params.category = filterCategory;
+
+        if (filterFeatured !== "all") {
+          params.featured = filterFeatured === "true";
+        }
+
         const [productsRes, categoriesRes] = await Promise.all([
-          listAdminProducts(), // API الأدمن
+          listAdminProducts(params),
           listCategories(),
         ]);
 
@@ -110,22 +131,22 @@ export default function AdminProductsSection() {
         const rawProducts = Array.isArray(productsRes)
           ? productsRes
           : Array.isArray(productsRes?.products)
-          ? productsRes.products
-          : [];
+            ? productsRes.products
+            : [];
 
         const mappedProducts = rawProducts.map((p) => {
           const imageUrls = Array.isArray(p.images)
             ? p.images
-                .map((img) => (typeof img === "string" ? img : img?.url))
-                .filter(Boolean)
+              .map((img) => (typeof img === "string" ? img : img?.url))
+              .filter(Boolean)
             : [];
 
           const rawStatus =
             typeof p.status === "string"
               ? p.status
               : p.isActive === false
-              ? "inactive"
-              : "active";
+                ? "inactive"
+                : "active";
 
           const isActive =
             typeof p.isActive === "boolean"
@@ -133,10 +154,13 @@ export default function AdminProductsSection() {
               : rawStatus === "active";
 
           const adminLocked = !!p.adminLocked;
+          const autoDeactivated = !!p.autoDeactivated;
 
           let statusLabel = "";
           if (adminLocked) {
             statusLabel = "محجوب من الإدارة";
+          } else if (autoDeactivated) {
+            statusLabel = "نفذ (تعطيل آلي)";
           } else if (!isActive) {
             statusLabel = "مخفي من البائع";
           } else {
@@ -164,6 +188,8 @@ export default function AdminProductsSection() {
             status: rawStatus,
             isActive,
             adminLocked,
+            autoDeactivated,
+            lowStockThreshold: p.lowStockThreshold ?? 2,
             statusLabel,
             storeName: p.store?.name || "—",
             images: imageUrls,
@@ -171,14 +197,19 @@ export default function AdminProductsSection() {
             updatedAt: p.updatedAt,
             // عدد الوحدات المباعة
             salesCount: typeof p.salesCount === "number" ? p.salesCount : 0,
+            // بيانات التميز
+            isFeatured: !!p.isFeatured,
+            featuredOrder: typeof p.featuredOrder === 'number' ? p.featuredOrder : 0,
+            // عداد المشاهدات
+            viewsCount: typeof p.viewsCount === "number" ? p.viewsCount : 0,
           };
         });
 
         const rawCategories = Array.isArray(categoriesRes)
           ? categoriesRes
           : Array.isArray(categoriesRes?.categories)
-          ? categoriesRes.categories
-          : [];
+            ? categoriesRes.categories
+            : [];
 
         const mappedCategories = rawCategories.map((c) => ({
           id: c._id,
@@ -187,6 +218,11 @@ export default function AdminProductsSection() {
 
         setProducts(mappedProducts);
         setCategories(mappedCategories);
+
+        // ✅ حفظ بيانات الصفحات
+        if (productsRes?.pages) setTotalPages(productsRes.pages);
+        if (productsRes?.totalCount) setTotalProducts(productsRes.totalCount);
+        if (productsRes?.page) setCurrentPage(productsRes.page);
       } catch (error) {
         if (showToast) {
           const msg =
@@ -205,62 +241,43 @@ export default function AdminProductsSection() {
     return () => {
       isMounted = false;
     };
-  }, [showToast]);
+  }, [showToast, filterFeatured, currentPage, filterStatus, filterCategory, searchQuery, sortBySales]);
 
   const filteredProducts = useMemo(() => {
-    // 1) الفلترة
-    let list = products.filter((p) => {
-      if (filterCategory && p.categoryId !== filterCategory) return false;
+    // بما أن الفلترة والبحث أصبحت تتم في السيرفر، فنحن نعرض المصفوفة كما هي.
+    // نحافظ على الترتيب حسب المبيعات كخطوة أخيرة في الفرونت إذا لزم (أو يمكن نقلها للسيرفر مستقبلاً)
+    let list = [...products];
 
-      if (filterStatus === "active") {
-        if (!(p.isActive && !p.adminLocked)) return false;
-      } else if (filterStatus === "inactive") {
-        if (p.isActive && !p.adminLocked) return false;
-      }
-
-      if (searchQuery.trim()) {
-        const q = searchQuery.trim().toLowerCase();
-        const haystack = [
-          p.name,
-          p.brand,
-          p.description,
-          p.storeName,
-          p.categoryName,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-
-        if (!haystack.includes(q)) return false;
-      }
-
-      return true;
-    });
-
-    // 2) الترتيب حسب المبيعات
     if (sortBySales === "most") {
-      list = [...list].sort(
-        (a, b) => (b.salesCount || 0) - (a.salesCount || 0)
-      );
+      list.sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0));
     } else if (sortBySales === "least") {
-      list = [...list].sort(
-        (a, b) => (a.salesCount || 0) - (b.salesCount || 0)
-      );
+      list.sort((a, b) => (a.salesCount || 0) - (b.salesCount || 0));
     }
 
     return list;
-  }, [products, searchQuery, filterCategory, filterStatus, sortBySales]);
+  }, [products, sortBySales]);
 
-  const totalCount = products.length;
+  const totalCount = totalProducts || products.length;
   const activeCount = products.filter(
-    (p) => p.isActive && !p.adminLocked
+    (p) => p.isActive && !p.adminLocked && !p.autoDeactivated
   ).length;
   const inactiveCount = products.filter(
-    (p) => !p.isActive || p.adminLocked
+    (p) => !p.isActive || p.adminLocked || p.autoDeactivated
   ).length;
+  const featuredCount = products.filter((p) => p.isFeatured).length;
 
   const handleToggleStatus = async (product) => {
-    const newStatus = product.isActive ? "inactive" : "active";
+    // If product is auto-deactivated, admin can't activate it directly.
+    // Admin can only override adminLocked status.
+    // If adminLocked is true, admin can unlock it.
+    // If adminLocked is false, admin can lock it.
+    // Auto-deactivated status is based on stock and cannot be directly toggled by admin.
+    if (product.autoDeactivated) {
+      showToast("لا يمكن تفعيل منتج تم تعطيله آليًا بسبب نفاد المخزون.", "info");
+      return;
+    }
+
+    const newAdminLockedStatus = !product.adminLocked; // Toggle adminLocked status
 
     setTogglingIds((prev) => ({ ...prev, [product.id]: true }));
 
@@ -269,23 +286,31 @@ export default function AdminProductsSection() {
       prev.map((p) =>
         p.id === product.id
           ? {
-              ...p,
-              status: newStatus,
-              isActive: newStatus === "active",
-              adminLocked: newStatus === "inactive",
-              statusLabel:
-                newStatus === "active"
+            ...p,
+            adminLocked: newAdminLockedStatus,
+            statusLabel: newAdminLockedStatus
+              ? "محجوب من الإدارة"
+              : p.autoDeactivated
+                ? "نفذ (تعطيل آلي)"
+                : p.isActive
                   ? "نشط"
-                  : "محجوب من الإدارة", // من الأدمن دائمًا
-            }
+                  : "مخفي من البائع",
+          }
           : p
       )
     );
 
     try {
-      await updateProductStatusByAdmin(product.id, newStatus);
+      // The API call should reflect the admin's action on adminLocked status
+      // Assuming updateProductStatusByAdmin can handle setting adminLocked directly
+      await updateProductStatusByAdmin(product.id, { adminLocked: newAdminLockedStatus });
       if (showToast) {
-        showToast("تم تحديث حالة المنتج من قبل الإدارة.", "success");
+        showToast(
+          newAdminLockedStatus
+            ? "تم حجب المنتج من قبل الإدارة."
+            : "تم إلغاء حجب المنتج من قبل الإدارة.",
+          "success"
+        );
       }
     } catch (error) {
       // رجوع للحالة السابقة عند الفشل
@@ -302,6 +327,79 @@ export default function AdminProductsSection() {
       }
     } finally {
       setTogglingIds((prev) => ({ ...prev, [product.id]: false }));
+    }
+  };
+
+  // ✅ دالة التعامل مع التميز (Toggle / Update Order)
+  const handleToggleFeatured = async (product) => {
+    if (togglingFeatureIds[product.id]) return;
+
+    const newIsFeatured = !product.isFeatured;
+    setTogglingFeatureIds(prev => ({ ...prev, [product.id]: true }));
+
+    // تحديث متفائل (بدون Order مبدئياً حتى يأتي من السيرفر)
+    const oldState = { ...product };
+    setProducts(prev => prev.map(p =>
+      p.id === product.id ? { ...p, isFeatured: newIsFeatured } : p
+    ));
+
+    try {
+      // استدعاء السيرفر
+      // عند التفعيل: نرسل isFeatured: true (السيرفر يحدد الترتيب تلقائياً)
+      // عند الإلغاء: نرسل isFeatured: false
+      const res = await updateProductFeatureStatus(product.id, {
+        isFeatured: newIsFeatured
+      });
+
+      // تحديث الحالة بالبيانات الحقيقية من السيرفر (خاصة الترتيب)
+      setProducts(prev => prev.map(p =>
+        p.id === product.id ? {
+          ...p,
+          isFeatured: res.isFeatured,
+          featuredOrder: res.featuredOrder
+        } : p
+      ));
+
+      if (showToast) {
+        showToast(res.message, "success");
+      }
+
+    } catch (error) {
+      // تراجع
+      setProducts(prev => prev.map(p => p.id === product.id ? oldState : p));
+      if (showToast) showToast(error?.message || "فشلت العملية", "error");
+    } finally {
+      setTogglingFeatureIds(prev => ({ ...prev, [product.id]: false }));
+    }
+  };
+
+  // تحديث الترتيب عند تغيير الرقم
+  const handleUpdateFeaturedOrder = async (productId, newOrderVal) => {
+    const val = parseInt(newOrderVal);
+    if (isNaN(val) || val < 1) {
+      if (showToast) showToast("يجب أن يكون الترتيب 1 أو أكثر", "error");
+      return;
+    }
+
+    setTogglingFeatureIds(prev => ({ ...prev, [productId]: true }));
+    try {
+      const res = await updateProductFeatureStatus(productId, {
+        isFeatured: true,
+        featuredOrder: val
+      });
+
+      setProducts(prev => prev.map(p =>
+        p.id === productId ? { ...p, featuredOrder: res.featuredOrder } : p
+      ));
+
+      setEditingOrderProductId(null);
+      setEditingOrderValue("");
+      if (showToast) showToast("تم تحديث الترتيب", "success");
+
+    } catch (error) {
+      if (showToast) showToast(error?.message || "فشل تحديث الترتيب", "error");
+    } finally {
+      setTogglingFeatureIds(prev => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -336,132 +434,142 @@ export default function AdminProductsSection() {
     setSearchQuery("");
     setFilterCategory("");
     setFilterStatus("all");
+    setFilterFeatured("all");
     setSortBySales("none");
+    setCurrentPage(1); // العودة للصفحة الأولى
   };
 
-  // فتح نافذة التفاصيل
-  const openDetailsModal = async (product) => {
-    setSelectedProduct(product);
-    setIsDetailsOpen(true);
-    setDetails(null);
-    setDetailsError("");
-
-    try {
-      setDetailsLoading(true);
-      const res = await getAdminProductDetails(product.id);
-      const d = res?.product || res;
-      setDetails(d);
-    } catch (error) {
-      const msg =
-        error?.response?.data?.message ||
-        error?.message ||
-        "تعذّر تحميل تفاصيل المنتج.";
-      setDetailsError(msg);
-      if (showToast) showToast(msg, "error");
-    } finally {
-      setDetailsLoading(false);
-    }
+  // الانتقال لصفحة التفاصيل الجديدة
+  const openDetailsModal = (product) => {
+    navigate(`/admin/products/details/${product.id || product._id}`);
   };
 
-  const closeDetailsModal = () => {
-    setIsDetailsOpen(false);
-    setSelectedProduct(null);
-    setDetails(null);
-    setDetailsError("");
+  // إخفاء نافذة التعديل السريع
+  const closeEditOrder = () => {
+    setEditingOrderProductId(null);
+    setEditingOrderValue("");
   };
 
-  const modalData = details || selectedProduct || null;
 
   return (
-    <section className="admin-section">
-      <header className="admin-section-header">
-        <div>
-          <h2>إدارة المنتجات</h2>
-          <p>
-            من هنا يمكن للإدارة الإشراف على جميع المنتجات المضافة من قِبل
-            البائعين، وتعديل حالة ظهورها أو حذف المخالف منها، مع إمكانية
-            مراجعة تفاصيل كل منتج.
-          </p>
+    <section className="adm-section-panel">
+      <header className="adm-section-inner-header">
+        <div className="adm-section-icon">
+          <Package size={22} />
         </div>
-        <div className="admin-section-stats">
-          <div className="admin-stat-pill">
-            <span className="admin-stat-label">إجمالي المنتجات</span>
-            <span className="admin-stat-value">{totalCount}</span>
-          </div>
-          <div className="admin-stat-pill">
-            <span className="admin-stat-label">المنتجات النشطة</span>
-            <span className="admin-stat-value admin-stat-green">
-              {activeCount}
-            </span>
-          </div>
-          <div className="admin-stat-pill">
-            <span className="admin-stat-label">
-              المنتجات الموقوفة / المحجوبة
-            </span>
-            <span className="admin-stat-value admin-stat-amber">
-              {inactiveCount}
-            </span>
-          </div>
+        <div className="adm-section-title-group">
+          <h2 className="adm-section-title">إدارة المنتجات</h2>
+          <p className="adm-section-subtitle">
+            الإشراف على المنتجات المضافة من قِبل البائعين، وحجب أو حذف المخالف منها.
+          </p>
         </div>
       </header>
 
-      <div className="admin-toolbar">
-        <div className="admin-search">
-          <Search size={16} />
+      <div className="adm-stats-grid">
+        <div className="adm-stat-card">
+          <div className="adm-stat-icon">
+            <Package size={20} />
+          </div>
+          <div className="adm-stat-content">
+            <div className="adm-stat-label">إجمالي المنتجات</div>
+            <div className="adm-stat-value">{formatNumber(totalCount)}</div>
+          </div>
+        </div>
+        <div className="adm-stat-card">
+          <div className="adm-stat-icon" style={{ background: '#dcfce7', color: 'var(--adm-success)' }}>
+            <ListChecks size={20} />
+          </div>
+          <div className="adm-stat-content">
+            <div className="adm-stat-label">المنتجات النشطة</div>
+            <div className="adm-stat-value" style={{ color: 'var(--adm-success)' }}>
+              {formatNumber(activeCount)}
+            </div>
+          </div>
+        </div>
+        <div className="adm-stat-card">
+          <div className="adm-stat-icon" style={{ background: '#fee2e2', color: 'var(--adm-danger)' }}>
+            <XCircle size={20} />
+          </div>
+          <div className="adm-stat-content">
+            <div className="adm-stat-label">الموقوفة / المحجوبة</div>
+            <div className="adm-stat-value" style={{ color: 'var(--adm-danger)' }}>
+              {formatNumber(inactiveCount)}
+            </div>
+          </div>
+        </div>
+        <div className="adm-stat-card">
+          <div className="adm-stat-icon" style={{ background: '#fef3c7', color: 'var(--adm-warning)' }}>
+            <Star size={20} />
+          </div>
+          <div className="adm-stat-content">
+            <div className="adm-stat-label">منتجات مميزة</div>
+            <div className="adm-stat-value" style={{ color: 'var(--adm-warning)' }}>
+              {formatNumber(featuredCount)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="adm-toolbar">
+        <div className="adm-search-wrapper">
+          <Search size={16} className="adm-search-icon" />
           <input
             type="text"
+            className="adm-search-input"
             placeholder="بحث باسم المنتج، المتجر، التصنيف..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        <div className="admin-toolbar-right">
-          <div className="admin-filter-group">
-            <div className="admin-select">
-              <Filter size={14} />
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
-                <option value="all">كل الحالات</option>
-                <option value="active">نشط</option>
-                <option value="inactive">غير نشط / محجوب</option>
-              </select>
-            </div>
+        <div className="adm-section-actions">
+          <select
+            className="adm-filter-select"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="all">كل الحالات</option>
+            <option value="active">نشط</option>
+            <option value="inactive">غير نشط / محجوب</option>
+          </select>
 
-            <div className="admin-select">
-              <Layers size={14} />
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-              >
-                <option value="">كل التصنيفات</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <select
+            className="adm-filter-select"
+            value={filterFeatured}
+            onChange={(e) => setFilterFeatured(e.target.value)}
+          >
+            <option value="all">كل المنتجات</option>
+            <option value="true">المميزة فقط ⭐</option>
+            <option value="false">غير المميزة</option>
+          </select>
 
-            {/* فلتر ترتيب حسب المبيعات */}
-            <div className="admin-select">
-              <ShoppingBag size={14} />
-              <select
-                value={sortBySales}
-                onChange={(e) => setSortBySales(e.target.value)}
-              >
-                <option value="none">بدون ترتيب</option>
-                <option value="most">الأكثر مبيعاً</option>
-                <option value="least">الأقل مبيعاً</option>
-              </select>
-            </div>
-          </div>
+          <select
+            className="adm-filter-select"
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+          >
+            <option value="">كل التصنيفات</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="adm-filter-select"
+            value={sortBySales}
+            onChange={(e) => setSortBySales(e.target.value)}
+          >
+            <option value="none">بدون ترتيب</option>
+            <option value="most">الأكثر مبيعاً</option>
+            <option value="least">الأقل مبيعاً</option>
+          </select>
 
           <button
             type="button"
-            className="admin-btn-ghost"
+            className="adm-btn ghost"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
             onClick={handleResetFilters}
           >
             <RefreshCw size={14} />
@@ -471,20 +579,21 @@ export default function AdminProductsSection() {
       </div>
 
       {isLoading ? (
-        <div className="admin-empty">
+        <div className="adm-loading">
+          <RefreshCw size={24} className="spin" />
           <p>جاري تحميل المنتجات...</p>
         </div>
       ) : filteredProducts.length === 0 ? (
-        <div className="admin-empty">
+        <div className="adm-empty-msg">
           <div className="admin-empty-icon">
-            <Package size={22} />
+            <Package size={32} />
           </div>
           <h3>لا توجد منتجات مطابقة للبحث / الفلاتر الحالية</h3>
           <p>جرّب تعديل معايير البحث أو إعادة تعيين الفلاتر.</p>
         </div>
       ) : (
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
+        <div className="adm-table-wrapper" ref={scrollRef}>
+          <table className="adm-table">
             <thead>
               <tr>
                 <th>المنتج</th>
@@ -492,9 +601,11 @@ export default function AdminProductsSection() {
                 <th>التصنيف</th>
                 <th>السعر</th>
                 <th>المخزون</th>
-                <th>المبيعات</th>
+                <th style={{ textAlign: "center" }}>تميز / ترتيب</th>
+                <th style={{ textAlign: "center" }}>المشاهدات</th>
+                <th style={{ textAlign: "center" }}>المبيعات</th>
                 <th>الحالة</th>
-                <th>إجراءات</th>
+                <th style={{ textAlign: "center" }}>إجراءات</th>
               </tr>
             </thead>
             <tbody>
@@ -509,12 +620,13 @@ export default function AdminProductsSection() {
                   categories.find((c) => c.id === product.categoryId)?.name ||
                   "";
 
-                const statusClass =
-                  product.adminLocked
-                    ? "admin-status-badge admin-status-locked"
+                const statusConfig = product.adminLocked
+                  ? { cls: "inactive", label: "محجوب" }
+                  : product.autoDeactivated
+                    ? { cls: "inactive", label: "نفد" }
                     : product.isActive
-                    ? "admin-status-badge admin-status-active"
-                    : "admin-status-badge admin-status-inactive";
+                      ? { cls: "active", label: "نشط" }
+                      : { cls: "inactive", label: "مخفي" };
 
                 const sales = Number(product.salesCount || 0);
 
@@ -522,10 +634,10 @@ export default function AdminProductsSection() {
                   <tr key={product.id}>
                     <td>
                       <div
-                        className="admin-table-main admin-table-main-clickable"
+                        className="adm-table-main clickable"
                         onClick={() => openDetailsModal(product)}
                       >
-                        <div className="admin-product-thumb">
+                        <div className="global-product-frame is-thumbnail">
                           {thumbUrl ? (
                             <img
                               src={thumbUrl}
@@ -533,31 +645,30 @@ export default function AdminProductsSection() {
                               loading="lazy"
                             />
                           ) : (
-                            <div className="admin-product-thumb-placeholder">
+                            <div className="adm-placeholder-box">
                               <Package size={16} />
                             </div>
                           )}
                         </div>
-                        <div className="admin-product-info">
-                          <div className="admin-product-name">
+                        <div className="adm-product-info">
+                          <div className="adm-product-name">
                             {product.name}
                           </div>
-                          <div className="admin-product-meta">
+                          <div className="adm-product-meta">
                             {product.brand && (
-                              <span className="admin-product-brand">
+                              <span className="adm-meta-text">
                                 {product.brand}
                               </span>
                             )}
                             {product.unitLabel && (
-                              <span className="admin-product-unit">
+                              <span className="adm-meta-text">
                                 • {product.unitLabel}
                               </span>
                             )}
                             {product.rating > 0 && (
-                              <span className="admin-product-rating">
-                                <Star size={11} />{" "}
-                                {product.rating.toFixed(1)} ({product.numReviews}{" "}
-                                مراجعة)
+                              <span className="adm-meta-text" style={{ color: '#f59e0b' }}>
+                                <Star size={11} fill="#f59e0b" />{" "}
+                                {product.rating.toFixed(1)}
                               </span>
                             )}
                           </div>
@@ -565,74 +676,142 @@ export default function AdminProductsSection() {
                       </div>
                     </td>
                     <td>
-                      <div className="admin-chip admin-chip-store">
+                      <div className="adm-chip store">
                         <Store size={14} />
                         <span>{product.storeName}</span>
                       </div>
                     </td>
                     <td>
-                      <div className="admin-chip admin-chip-category">
+                      <div className="adm-chip category">
                         <Layers size={14} />
                         <span>{categoryLabel || "—"}</span>
                       </div>
                     </td>
                     <td>
-                      {Number(product.price).toLocaleString()} <span>ر.ي</span>
+                      {formatCurrency(product.price)}
                     </td>
                     {/* عمود المخزون */}
                     <td>
-                      <span className="admin-stock-value">
-                        {Number(product.stock).toLocaleString()}
-                      </span>{" "}
-                      <span className="admin-stock-unit">وحدة</span>
+                      <strong>{formatNumber(product.stock)}</strong>{" "}
+                      <span className="adm-text-muted" style={{ fontSize: '0.75rem' }}>وحدة</span>
+                      {product.isActive && !product.adminLocked && product.stock <= product.lowStockThreshold && product.stock > 0 && (
+                        <div className="adm-notice-text danger" style={{ fontSize: "10px", marginTop: '2px' }}>
+                          (مخزون منخفض)
+                        </div>
+                      )}
+                    </td>
+
+                    {/* عمود التميز / الترتيب */}
+                    <td style={{ textAlign: "center" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                        <button
+                          type="button"
+                          className={`adm-star-btn ${product.isFeatured ? "active" : ""}`}
+                          onClick={() => handleToggleFeatured(product)}
+                          disabled={togglingFeatureIds[product.id]}
+                          title={product.isFeatured ? "إلغاء التميز" : "تفعيل التميز"}
+                        >
+                          <Star
+                            size={18}
+                            fill={product.isFeatured ? "var(--adm-accent-solid)" : "none"}
+                            color={product.isFeatured ? "var(--adm-accent-solid)" : "var(--adm-text-soft)"}
+                            strokeWidth={product.isFeatured ? 0 : 2}
+                          />
+                        </button>
+
+                        {product.isFeatured && (
+                          editingOrderProductId === product.id ? (
+                            <input
+                              type="number"
+                              min="1"
+                              className="adm-order-input"
+                              autoFocus
+                              value={editingOrderValue}
+                              onChange={(e) => setEditingOrderValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleUpdateFeaturedOrder(product.id, editingOrderValue);
+                                if (e.key === "Escape") setEditingOrderProductId(null);
+                              }}
+                              onBlur={() => {
+                                if (editingOrderValue && editingOrderValue !== String(product.featuredOrder)) {
+                                  handleUpdateFeaturedOrder(product.id, editingOrderValue);
+                                } else {
+                                  setEditingOrderProductId(null);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span
+                              className="adm-order-badge"
+                              onClick={() => {
+                                setEditingOrderProductId(product.id);
+                                setEditingOrderValue(String(product.featuredOrder));
+                              }}
+                              title="اضغط لتعديل الترتيب"
+                            >
+                              {product.featuredOrder}
+                            </span>
+                          )
+                        )}
+                      </div>
+                    </td>
+                    {/* عمود المشاهدات */}
+                    <td style={{ textAlign: "center" }}>
+                      <span className="admin-views-pill">
+                        <Eye size={12} />
+                        <span>{formatNumber(product.viewsCount)}</span>
+                      </span>
                     </td>
                     {/* عمود المبيعات */}
-                    <td>
+                    <td style={{ textAlign: "center" }}>
                       <span className="admin-sales-pill">
                         <ShoppingBag size={12} />
-                        <span>{sales.toLocaleString()}</span>
+                        <span>{formatNumber(sales)}</span>
                       </span>
                     </td>
                     <td>
-                      <span className={statusClass}>{product.statusLabel}</span>
+                      <span className={`adm-status-chip ${statusConfig.cls}`}>
+                        <span className="adm-status-dot"></span>
+                        {statusConfig.label}
+                      </span>
                     </td>
                     <td>
-                      <div className="admin-table-actions">
+                      <div className="adm-table-actions">
                         <button
                           type="button"
-                          className="admin-icon-btn"
+                          className="adm-icon-btn primary"
                           onClick={() => openDetailsModal(product)}
                           title="عرض التفاصيل"
                         >
-                          <Search size={16} />
+                          <Search size={14} />
                         </button>
 
                         <button
                           type="button"
-                          className="admin-icon-btn"
+                          className={`adm-icon-btn ${product.isActive ? 'muted' : 'success'}`}
                           disabled={!!togglingIds[product.id]}
                           onClick={() => handleToggleStatus(product)}
                           title={
                             product.isActive
-                              ? "إيقاف / حجب المنتج من قبل الإدارة"
-                              : "تفعيل المنتج من قبل الإدارة"
+                              ? "إيقاف / حجب المنتج"
+                              : "تفعيل المنتج"
                           }
                         >
                           {product.isActive ? (
-                            <EyeOff size={16} />
+                            <EyeOff size={14} />
                           ) : (
-                            <Eye size={16} />
+                            <Eye size={14} />
                           )}
                         </button>
 
                         <button
                           type="button"
-                          className="admin-icon-btn admin-icon-danger"
+                          className="adm-icon-btn danger"
                           disabled={!!deletingIds[product.id]}
                           onClick={() => handleDelete(product)}
                           title="حذف المنتج نهائيًا"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>
@@ -644,203 +823,36 @@ export default function AdminProductsSection() {
         </div>
       )}
 
-      {/* نافذة تفاصيل المنتج */}
-      {isDetailsOpen && modalData && (
-        <div className="admin-modal-backdrop" onClick={closeDetailsModal}>
-          <div
-            className="admin-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <header className="admin-modal-header">
-              <h3 className="admin-modal-title">
-                تفاصيل المنتج: {modalData.name}
-              </h3>
-              <button
-                type="button"
-                className="admin-modal-close"
-                onClick={closeDetailsModal}
-              >
-                <X size={18} />
-              </button>
-            </header>
-
-            <div className="admin-modal-body">
-              {detailsLoading && (
-                <div className="admin-modal-section">
-                  <p>جاري تحميل تفاصيل المنتج...</p>
-                </div>
-              )}
-
-              {detailsError && (
-                <div className="admin-modal-section admin-modal-error">
-                  {detailsError}
-                </div>
-              )}
-
-              {!detailsLoading && (
-                <div className="admin-modal-grid">
-                  {/* البيانات الأساسية */}
-                  <section className="admin-modal-section">
-                    <h4>البيانات الأساسية</h4>
-                    <ul className="admin-details-list">
-                      <li>
-                        <span>المتجر:</span>
-                        <strong>{modalData.storeName || "—"}</strong>
-                      </li>
-                      <li>
-                        <span>التصنيف:</span>
-                        <strong>
-                          {modalData.category ||
-                            modalData.categoryName ||
-                            "—"}
-                        </strong>
-                      </li>
-                      <li>
-                        <span>السعر:</span>
-                        <strong>
-                          {Number(modalData.price ?? 0).toLocaleString()} ر.ي
-                        </strong>
-                      </li>
-                      <li>
-                        <span>المخزون:</span>
-                        <strong>{modalData.stock ?? 0}</strong>
-                      </li>
-                      <li>
-                        <span>وحدة المنتج:</span>
-                        <strong>{modalData.unitLabel || "—"}</strong>
-                      </li>
-                      <li>
-                        <span>العلامة التجارية:</span>
-                        <strong>
-                          {modalData.brand || "بدون علامة تجارية"}
-                        </strong>
-                      </li>
-                      <li>
-                        <span>الخيارات / النكهات / الأوزان:</span>
-                        <strong>
-                          {modalData.variants || "لا توجد خيارات محددة"}
-                        </strong>
-                      </li>
-                    </ul>
-                  </section>
-
-                  {/* الحالة */}
-                  <section className="admin-modal-section">
-                    <h4>حالة المنتج والتحكم الإداري</h4>
-                    <ul className="admin-details-list">
-                      <li>
-                        <span>حالة العرض الحالية:</span>
-                        <strong>
-                          {modalData.statusLabel ||
-                            (modalData.adminControlLabel || "—")}
-                        </strong>
-                      </li>
-                      <li>
-                        <span>تحكم الإدارة:</span>
-                        <strong>
-                          {modalData.adminLocked
-                            ? "محجوب من الإدارة"
-                            : modalData.isActive
-                            ? "نشط عادي"
-                            : "مخفي من البائع"}
-                        </strong>
-                      </li>
-                      <li>
-                        <span>تاريخ الإنشاء:</span>
-                        <strong>{formatDateTime(modalData.createdAt)}</strong>
-                      </li>
-                      <li>
-                        <span>آخر تحديث:</span>
-                        <strong>{formatDateTime(modalData.updatedAt)}</strong>
-                      </li>
-                    </ul>
-                  </section>
-
-                  {/* التقييم وجودة المنتج */}
-                  <section className="admin-modal-section">
-                    <h4>التقييم وجودة التجربة</h4>
-                    <ul className="admin-details-list">
-                      <li>
-                        <span>متوسط التقييم:</span>
-                        <strong>
-                          {modalData.rating && modalData.rating > 0
-                            ? `${modalData.rating.toFixed(1)} من 5`
-                            : "لا يوجد تقييم بعد"}
-                        </strong>
-                      </li>
-                      <li>
-                        <span>عدد المراجعات:</span>
-                        <strong>{modalData.numReviews ?? 0}</strong>
-                      </li>
-                      <li>
-                        <span>عدد الطلبات التي تحتوي المنتج:</span>
-                        <strong>{modalData.ordersCount ?? 0}</strong>
-                      </li>
-                      <li>
-                        <span>مرات الإضافة للمفضلة:</span>
-                        <strong>{modalData.favoritesCount ?? 0}</strong>
-                      </li>
-                    </ul>
-                  </section>
-
-                  {/* الوصف الكامل */}
-                  <section className="admin-modal-section admin-modal-section-full">
-                    <h4>وصف المنتج</h4>
-                    <p className="admin-modal-text">
-                      {modalData.description || "لا يوجد وصف للمنتج."}
-                    </p>
-                  </section>
-
-                  {/* سياسة الاسترجاع */}
-                  <section className="admin-modal-section admin-modal-section-full">
-                    <h4>سياسة الاسترجاع</h4>
-                    <p className="admin-modal-text">
-                      {modalData.returnPolicy ||
-                        "لا توجد سياسة استرجاع محددة لهذا المنتج."}
-                    </p>
-                  </section>
-
-                  {/* صور المنتج */}
-                  <section className="admin-modal-section admin-modal-section-full">
-                    <h4>صور المنتج</h4>
-                    <div className="admin-modal-images">
-                      {modalData.images && modalData.images.length > 0 ? (
-                        modalData.images.map((img, index) => {
-                          const url =
-                            typeof img === "string" ? img : img.url || "";
-                          if (!url) return null;
-                          return (
-                            <img
-                              key={index}
-                              src={resolveImageUrl(url)}
-                              alt={modalData.name}
-                              className="admin-modal-image"
-                            />
-                          );
-                        })
-                      ) : (
-                        <p className="admin-modal-text">
-                          لا توجد صور مرفوعة لهذا المنتج.
-                        </p>
-                      )}
-                    </div>
-                  </section>
-                </div>
-              )}
-            </div>
-
-            <footer className="admin-modal-footer">
-              <button
-                type="button"
-                className="admin-btn-ghost"
-                onClick={closeDetailsModal}
-              >
-                إغلاق
-              </button>
-            </footer>
+      {/* ✅ شريط التنقل بين الصفحات (Pagination Controls) */}
+      {!isLoading && filteredProducts.length > 0 && totalPages > 1 && (
+        <div className="adm-pagination">
+          <div className="adm-pagination-info">
+            عرض {((currentPage - 1) * 20) + 1} - {Math.min(currentPage * 20, totalProducts)} من أصل {formatNumber(totalProducts)} منتج
+          </div>
+          <div className="adm-pagination-actions">
+            <button
+              type="button"
+              className="adm-btn outline"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            >
+              السابق
+            </button>
+            <span className="adm-pagination-current">
+              صفحة {currentPage} من {totalPages}
+            </span>
+            <button
+              type="button"
+              className="adm-btn outline"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            >
+              التالي
+            </button>
           </div>
         </div>
       )}
+
     </section>
   );
 }

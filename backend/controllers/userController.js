@@ -7,7 +7,8 @@ import asyncHandler from "express-async-handler";
 import User from "../models/User.js";
 import Address from "../models/Address.js";
 import generateToken from "../utils/generateToken.js";
-import SupportTicket from "../models/SupportTicket.js"; // ✅ تذاكر الدعم
+import SupportTicket from "../models/SupportTicket.js"; 
+import { sanitizeHTML, sanitizeText } from "../utils/sanitize.js";
 
 // ────────────────────────────────────────────────
 // 🔐 تسجيل مستخدم جديد (مبسّط – يمكن أن يكون بديل احتياطي)
@@ -169,23 +170,46 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     throw new Error("المستخدم غير موجود");
   }
 
-  const fullName = req.body.fullName || req.body.name;
-  const email = req.body.email;
-  const phone = req.body.phone;
-  const country = req.body.country;
+  const { fullName, email, password, currentPassword } = req.body;
 
-  if (fullName) user.name = fullName;
-  if (email) user.email = email;
-  if (typeof phone !== "undefined") {
-    user.phone = phone;
-  }
-  if (typeof country !== "undefined") {
-    user.country = country;
+  // 🛡️ طلب كلمة المرور الحالية عند تغيير الإيميل أو كلمة المرور
+  if (email || password) {
+    if (!currentPassword) {
+      res.status(400);
+      throw new Error("يجب إدخال كلمة المرور الحالية لتعديل البيانات الحساسة (البريد أو كلمة المرور)");
+    }
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      res.status(401);
+      throw new Error("كلمة المرور الحالية غير صحيحة");
+    }
   }
 
-  // دعم تغيير كلمة المرور من هنا أيضاً (اختياري)
-  if (req.body.password) {
-    user.password = req.body.password;
+  if (fullName) user.name = sanitizeText(fullName);
+  if (email) user.email = email.toLowerCase().trim();
+  
+  if (typeof req.body.phone !== "undefined") {
+    user.phone = sanitizeText(req.body.phone);
+  }
+  if (typeof req.body.country !== "undefined") {
+    user.country = sanitizeText(req.body.country);
+  }
+  if (typeof req.body.city !== "undefined") {
+    user.city = sanitizeText(req.body.city);
+  }
+  if (typeof req.body.district !== "undefined") {
+    user.district = sanitizeText(req.body.district);
+  }
+  if (typeof req.body.neighborhood !== "undefined") {
+    user.neighborhood = sanitizeText(req.body.neighborhood);
+  }
+  if (typeof req.body.addressDetails !== "undefined") {
+    user.addressDetails = sanitizeHTML(req.body.addressDetails);
+  }
+
+  // دعم تغيير كلمة المرور
+  if (password) {
+    user.password = password;
   }
 
   const updatedUser = await user.save();
@@ -198,6 +222,10 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     phone: updatedUser.phone || "",
     role: updatedUser.role,
     country: updatedUser.country || "",
+    city: updatedUser.city || "",
+    district: updatedUser.district || "",
+    neighborhood: updatedUser.neighborhood || "",
+    addressDetails: updatedUser.addressDetails || "",
   });
 });
 
@@ -250,7 +278,7 @@ export const getUserAddresses = asyncHandler(async (req, res) => {
 // مستخدم من BuyerDashboard (createAddress)
 // ────────────────────────────────────────────────
 export const createUserAddress = asyncHandler(async (req, res) => {
-  const { label, city, area, street, details, isDefault } = req.body;
+  const { label, city, area, district, street, details, isDefault } = req.body;
 
   if (!label) {
     res.status(400);
@@ -262,6 +290,7 @@ export const createUserAddress = asyncHandler(async (req, res) => {
     label,
     city: city || "",
     area: area || "",
+    district: district || "",
     street: street || "",
     details: details || "",
     isDefault: !!isDefault,
@@ -286,7 +315,7 @@ export const createUserAddress = asyncHandler(async (req, res) => {
 // ────────────────────────────────────────────────
 export const updateUserAddress = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { label, city, area, street, details, isDefault } = req.body;
+  const { label, city, area, district, street, details, isDefault } = req.body;
 
   const address = await Address.findOne({ _id: id, user: req.user._id });
   if (!address) {
@@ -297,6 +326,7 @@ export const updateUserAddress = asyncHandler(async (req, res) => {
   if (label) address.label = label;
   if (typeof city !== "undefined") address.city = city;
   if (typeof area !== "undefined") address.area = area;
+  if (typeof district !== "undefined") address.district = district;
   if (typeof street !== "undefined") address.street = street;
   if (typeof details !== "undefined") address.details = details;
 
@@ -499,8 +529,8 @@ export const createSupportTicket = asyncHandler(async (req, res) => {
 
   const ticket = await SupportTicket.create({
     user: req.user._id,
-    subject: subject.trim(),
-    message: message.trim(),
+    subject: sanitizeText(subject),
+    message: sanitizeHTML(message),
     priority: finalPriority,
     status: "in_progress", // ✅ تبدأ قيد المتابعة
   });

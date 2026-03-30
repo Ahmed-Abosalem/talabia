@@ -1,16 +1,17 @@
 // frontend/src/pages/Seller/SellerOrdersSection.jsx
-// تبويب "الطلبات" في لوحة البائع - عرض كل منتج داخل الطلب على حدة (حالة على مستوى المنتج)
+// تبويب "الطلبات" في لوحة البائع
 
 import "./SellerOrdersSection.css";
 
 import { useState, useEffect, useMemo } from "react";
-import { ShoppingBag, Filter, Printer, CalendarDays } from "lucide-react";
+import { ShoppingBag, Filter, Printer, CalendarDays, Search } from "lucide-react";
 
 import { useApp } from "@/context/AppContext";
+import { generateReceiptPrintHTML, printReceipt } from "../../utils/printReceipt";
+import { formatCurrency, formatDate } from "@/utils/formatters";
 import { listOrders } from "@/services/orderService";
 import {
-  updateSellerOrderStatus, // مسار قديم على مستوى الطلب - أبقيناه احتياطيًا
-  updateSellerOrderItemStatus, // ✅ المسار الجديد على مستوى المنتج داخل الطلب
+  updateSellerOrderItemStatus,
 } from "@/services/sellerService";
 import {
   ORDER_STATUS_CODES,
@@ -84,8 +85,6 @@ function mapRawStatusToKey(rawStatus) {
     case "جاهز للشحن":
       return STATUS_KEYS.READY_FOR_SHIPPING;
 
-    // ⚠️ ملاحظة: "قيد الشحن" في البيانات القديمة قد تعني (جاهز للشحن) أو (في الشحن)
-    // لكن إن وجد statusCode سيحسم الأمر.ينبقيها افتراضيًا جاهز للشحن كما كان عندك.
     case "قيد الشحن":
       return STATUS_KEYS.READY_FOR_SHIPPING;
 
@@ -204,7 +203,7 @@ function deriveSellerItemState(order, item) {
   };
 }
 
-// ✅ استخراج اختيار اللون/الحجم من عنصر الطلب بأكثر من احتمال (حتى لا نكسر الإنتاج)
+// استخراج اختيار اللون/الحجم من عنصر الطلب
 function pickLabel(value) {
   if (!value) return "";
   if (typeof value === "string") return value.trim();
@@ -322,6 +321,7 @@ function normalizeOrder(raw) {
     code: raw.code || raw.orderCode || String(id).slice(-6),
     createdAt: raw.createdAt || raw.created_at,
     paymentMethod: raw.paymentMethod || raw.paymentType || "",
+    paymentSubMethod: raw.paymentSubMethod || "",
     rawStatus,
     unifiedStatusCode,
     items: raw.orderItems || raw.items || [],
@@ -329,55 +329,56 @@ function normalizeOrder(raw) {
   };
 }
 
-function getPaymentMethodLabel(method) {
+function getPaymentMethodLabel(method, subMethod) {
   if (!method) return "—";
-  const value = String(method).toUpperCase();
+  const mainMethod = String(method).toUpperCase();
+  const sub = subMethod ? String(subMethod).toUpperCase() : "";
 
-  if (value === "COD") return "الدفع عند الاستلام";
-  if (value === "ONLINE") return "دفع إلكتروني";
-  if (value === "BANK_TRANSFER") return "تحويل بنكي";
+  if (mainMethod === "COD") return "الدفع عند الاستلام";
+  if (mainMethod === "WALLET") return "الدفع بالمحفظة";
+
+  // Handling Online Methods
+  if (mainMethod === "ONLINE") {
+    if (sub === "BANK_TRANSFER") return "الحوالة البنكية";
+    return "الدفع بالبطاقة"; // Default for Online when not Bank Transfer (i.e. CARD)
+  }
+
+  // Fallbacks for older records
+  if (mainMethod === "BANK_TRANSFER") return "الحوالة البنكية";
+  if (mainMethod === "CARD") return "الدفع بالبطاقة";
 
   return method;
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.VITE_API_BASE_URL ||
-  ``;
+function resolvePaymentStatusUI(order) {
+  if (!order) return { label: "بانتظار", key: "pending" };
+  const method = order.paymentMethod || "";
+  const subMethod = order.paymentSubMethod || "";
+  const bankStatus = order.bankTransferStatus || "";
+  const isPaid = order.isPaid || false;
 
-function resolveImageUrl(raw) {
-  if (!raw) return null;
-
-  if (typeof raw === "object" && raw !== null) {
-    if (typeof raw.url === "string") {
-      return resolveImageUrl(raw.url);
-    }
-    return null;
+  if (method === "COD" || method === "CASH_ON_DELIVERY") {
+    return { label: "عند الاستلام", key: "cod" };
   }
 
-  if (typeof raw !== "string") return null;
-
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-
-  const baseUrl = API_BASE_URL || "";
-
-  if (trimmed.startsWith("/")) {
-    return `${baseUrl}${trimmed}`;
+  if (method === "Wallet") {
+    return { label: "مدفوع", key: "paid" };
   }
 
-  if (
-    trimmed.startsWith("uploads/") ||
-    trimmed.startsWith("products/") ||
-    trimmed.startsWith("static/")
-  ) {
-    return `${baseUrl}/${trimmed}`;
+  if (subMethod === "CARD") {
+    return isPaid ? { label: "مدفوع", key: "paid" } : { label: "بانتظار الدفع", key: "pending" };
   }
 
-  return trimmed;
+  if (subMethod === "BANK_TRANSFER" || method === "Online") {
+    if (bankStatus === "confirmed") return { label: "مدفوع", key: "paid" };
+    if (bankStatus === "rejected") return { label: "مرفوض", key: "rejected" };
+    return { label: "بانتظار المراجعة", key: "pending" };
+  }
+
+  return { label: "بانتظار", key: "pending" };
 }
+
+import { resolveImageUrl } from "@/utils/assetUtils";
 
 function getStatusFallbackLabel(key) {
   return STATUS_LABEL_FALLBACK[key] || "غير معروف";
@@ -399,8 +400,8 @@ export default function SellerOrdersSection() {
       const payload = Array.isArray(response?.data)
         ? response.data
         : Array.isArray(response)
-        ? response
-        : [];
+          ? response
+          : [];
 
       const normalized = payload.map(normalizeOrder).filter((o) => o && o.id);
       setOrders(normalized);
@@ -438,8 +439,8 @@ export default function SellerOrdersSection() {
         const payload = Array.isArray(response?.data)
           ? response.data
           : Array.isArray(response)
-          ? response
-          : [];
+            ? response
+            : [];
 
         const normalized = payload.map(normalizeOrder).filter((o) => o && o.id);
 
@@ -468,8 +469,10 @@ export default function SellerOrdersSection() {
       const orderCode = order.code;
       const createdAt = order.createdAt;
       const paymentMethod = order.paymentMethod;
+      const paymentSubMethod = order.paymentSubMethod;
 
       const itemsArray = order.items || order.orderItems || [];
+      const totalItemsInOrder = itemsArray.length;
 
       itemsArray.forEach((item, index) => {
         if (!item) return;
@@ -484,15 +487,15 @@ export default function SellerOrdersSection() {
           typeof item.qty === "number"
             ? item.qty
             : typeof item.quantity === "number"
-            ? item.quantity
-            : 1;
+              ? item.quantity
+              : 1;
 
         const price =
           typeof item.price === "number"
             ? item.price
             : typeof item.unitPrice === "number"
-            ? item.unitPrice
-            : 0;
+              ? item.unitPrice
+              : 0;
 
         const lineTotal =
           typeof price === "number" && typeof quantity === "number"
@@ -517,14 +520,20 @@ export default function SellerOrdersSection() {
 
         const { color, size } = extractColorSizeFromOrderItem(item);
 
+        const paymentStatusData = resolvePaymentStatusUI(order.raw || order);
+
         rows.push({
           key: `${baseOrderId}__${itemId}`,
           orderId: baseOrderId,
           itemId,
           orderCode,
           indexInOrder: index + 1,
+          totalItemsInOrder,
           createdAt,
           paymentMethod,
+          paymentSubMethod,
+          paymentStatusLabel: paymentStatusData.label,
+          paymentStatusKey: paymentStatusData.key,
           statusKey,
           unifiedStatusCode,
           productName,
@@ -620,398 +629,296 @@ export default function SellerOrdersSection() {
 
   function handlePrintItem(item) {
     try {
-      const lineTotalLabel =
-        typeof item.lineTotal === "number" && item.lineTotal > 0
-          ? `${item.lineTotal} ر.ي`
-          : "—";
+      const html = generateReceiptPrintHTML(item);
+      const success = printReceipt(html);
 
-      const effectiveStatusCode =
-        item.unifiedStatusCode || mapStatusKeyToCode(item.statusKey);
-      const labelFromCode =
-        effectiveStatusCode && getOrderStatusLabel(effectiveStatusCode);
-      const statusLabel = labelFromCode || getStatusFallbackLabel(item.statusKey);
-
-      const paymentLabel = getPaymentMethodLabel(item.paymentMethod);
-
-      const createdAtText = item.createdAt
-        ? new Date(item.createdAt).toLocaleString("ar-SA")
-        : "";
-
-      const colorLine = item.selectedColor ? item.selectedColor : "—";
-      const sizeLine = item.selectedSize ? item.selectedSize : "—";
-
-      const win = window.open("", "_blank", "noopener,noreferrer");
-      if (!win) {
-        if (showToast) showToast("تعذّر فتح نافذة الطباعة.", "error");
-        return;
+      if (!success && showToast) {
+        showToast("تعذّر فتح نافذة الطباعة. يرجى التأكد من عدم حظر النوافذ المنبثقة.", "error");
       }
-
-      win.document.write(`
-        <html dir="rtl" lang="ar">
-          <head>
-            <meta charset="UTF-8" />
-            <title>بيانات المنتج في الطلب #${item.orderCode}</title>
-            <style>
-              body {
-                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-                padding: 24px;
-                background: #f9fafb;
-                color: #111827;
-              }
-              h1 { font-size: 20px; margin-bottom: 16px; text-align: center; }
-              h2 { font-size: 16px; margin: 16px 0 8px; }
-              .section {
-                background: #ffffff;
-                border-radius: 12px;
-                padding: 16px 18px;
-                margin-bottom: 12px;
-                border: 1px solid #e5e7eb;
-              }
-              .row {
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 6px;
-                font-size: 14px;
-              }
-              .label { font-weight: 600; }
-              .value { max-width: 65%; text-align: left; direction: rtl; }
-              .small {
-                font-size: 13px;
-                color: #6b7280;
-                text-align: center;
-                margin-top: 20px;
-              }
-            </style>
-          </head>
-          <body>
-            <h1>بيانات المنتج في الطلب #${item.orderCode}</h1>
-
-            <div class="section">
-              <h2>معلومات عامة</h2>
-              <div class="row">
-                <span class="label">رقم الطلب:</span>
-                <span class="value">#${item.orderCode}</span>
-              </div>
-              <div class="row">
-                <span class="label">المنتج رقم:</span>
-                <span class="value">${item.indexInOrder} من هذا الطلب</span>
-              </div>
-              ${
-                createdAtText
-                  ? `
-              <div class="row">
-                <span class="label">تاريخ إنشاء الطلب:</span>
-                <span class="value">${createdAtText}</span>
-              </div>`
-                  : ""
-              }
-              <div class="row">
-                <span class="label">الحالة الحالية:</span>
-                <span class="value">${statusLabel}</span>
-              </div>
-            </div>
-
-            <div class="section">
-              <h2>تفاصيل المنتج</h2>
-              <div class="row">
-                <span class="label">اسم المنتج:</span>
-                <span class="value">${item.productName || "منتج بدون اسم"}</span>
-              </div>
-              <div class="row">
-                <span class="label">اللون:</span>
-                <span class="value">${colorLine}</span>
-              </div>
-              <div class="row">
-                <span class="label">الحجم:</span>
-                <span class="value">${sizeLine}</span>
-              </div>
-              <div class="row">
-                <span class="label">الكمية:</span>
-                <span class="value">${item.quantity}</span>
-              </div>
-              <div class="row">
-                <span class="label">سعر الوحدة:</span>
-                <span class="value">${item.price ? item.price + " ر.ي" : "—"}</span>
-              </div>
-              <div class="row">
-                <span class="label">إجمالي هذا المنتج:</span>
-                <span class="value">${lineTotalLabel}</span>
-              </div>
-              <div class="row">
-                <span class="label">طريقة الدفع:</span>
-                <span class="value">${paymentLabel}</span>
-              </div>
-            </div>
-
-            <p class="small">يمكنك حفظ هذه الصفحة كملف PDF من مربع الحوار الخاص بالطباعة في المتصفح.</p>
-            <script>window.print();</script>
-          </body>
-        </html>
-      `);
-
-      win.document.close();
     } catch (error) {
       if (showToast) showToast("تعذّرت طباعة بيانات المنتج.", "error");
+      console.error("Print Error:", error);
     }
   }
 
   return (
     <section className="seller-section">
-      <div className="seller-section-header">
-        <div>
-          <h2>الطلبات</h2>
-          <p>متابعة طلبات العملاء المرتبطة بمنتجات متجرك، منتجًا منتجًا.</p>
+      <div className="seller-layout-container seller-orders-container">
+        <div className="seller-hero-action">
+          <div className="seller-hero-info">
+            <h3>إدارة الطلبات</h3>
+            <p>متابعة وتحديث حالات طلبات العملاء لمنتجات متجرك بدقة.</p>
+          </div>
         </div>
 
-        <div className="seller-header-actions">
-          <div className="seller-search">
+        <div className="seller-tool-bar">
+          <div className="seller-search-box">
             <input
               type="text"
               placeholder="بحث برقم الطلب أو اسم المنتج..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            <Search className="search-icon" size={20} />
           </div>
 
-          <div className="seller-select">
-            <Filter size={14} />
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+          <div className="seller-filter-group">
+            <div className="seller-modern-select-wrap">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value={FILTER_ALL}>كل الحالات</option>
+                <option value={ORDER_STATUS_CODES.AT_SELLER_NEW}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.AT_SELLER_NEW)}
+                </option>
+                <option value={ORDER_STATUS_CODES.AT_SELLER_PROCESSING}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.AT_SELLER_PROCESSING)}
+                </option>
+                <option value={ORDER_STATUS_CODES.AT_SELLER_READY_TO_SHIP}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.AT_SELLER_READY_TO_SHIP)}
+                </option>
+                <option value={ORDER_STATUS_CODES.IN_SHIPPING}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.IN_SHIPPING)}
+                </option>
+                <option value={ORDER_STATUS_CODES.DELIVERED}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.DELIVERED)}
+                </option>
+                <option value={ORDER_STATUS_CODES.CANCELLED_BY_SELLER}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.CANCELLED_BY_SELLER)}
+                </option>
+                <option value={ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING)}
+                </option>
+                <option value={ORDER_STATUS_CODES.CANCELLED_BY_ADMIN}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.CANCELLED_BY_ADMIN)}
+                </option>
+              </select>
+              <Filter className="filter-icon" size={16} />
+            </div>
+          </div>
+        </div>
+
+        {hasActiveFilter && (
+          <div className="seller-filters-info">
+            <span>تصفية مفعّلة على الطلبات.</span>
+            <button
+              type="button"
+              className="seller-link-reset"
+              onClick={resetFilters}
             >
-              <option value={FILTER_ALL}>كل الحالات</option>
-
-              <option value={ORDER_STATUS_CODES.AT_SELLER_NEW}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.AT_SELLER_NEW)}
-              </option>
-              <option value={ORDER_STATUS_CODES.AT_SELLER_PROCESSING}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.AT_SELLER_PROCESSING)}
-              </option>
-              <option value={ORDER_STATUS_CODES.AT_SELLER_READY_TO_SHIP}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.AT_SELLER_READY_TO_SHIP)}
-              </option>
-              <option value={ORDER_STATUS_CODES.IN_SHIPPING}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.IN_SHIPPING)}
-              </option>
-              <option value={ORDER_STATUS_CODES.DELIVERED}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.DELIVERED)}
-              </option>
-              <option value={ORDER_STATUS_CODES.CANCELLED_BY_SELLER}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.CANCELLED_BY_SELLER)}
-              </option>
-              <option value={ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING)}
-              </option>
-              <option value={ORDER_STATUS_CODES.CANCELLED_BY_ADMIN}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.CANCELLED_BY_ADMIN)}
-              </option>
-            </select>
+              إعادة التعيين
+            </button>
           </div>
-        </div>
-      </div>
+        )}
 
-      {hasActiveFilter && (
-        <div className="seller-filters-info">
-          <span>تصفية مفعّلة على الطلبات.</span>
-          <button
-            type="button"
-            className="seller-link-reset"
-            onClick={resetFilters}
-          >
-            إعادة التعيين
-          </button>
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="seller-empty">
-          <div className="seller-empty-icon">
-            <ShoppingBag size={22} />
+        {isLoading ? (
+          <div className="seller-orders-list">
+            {[...Array(5)].map((_, i) => (
+              <div key={`skel-ord-${i}`} className="platinum-skeleton platinum-skeleton--card" style={{ height: "180px", marginBottom: "1rem" }} />
+            ))}
           </div>
-          <h3>جارٍ تحميل الطلبات...</h3>
-          <p>يرجى الانتظار لحظات حتى يتم جلب بيانات الطلبات.</p>
-        </div>
-      ) : filteredItems.length === 0 ? (
-        <div className="seller-empty">
-          <div className="seller-empty-icon">
-            <ShoppingBag size={22} />
-          </div>
-          <h3>لا توجد طلبات حالياً</h3>
-          <p>ستظهر هنا الطلبات المرتبطة بمنتجات متجرك فور بدء عمليات الشراء من العملاء.</p>
-        </div>
-      ) : (
-        <div className="seller-orders-list">
-          {filteredItems.map((item) => {
-            const lineTotalLabel =
-              typeof item.lineTotal === "number" && item.lineTotal > 0
-                ? `${item.lineTotal} ر.ي`
-                : "—";
+        ) : filteredItems.length > 0 ? (
+          <div className="seller-orders-list">
+            {filteredItems.map((item) => {
+              const lineTotalLabel =
+                typeof item.lineTotal === "number" && item.lineTotal > 0
+                  ? formatCurrency(item.lineTotal)
+                  : "—";
 
-            const createdAtText = item.createdAt
-              ? new Date(item.createdAt).toLocaleString("ar-SA")
-              : "";
+              const createdAtText = item.createdAt
+                ? formatDate(item.createdAt)
+                : "";
 
-            const effectiveStatusCode =
-              item.unifiedStatusCode || mapStatusKeyToCode(item.statusKey);
-            const statusLabelFromCode =
-              effectiveStatusCode && getOrderStatusLabel(effectiveStatusCode);
-            const effectiveStatusLabel =
-              statusLabelFromCode || getStatusFallbackLabel(item.statusKey);
+              const effectiveStatusCode =
+                item.unifiedStatusCode || mapStatusKeyToCode(item.statusKey);
+              const statusLabelFromCode =
+                effectiveStatusCode && getOrderStatusLabel(effectiveStatusCode);
+              const effectiveStatusLabel =
+                statusLabelFromCode || getStatusFallbackLabel(item.statusKey);
 
-            const allowedNextKeys = getAllowedNextStatusKeysForSeller(item.statusKey);
-            const canSellerChangeStatus = allowedNextKeys.length > 0;
+              const allowedNextKeys = getAllowedNextStatusKeysForSeller(item.statusKey);
+              const canSellerChangeStatus = allowedNextKeys.length > 0;
 
-            const hasVariantInfo = Boolean(item.selectedColor || item.selectedSize);
+              const hasVariantInfo = Boolean(item.selectedColor || item.selectedSize);
 
-            return (
-              <article key={item.key} className="seller-order-card">
-                <div className="seller-order-header-row">
-                  <div className="seller-order-pill seller-order-pill--code">
-                    <span>رقم الطلب</span>
-                    <span>#{item.orderCode}</span>
+              return (
+                <article key={item.key} className="seller-order-card">
+                  <div className="seller-order-header-row">
+                    <div className="seller-order-pill seller-order-pill--code">
+                      <span>رقم الطلب</span>
+                      <span>#{item.orderCode}</span>
+                    </div>
+
+                    {createdAtText && (
+                      <div className="seller-order-pill seller-order-pill--date">
+                        <CalendarDays size={14} />
+                        <span>{createdAtText}</span>
+                      </div>
+                    )}
                   </div>
 
-                  {createdAtText && (
-                    <div className="seller-order-pill seller-order-pill--date">
-                      <CalendarDays size={14} />
-                      <span>{createdAtText}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="seller-order-card-inner">
-                  <div className="seller-order-main-row seller-order-main-row--single">
-                    <div className="seller-order-column seller-order-column--product seller-order-column--full">
-                      <div className="seller-order-column-header">
-                        <span className="seller-header-stick" />
-                        <span>تفاصيل المنتج</span>
-                        <span className="seller-order-sub-index">
-                          المنتج رقم {item.indexInOrder} من هذا الطلب
-                        </span>
-                      </div>
-
-                      <div className="seller-order-product-main">
-                        <div className="seller-order-product-media">
-                          {item.imageUrl ? (
-                            <img
-                              src={item.imageUrl}
-                              alt={item.productName || "صورة المنتج"}
-                            />
-                          ) : (
-                            <div className="seller-order-product-placeholder">
-                              <ShoppingBag size={22} />
-                            </div>
-                          )}
+                  <div className="seller-order-card-inner">
+                    <div className="seller-order-main-row seller-order-main-row--single">
+                      <div className="seller-order-column seller-order-column--product seller-order-column--full">
+                        <div className="seller-order-column-header">
+                          <span className="seller-header-stick" />
+                          <span>تفاصيل المنتج</span>
+                          <span className="seller-order-sub-index">
+                            المنتج رقم {item.indexInOrder} من هذا الطلب
+                          </span>
                         </div>
 
-                        <div className="seller-order-product-text">
-                          <div className="seller-order-product-name">
-                            <span className="seller-order-product-name-label">اسم المنتج:</span>
-                            <span>{item.productName}</span>
+                        <div className="seller-order-product-main">
+                          <div className="seller-order-product-media">
+                            {item.imageUrl ? (
+                              <img
+                                src={item.imageUrl}
+                                alt={item.productName || "صورة المنتج"}
+                              />
+                            ) : (
+                              <div className="seller-order-product-placeholder">
+                                <ShoppingBag size={22} />
+                              </div>
+                            )}
                           </div>
 
-                          {hasVariantInfo && (
-                            <div className="seller-order-variants-row">
-                              {item.selectedColor ? (
-                                <span className="seller-order-variant-chip">
-                                  <span className="seller-order-variant-label">اللون:</span>
-                                  <span className="seller-order-variant-value">
-                                    {item.selectedColor}
-                                  </span>
-                                </span>
-                              ) : null}
-
-                              {item.selectedSize ? (
-                                <span className="seller-order-variant-chip">
-                                  <span className="seller-order-variant-label">الحجم:</span>
-                                  <span className="seller-order-variant-value">
-                                    {item.selectedSize}
-                                  </span>
-                                </span>
-                              ) : null}
+                          <div className="seller-order-product-text">
+                            <div className="seller-order-product-name">
+                              <span className="seller-order-product-name-label">اسم المنتج:</span>
+                              <span>{item.productName}</span>
                             </div>
-                          )}
 
-                          <div className="seller-order-product-meta-row">
-                            <div className="seller-order-meta-item">
-                              <span className="seller-meta-label">الكمية</span>
-                              <span className="seller-meta-value">{item.quantity}</span>
+                            {hasVariantInfo && (
+                              <div className="seller-order-variants-row">
+                                {item.selectedColor ? (
+                                  <span className="seller-order-variant-chip">
+                                    <span className="seller-order-variant-label">اللون:</span>
+                                    <span className="seller-order-variant-value">
+                                      {item.selectedColor}
+                                    </span>
+                                  </span>
+                                ) : null}
+
+                                {item.selectedSize ? (
+                                  <span className="seller-order-variant-chip">
+                                    <span className="seller-order-variant-label">الحجم:</span>
+                                    <span className="seller-order-variant-value">
+                                      {item.selectedSize}
+                                    </span>
+                                  </span>
+                                ) : null}
+                              </div>
+                            )}
+
+                            <div className="seller-order-product-meta-row">
+                              <div className="seller-order-meta-item">
+                                <span className="seller-meta-label">الكمية</span>
+                                <span className="seller-meta-value">{item.quantity}</span>
+                              </div>
+                              <div className="seller-order-meta-item">
+                                <span className="seller-meta-label">سعر الواحدة</span>
+                                <span className="seller-meta-value">
+                                  {item.price ? `${item.price} ر.ي` : "—"}
+                                </span>
+                              </div>
+                              <div className="seller-order-meta-item">
+                                <span className="seller-meta-label">إجمالي المنتج</span>
+                                <span className="seller-meta-value">{lineTotalLabel}</span>
+                              </div>
                             </div>
-                            <div className="seller-order-meta-item">
-                              <span className="seller-meta-label">سعر الواحدة</span>
-                              <span className="seller-meta-value">
-                                {item.price ? `${item.price} ر.ي` : "—"}
+
+                            <div className="seller-order-payment-row">
+                              <div className="seller-order-payment-info">
+                                <span className="seller-meta-label">طريقة الدفع:</span>
+                                <span className="seller-order-pill-value">
+                                  {getPaymentMethodLabel(item.paymentMethod, item.paymentSubMethod)}
+                                </span>
+                              </div>
+
+                              <span className={`seller-payment-status-badge seller-payment-status-badge--${item.paymentStatusKey}`}>
+                                {item.paymentStatusLabel}
                               </span>
                             </div>
-                            <div className="seller-order-meta-item">
-                              <span className="seller-meta-label">إجمالي المنتج</span>
-                              <span className="seller-meta-value">{lineTotalLabel}</span>
-                            </div>
-                          </div>
-
-                          <div className="seller-order-payment">
-                            <span className="seller-meta-label">طريقة الدفع:</span>
-                            <span className="seller-meta-value">
-                              {getPaymentMethodLabel(item.paymentMethod)}
-                            </span>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="seller-order-bottom-row">
-                    <div className="seller-order-bottom-actions">
-                      <div className="seller-order-status-pill-wrapper">
-                        <span className="seller-meta-label">حالة الطلب</span>
-                        <span className="seller-order-status-pill">{effectiveStatusLabel}</span>
+                    <div className="seller-order-bottom-row">
+                      <div className="seller-order-bottom-actions">
+                        <div className="seller-order-status-pill-wrapper">
+                          <span className="seller-meta-label">حالة الطلب</span>
+                          <span className="seller-order-status-pill">{effectiveStatusLabel}</span>
+                        </div>
+
+                        <div className="seller-order-status-update">
+                          <span className="seller-meta-label">تحديث حالة الطلب</span>
+                          <select
+                            className="seller-order-status-select"
+                            value={item.statusKey}
+                            onChange={(e) => handleStatusUpdate(item, e.target.value)}
+                            disabled={updatingItemKey === item.key || !canSellerChangeStatus}
+                          >
+                            <option value="">اختر الحالة</option>
+                            {SELLER_UPDATE_KEYS.map((key) => {
+                              const isCurrent = key === item.statusKey;
+                              const allowedNextKeys = getAllowedNextStatusKeysForSeller(item.statusKey);
+                              const isSelectable = isCurrent || allowedNextKeys.includes(key);
+
+                              const optionCode = mapStatusKeyToCode(key);
+                              const optionLabel =
+                                (optionCode && getOrderStatusLabel(optionCode)) ||
+                                STATUS_LABEL_FALLBACK[key] ||
+                                "غير معروف";
+
+                              return (
+                                <option key={key} value={key} disabled={!isSelectable}>
+                                  {optionLabel}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
                       </div>
 
-                      <div className="seller-order-status-update">
-                        <span className="seller-meta-label">تحديث حالة الطلب</span>
-                        <select
-                          className="seller-order-status-select"
-                          value={item.statusKey}
-                          onChange={(e) => handleStatusUpdate(item, e.target.value)}
-                          disabled={updatingItemKey === item.key || !canSellerChangeStatus}
-                        >
-                          <option value="">اختر الحالة</option>
-                          {SELLER_UPDATE_KEYS.map((key) => {
-                            const isCurrent = key === item.statusKey;
-                            const allowedNextKeys = getAllowedNextStatusKeysForSeller(item.statusKey);
-                            const isSelectable = isCurrent || allowedNextKeys.includes(key);
-
-                            const optionCode = mapStatusKeyToCode(key);
-                            const optionLabel =
-                              (optionCode && getOrderStatusLabel(optionCode)) ||
-                              STATUS_LABEL_FALLBACK[key] ||
-                              "غير معروف";
-
-                            return (
-                              <option key={key} value={key} disabled={!isSelectable}>
-                                {optionLabel}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </div>
+                      <button
+                        type="button"
+                        className="seller-order-print-btn"
+                        onClick={() => handlePrintItem(item)}
+                      >
+                        <Printer size={14} />
+                        <span>طباعة السند</span>
+                      </button>
                     </div>
-
-                    <button
-                      type="button"
-                      className="seller-order-print-btn"
-                      onClick={() => handlePrintItem(item)}
-                    >
-                      <Printer size={14} />
-                      <span>طباعة السند</span>
-                    </button>
                   </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="seller-empty-state">
+            <div className="seller-empty-icon-box">
+              <ShoppingBag size={48} />
+            </div>
+            <h3>لا توجد طلبات حتى الآن</h3>
+            <p>
+              {hasActiveFilter
+                ? "لا توجد طلبات تطابق معايير البحث أو الفلترة المطبقة حالياً."
+                : "لم يتم تسجيل أي طلبات لمنتجاتك بعد. بمجرد قيام العملاء بالشراء، ستظهر طلباتهم هنا لإدارتها."}
+            </p>
+            {hasActiveFilter && (
+              <button
+                type="button"
+                className="seller-empty-reset-btn"
+                onClick={resetFilters}
+              >
+                مسح كافة الفلاتر
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

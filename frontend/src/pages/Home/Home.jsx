@@ -1,23 +1,20 @@
-import PwaInstallBanner from "../../components/pwa/PwaInstallBanner";
-
-
-// src/pages/Home/Home.jsx
-import { useMemo, useState, useEffect, useRef, Children } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProductCard from "@/components/ProductCard/ProductCard";
+import { ProductDetailsPage, Login, CartPage } from "@/router";
 import { getCategories } from "@/services/categoryService";
 import { listProducts } from "@/services/productService";
 import { getHomeBannerAds } from "@/services/adService";
 import "./Home.css";
+import HScrollWrap from "@/components/HScrollWrap/HScrollWrap";
+import ProductSkeleton from "@/components/ProductCard/ProductSkeleton";
+import SafeImage from "@/components/SafeImage";
 
-const bannerImages = [
-  "/assets/banners/banner1.jpg",
-  "/assets/banners/banner2.jpg",
-  "/assets/banners/banner3.jpg",
-];
+const bannerImages = []; // No hardcoded local banners to avoid 404s
 
 const CATEGORY_IMAGE_MAP = {
+  all: "/assets/categories/all.jpg",
   electronics: "/assets/categories/electronics.jpg",
   fashion: "/assets/categories/fashion.jpg",
   home: "/assets/categories/home.jpg",
@@ -55,164 +52,16 @@ const resolveImageUrl = (imagePath) => {
   return "/uploads" + normalized;
 };
 
-/* =========================
-   ✅ إيحاء تمرير أفقي (سهم فقط)
-   - بدون تدرّجات/ضبابية
-   - السهم يظهر في جهة التمرير المتاحة
-   - بدون أي "رجوع تلقائي" أو scrollTo
-   ========================= */
-
-let __rtlScrollTypeCache = null;
-
-function getRtlScrollType() {
-  if (__rtlScrollTypeCache) return __rtlScrollTypeCache;
-
-  const outer = document.createElement("div");
-  const inner = document.createElement("div");
-
-  outer.style.width = "100px";
-  outer.style.height = "100px";
-  outer.style.overflow = "scroll";
-  outer.style.position = "absolute";
-  outer.style.top = "-9999px";
-  outer.style.direction = "rtl";
-
-  inner.style.width = "200px";
-  inner.style.height = "1px";
-
-  outer.appendChild(inner);
-  document.body.appendChild(outer);
-
-  if (outer.scrollLeft > 0) {
-    __rtlScrollTypeCache = "default";
-  } else {
-    outer.scrollLeft = 1;
-    __rtlScrollTypeCache = outer.scrollLeft === 0 ? "negative" : "reverse";
-  }
-
-  document.body.removeChild(outer);
-  return __rtlScrollTypeCache;
-}
-
-function getMaxScroll(scrollEl) {
-  return Math.max(0, scrollEl.scrollWidth - scrollEl.clientWidth);
-}
-
-// normalized: 0 = بداية المحتوى (يمين في RTL), max = نهاية المحتوى (يسار في RTL)
-function getNormalizedScrollLeft(scrollEl) {
-  const dir = getComputedStyle(scrollEl).direction;
-  const max = getMaxScroll(scrollEl);
-
-  if (dir !== "rtl") {
-    return Math.min(Math.max(scrollEl.scrollLeft, 0), max);
-  }
-
-  const type = getRtlScrollType();
-  if (type === "default") return max - scrollEl.scrollLeft;
-  if (type === "negative") return -scrollEl.scrollLeft;
-  return scrollEl.scrollLeft; // reverse
-}
-
-function attachHScrollHints(scrollEl) {
-  if (!scrollEl) return () => {};
-
-  const wrap = scrollEl.closest(".hscroll-wrap");
-  if (!wrap) return () => {};
-
-  let resizeObs = null;
-  let t1 = null;
-  let t2 = null;
-  let t3 = null;
-
-  const isOverflowing = () => scrollEl.scrollWidth > scrollEl.clientWidth + 4;
-
-  const updateState = () => {
-    const hasOverflow = isOverflowing();
-    wrap.classList.toggle("hscroll--active", hasOverflow);
-
-    if (!hasOverflow) {
-      wrap.classList.remove("hscroll--can-left", "hscroll--can-right");
-      return;
-    }
-
-    const max = getMaxScroll(scrollEl);
-    const pos = getNormalizedScrollLeft(scrollEl);
-
-    // ✅ السهم يظهر في "جهة يوجد فيها تمرير"
-    // can-left: يوجد محتوى مخفي باتجاه اليسار
-    // can-right: يوجد محتوى مخفي باتجاه اليمين
-    const canGoLeft = max - pos > 2;
-    const canGoRight = pos > 2;
-
-    wrap.classList.toggle("hscroll--can-left", canGoLeft);
-    wrap.classList.toggle("hscroll--can-right", canGoRight);
-  };
-
-  const onScroll = () => updateState();
-
-  scrollEl.addEventListener("scroll", onScroll, { passive: true });
-
-  if (typeof ResizeObserver !== "undefined") {
-    resizeObs = new ResizeObserver(() => updateState());
-    resizeObs.observe(scrollEl);
-  } else {
-    window.addEventListener("resize", updateState);
-  }
-
-  // ✅ الأهم: "تهيئة" متكررة بعد التحميل
-  // لأن شريط الأقسام قد يتغير عرضه بعد تحميل الصور/بعد جلب البيانات
-  const prime = () => {
-    updateState();
-    requestAnimationFrame(updateState);
-
-    clearTimeout(t1);
-    clearTimeout(t2);
-    clearTimeout(t3);
-
-    t1 = setTimeout(updateState, 120);
-    t2 = setTimeout(updateState, 420);
-    t3 = setTimeout(updateState, 950);
-  };
-
-  prime();
-
-  return () => {
-    scrollEl.removeEventListener("scroll", onScroll);
-    if (resizeObs) resizeObs.disconnect();
-    else window.removeEventListener("resize", updateState);
-
-    clearTimeout(t1);
-    clearTimeout(t2);
-    clearTimeout(t3);
-  };
-}
-
-function HScrollWrap({ id, className, children }) {
-  const ref = useRef(null);
-  const childCount = Children.count(children);
-
-  // ✅ مهم: نعيد تهيئة الإيماءة عند تغير عدد العناصر (مثل الأقسام بعد الجلب)
-  useEffect(() => {
-    if (!ref.current) return;
-    return attachHScrollHints(ref.current);
-  }, [childCount]);
-
-  return (
-    <div className="hscroll-wrap" data-hscroll-id={id}>
-      <div ref={ref} className={className}>
-        {children}
-      </div>
-
-      {/* ✅ سهم عصري دائم (يظهر فقط في الجهة المتاحة للتمرير) */}
-      <div className="hscroll-arrow hscroll-arrow-left" aria-hidden="true">
-        <ChevronLeft size={18} />
-      </div>
-      <div className="hscroll-arrow hscroll-arrow-right" aria-hidden="true">
-        <ChevronRight size={18} />
-      </div>
-    </div>
-  );
-}
+// 🔹 خيارات الترتيب الموحدة
+const SORT_OPTIONS = [
+  { value: "default", label: "الافتراضي" },
+  { value: "price_asc", label: "الأقل سعراً" },
+  { value: "price_desc", label: "الأعلى سعراً" },
+  { value: "best_selling", label: "الأكثر مبيعاً" },
+  { value: "featured", label: "المميزة فقط" },
+  { value: "newest", label: "الأحدث" },
+  { value: "oldest", label: "الأقدم" },
+];
 
 export default function Home() {
   const navigate = useNavigate();
@@ -223,18 +72,34 @@ export default function Home() {
 
   const [activeBanner, setActiveBanner] = useState(0);
   const [activeCategory, setActiveCategory] = useState("all");
+  const [sortOption, setSortOption] = useState("default"); // 🆕 حالة الترتيب
 
   const [bannerAds, setBannerAds] = useState([]);
   const [hasDynamicBanners, setHasDynamicBanners] = useState(false);
+  const [bannerLoading, setBannerLoading] = useState(true);
 
-  const [categories, setCategories] = useState([
-    { id: "all", name: "الكل", image: "/assets/categories/all.jpg" },
-  ]);
+  const [categories, setCategories] = useState([]);
 
   const [products, setProducts] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [nextCursorScore, setNextCursorScore] = useState(null);
+  const [nextCursorId, setNextCursorId] = useState(null);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const observer = useRef();
+  const lastProductElementRef = (node) => {
+    if (isLoading || isFetchingNextPage) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore) {
+        loadMoreProducts();
+      }
+    });
+    if (node) observer.current.observe(node);
+  };
 
   const totalBanners =
     hasDynamicBanners && bannerAds.length > 0
@@ -251,105 +116,206 @@ export default function Home() {
     setActiveBanner((prev) => (prev === totalBanners - 1 ? 0 : prev + 1));
   };
 
+  // 🖱️ منطق السحب (Swipe) الموحد للماوس واللمس
+  const dragStartX = useRef(null);
+  const dragEndX = useRef(null);
+  const minSwipeDistance = 50;
+
+  const onDragStart = (clientX) => {
+    dragStartX.current = clientX;
+    dragEndX.current = null;
+  };
+
+  const onDragMove = (clientX) => {
+    dragEndX.current = clientX;
+  };
+
+  const onDragEnd = () => {
+    if (dragStartX.current === null || dragEndX.current === null) return;
+    const distance = dragStartX.current - dragEndX.current;
+    if (distance > minSwipeDistance) handleNext();
+    else if (distance < -minSwipeDistance) handlePrev();
+    dragStartX.current = null;
+    dragEndX.current = null;
+  };
+
+  const processProducts = (rawList) => {
+    return rawList.map((p) => {
+      let imageUrl = "";
+      if (Array.isArray(p.images) && p.images.length > 0) {
+        const first = p.images[0];
+        if (typeof first === "string") imageUrl = resolveImageUrl(first);
+        else if (first && typeof first === "object" && first.url) {
+          imageUrl = resolveImageUrl(first.url);
+        }
+      }
+      if (!imageUrl) imageUrl = "/assets/products/default.jpg";
+
+      return {
+        id: p._id,
+        category: p.category?._id || p.category,
+        name: p.name,
+        description: p.shortDescription || p.description || "",
+        price: p.price,
+        image: imageUrl,
+        stock: p.stock ?? 0,
+        isActive: p.isActive ?? true,
+        status: p.status || "active",
+        performanceScore: p.performanceScore,
+        isFeatured: p.isFeatured, // 🆕
+        featuredOrder: p.featuredOrder, // 🆕
+      };
+    });
+  };
+
+  // 🔄 دالة جلب المنتجات (تحميل المزيد)
+  const loadMoreProducts = async () => {
+    if (isFetchingNextPage || !hasMore) return;
+    try {
+      setIsFetchingNextPage(true);
+      const params = {
+        category: activeCategory === "all" ? undefined : activeCategory,
+        limit: 20,
+        cursor_score: nextCursorScore,
+        cursor_id: nextCursorId,
+        search: query, // 🆕 تمرير البحث للسيرفر
+        sort: sortOption, // 🆕 تمرير الترتيب للسيرفر
+      };
+
+      // في حالة البحث أو الترتيب المخصص، قد لا نستخدم الكيرسر بنفس الطريقة
+      // لكن سأبقيه كما هو لأن الباك اند سيتجاهله إذا وجد search/sort وسيعتمد على limit/skip إذا طورناه، 
+      // أو سيعيد الصفحة الأولى فقط حالياً. (حسب اتفاقنا، سنعتمد حالياً على ما يرجع)
+      // ملاحظة: الباك اند المعدل يتجاهل الكيرسر في وجود search/sort ويعيد أول 20 نتيجة فقط.
+      // وهذا مقبول للمرحلة الحالية، ويمكن تطوير Pagination كلاسيكي لاحقاً.
+      if (query || sortOption !== 'default') {
+        // إذا كان هناك بحث أو ترتيب، نعطل السكرول اللانهائي مؤقتاً بعد أول صفحة
+        // إلا إذا طورنا الباك اند لدعم skip.
+        // في الكود الحالي للباك اند، هو يعيد limit 20 دائماً مع search/sort.
+        // لذا لكي لا نكرر المنتجات، سنوقف hasMore مؤقتاً في هذه الحالات بعد أول تحميل.
+        // *تحسين مستقبلي: دعم skip/page في الباك اند*
+      }
+
+      const newProductsRaw = await listProducts(params);
+
+      if (newProductsRaw.length === 0) {
+        setHasMore(false);
+      } else {
+        const processed = processProducts(newProductsRaw);
+        setProducts((prev) => [...prev, ...processed]);
+
+        const last = newProductsRaw[newProductsRaw.length - 1];
+        setNextCursorScore(last.performanceScore || 0);
+        setNextCursorId(last._id);
+
+        if (newProductsRaw.length < 20) {
+          setHasMore(false);
+        }
+
+        // ⚠️ مؤقتاً: مع البحث والترتيب، نوقف التحميل الإضافي لأن الكيرسر غير مدعوم
+        if (query || sortOption !== 'default') {
+          setHasMore(false);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading more products:", error);
+    } finally {
+      setIsFetchingNextPage(false);
+    }
+  };
+
+  // Touch Events
+  const handleTouchStart = (e) => onDragStart(e.targetTouches[0].clientX);
+  const handleTouchMove = (e) => onDragMove(e.targetTouches[0].clientX);
+  const handleTouchEnd = () => onDragEnd();
+
+  // Mouse Events
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    onDragStart(e.clientX);
+  };
+  const handleMouseMove = (e) => {
+    if (dragStartX.current !== null) {
+      onDragMove(e.clientX);
+    }
+  };
+  const handleMouseUp = () => onDragEnd();
+  const handleMouseLeave = () => {
+    if (dragStartX.current !== null) onDragEnd();
+  };
+
+  // 🔄 التحميل الأولي عند تغيير الفلاتر (Category, Search, Sort)
   useEffect(() => {
     let isMounted = true;
 
-    async function loadHomeData() {
+    async function initialLoad() {
       try {
         setIsLoading(true);
         setErrorMessage("");
+        setHasMore(true);
+        setNextCursorScore(null);
+        setNextCursorId(null);
+        setProducts([]); // تصفية القائمة القديمة
 
-        const [catRes, productsRes] = await Promise.all([
-          getCategories(),
-          listProducts(),
-        ]);
+        // جلب الأقسام فقط في المرة الأولى (إذا كانت فارغة)
+        let apiCategories = categories;
+        if (categories.length === 0) {
+          const catRes = await getCategories();
+          const rawCategories = catRes?.categories || [];
+          apiCategories = rawCategories.map((cat) => {
+            const slugBase = cat.slug || cat.name?.trim()?.toLowerCase() || String(cat._id || "");
+            let imageUrl = cat.image ? resolveImageUrl(cat.image) : (CATEGORY_IMAGE_MAP[slugBase] || "/assets/categories/default.jpg");
+            const finalId = (slugBase === "all") ? "all" : (cat._id || slugBase);
+            return { id: finalId, name: cat.name, image: imageUrl, slug: slugBase };
+          });
+          if (isMounted) setCategories(apiCategories);
+        }
 
-        if (!isMounted) return;
-
-        const rawCategories = catRes?.categories || [];
-        const categoryIdToSlug = {};
-
-        const apiCategories = rawCategories.map((cat) => {
-          const slugBase =
-            cat.slug || cat.name?.trim()?.toLowerCase() || String(cat._id || "");
-
-          if (cat._id) categoryIdToSlug[String(cat._id)] = slugBase;
-
-          let imageUrl = "";
-          if (cat.image) imageUrl = resolveImageUrl(cat.image);
-          else
-            imageUrl =
-              CATEGORY_IMAGE_MAP[slugBase] || "/assets/categories/default.jpg";
-
-          return { id: slugBase, name: cat.name, image: imageUrl };
-        });
-
-        const baseAllCategory = {
-          id: "all",
-          name: "الكل",
-          image: "/assets/categories/all.jpg",
+        const params = {
+          category: activeCategory === "all" ? undefined : activeCategory,
+          limit: 20,
+          search: query, // 🆕
+          sort: sortOption // 🆕
         };
 
-        setCategories([baseAllCategory, ...apiCategories]);
+        const productsRes = await listProducts(params);
 
-        const apiProducts = (productsRes || []).map((p) => {
-          const rawCategory = p.category;
-          let categorySlug = "";
-
-          if (typeof rawCategory === "string") {
-            const fromMap = categoryIdToSlug[rawCategory];
-            categorySlug = fromMap ? fromMap : rawCategory;
-          } else if (rawCategory && typeof rawCategory === "object") {
-            if (rawCategory._id && categoryIdToSlug[rawCategory._id]) {
-              categorySlug = categoryIdToSlug[rawCategory._id];
-            } else if (rawCategory.slug) {
-              categorySlug = rawCategory.slug;
-            } else if (rawCategory.name) {
-              categorySlug = rawCategory.name.trim().toLowerCase();
-            }
-          }
-
-          let imageUrl = "";
-          if (Array.isArray(p.images) && p.images.length > 0) {
-            const first = p.images[0];
-            if (typeof first === "string") imageUrl = resolveImageUrl(first);
-            else if (first && typeof first === "object" && first.url) {
-              imageUrl = resolveImageUrl(first.url);
-            }
-          }
-          if (!imageUrl) imageUrl = "/assets/products/default.jpg";
-
-          return {
-            id: p._id,
-            category: categorySlug,
-            name: p.name,
-            description: p.shortDescription || p.description || "",
-            price: p.price,
-            image: imageUrl,
-          };
-        });
-
-        setProducts(apiProducts);
-      } catch (error) {
-        console.error("خطأ في تحميل بيانات الصفحة الرئيسية:", error);
         if (!isMounted) return;
-        setErrorMessage("حدث خطأ أثناء تحميل البيانات، يرجى المحاولة لاحقًا.");
+
+        const processed = processProducts(productsRes);
+        setProducts(processed);
+
+        if (productsRes.length > 0) {
+          const last = productsRes[productsRes.length - 1];
+          setNextCursorScore(last.performanceScore || 0);
+          setNextCursorId(last._id);
+          if (productsRes.length < 20) setHasMore(false);
+
+          // ⚠️ مؤقتاً: مع البحث والترتيب، نوقف التحميل الإضافي
+          if (query || sortOption !== 'default') {
+            setHasMore(false);
+          }
+        } else {
+          setHasMore(false);
+        }
+
+      } catch (error) {
+        console.error("Home load error:", error);
+        if (isMounted) setErrorMessage("فشل تحميل البيانات.");
       } finally {
         if (isMounted) setIsLoading(false);
       }
     }
 
-    loadHomeData();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    initialLoad();
+    return () => { isMounted = false; };
+  }, [activeCategory, query, sortOption]); // 🔄 إعادة التحميل عند تغيير أي فلتر
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadBannerAds() {
       try {
+        setBannerLoading(true);
         const ads = await getHomeBannerAds({ limit: 5 });
         if (!isMounted) return;
 
@@ -366,6 +332,8 @@ export default function Home() {
         if (!isMounted) return;
         setBannerAds([]);
         setHasDynamicBanners(false);
+      } finally {
+        if (isMounted) setBannerLoading(false);
       }
     }
 
@@ -375,13 +343,24 @@ export default function Home() {
     };
   }, []);
 
+  // 🚀 Strategic Preloading on Idle
+  useEffect(() => {
+    const idleCallback = window.requestIdleCallback || ((cb) => setTimeout(cb, 1000));
+    const handle = idleCallback(() => {
+      Login.preload();
+      CartPage.preload();
+    });
+    return () => {
+      if (window.cancelIdleCallback) window.cancelIdleCallback(handle);
+      else clearTimeout(handle);
+    };
+  }, []);
+
   useEffect(() => {
     if (totalBanners <= 1) return;
-
     const intervalId = setInterval(() => {
       setActiveBanner((prev) => (prev === totalBanners - 1 ? 0 : prev + 1));
     }, 2000);
-
     return () => clearInterval(intervalId);
   }, [totalBanners]);
 
@@ -389,22 +368,7 @@ export default function Home() {
     setActiveCategory(categoryId);
   };
 
-  const searchedProducts = useMemo(() => {
-    if (!hasQuery) return products;
-    const q = query.toLowerCase();
-    return products.filter((p) => {
-      const name = (p.name || "").toLowerCase();
-      const desc = (p.description || "").toLowerCase();
-      return name.includes(q) || desc.includes(q);
-    });
-  }, [products, hasQuery, query]);
-
-  const isAllActive = activeCategory === "all";
-
-  const filteredProductsByCategory = (categoryId) => {
-    if (categoryId === "all") return searchedProducts;
-    return searchedProducts.filter((p) => p.category === categoryId);
-  };
+  // ❌ Removed useMemo for searchedProducts - now using server-side results directly in `products`
 
   const categoryRows = categories.filter((cat) => cat.id !== "all");
 
@@ -417,14 +381,10 @@ export default function Home() {
 
   const handleBannerClick = () => {
     if (!hasDynamicBanners || !currentBannerData) return;
-
     const link = currentBannerData.linkUrl;
-    if (!link) return;
-
-    if (link.startsWith("http")) {
-      window.open(link, "_blank", "noopener,noreferrer");
-    } else {
-      navigate(link);
+    if (link) {
+      if (link.startsWith("http")) window.open(link, "_blank", "noopener,noreferrer");
+      else navigate(link);
     }
   };
 
@@ -432,163 +392,159 @@ export default function Home() {
     const next = new URLSearchParams(searchParams);
     next.delete("q");
     setSearchParams(next, { replace: true });
-    setActiveCategory("all");
+    // Reset sort when clearing search? Optional. Let's keep sort as is.
   };
 
   const showNoResults =
     !isLoading &&
     !errorMessage &&
-    products.length > 0 &&
-    hasQuery &&
-    searchedProducts.length === 0;
+    products.length === 0;
 
   return (
     <div className="page-container home-page">
-      <div className="banner-top-gap" />
-
       <section className="banner-section">
         <div className="banner-strip">
-          <div
-            className={"banner-wrapper" + (hasDynamicBanners ? " banner-wrapper-clickable" : "")}
-            onClick={handleBannerClick}
-          >
-            <img src={currentBannerSrc} alt="عرض مميز" className="banner-image" />
-
-            {totalBanners > 0 && (
-              <div className="banner-counter">
-                {currentBannerIndex + 1} / {totalBanners}
-              </div>
-            )}
-
-            <button
-              className="banner-nav-btn banner-nav-left"
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePrev();
-              }}
-              aria-label="السابق"
-            >
-              <ChevronRight size={20} />
-            </button>
-            <button
-              className="banner-nav-btn banner-nav-right"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNext();
-              }}
-              aria-label="التالي"
-            >
-              <ChevronLeft size={20} />
-            </button>
-
-            <div className="banner-dots">
-              {Array.from({ length: totalBanners }).map((_, idx) => (
-                <button
-                  key={idx}
-                  className={"banner-dot" + (idx === currentBannerIndex ? " active" : "")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveBanner(idx);
-                  }}
-                  aria-label={`انتقال إلى البنر ${idx + 1}`}
-                />
-              ))}
+          {bannerLoading ? (
+            /* ✅ Skeleton أثناء تحميل الإعلانات - يمنع الخلفية البيضاء */
+            <div className="banner-wrapper banner-skeleton">
+              <div className="banner-skeleton-inner skeleton-pulse" />
             </div>
-          </div>
+          ) : (
+            <div
+              className={"banner-wrapper" + (hasDynamicBanners ? " banner-wrapper-clickable" : "")}
+              onClick={handleBannerClick}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+              style={{ touchAction: "pan-y" }}
+            >
+              <SafeImage src={currentBannerSrc} alt="عرض مميز" className="banner-image" draggable="false" />
+              {totalBanners > 0 && (
+                <div className="banner-counter">
+                  {currentBannerIndex + 1} / {totalBanners}
+                </div>
+              )}
+              <div className="banner-dots">
+                {Array.from({ length: totalBanners }).map((_, idx) => (
+                  <button
+                    key={idx}
+                    className={"banner-dot" + (idx === currentBannerIndex ? " active" : "")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveBanner(idx);
+                    }}
+                    aria-label={`انتقال إلى البنر ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-        {/* PWA Install Banner */}
-        <PwaInstallBanner />
 
 
       <section className="categories-section">
         <HScrollWrap id="categories-strip" className="categories-strip">
-          {categories.map((cat) => {
-            const isActive = cat.id === activeCategory;
-            return (
-              <button
-                key={cat.id}
-                className="category-item"
-                onClick={() => handleCategoryClick(cat.id)}
-              >
-                <div className={"category-circle" + (isActive ? " category-circle-active" : "")}>
-                  <img src={cat.image} alt={cat.name} />
-                </div>
-                <span className={"category-label" + (isActive ? " category-label-active" : "")}>
-                  {cat.name}
-                </span>
-              </button>
-            );
-          })}
+          {isLoading && products.length === 0 && categories.length === 0 ? (
+            Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="category-item category-skeleton">
+                <div className="category-circle skeleton-pulse" />
+                <span className="category-label skeleton-text" />
+              </div>
+            ))
+          ) : (
+            categories.map((cat) => {
+              const isActive = cat.id === activeCategory;
+              return (
+                <button
+                  key={cat.id}
+                  className="category-item"
+                  onClick={() => handleCategoryClick(cat.id)}
+                >
+                  <div className={"category-circle" + (isActive ? " category-circle-active" : "")}>
+                    <img src={cat.image} alt={cat.name} />
+                  </div>
+                  <span className={"category-label" + (isActive ? " category-label-active" : "")}>
+                    {cat.name}
+                  </span>
+                </button>
+              );
+            })
+          )}
         </HScrollWrap>
       </section>
 
-      {!isLoading && !errorMessage && hasQuery && (
-        <div
-          style={{
-            padding: "0.25rem 0.75rem 0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "0.75rem",
-          }}
-        >
-          <div style={{ fontSize: "0.9rem", color: "#0f172a", overflow: "hidden" }}>
-            نتائج البحث عن: <b>{query}</b> (عدد: <b>{searchedProducts.length}</b>)
-          </div>
-          <button
-            type="button"
-            onClick={clearSearch}
-            style={{
-              border: "1px solid #e5e7eb",
-              background: "#fff",
-              borderRadius: "10px",
-              padding: "0.25rem 0.6rem",
-              cursor: "pointer",
-              fontWeight: 700,
-            }}
-          >
-            مسح
-          </button>
+      {/* 🆕 شريط الأدوات الموحد: نتائج البحث + الفلتر */}
+      <div className="home-info-bar">
+        {/* معلومات البحث */}
+        <div className="home-title-container">
+          {hasQuery ? (
+            <div className="search-results-info">
+              <span>نتائج: <b>{query}</b></span>
+              <button onClick={clearSearch} className="btn-clear-search">
+                إلغاء
+              </button>
+            </div>
+          ) : (
+            <h2 className="home-section-title">
+              {activeCategory === 'all' ? 'كل المنتجات' : categories.find(c => c.id === activeCategory)?.name || 'المنتجات'}
+            </h2>
+          )}
         </div>
-      )}
+
+        {/* 🔻 القائمة المنسدلة للترتيب */}
+        <div className="sort-dropdown-container">
+          <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            className="sort-select"
+          >
+            {SORT_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="sort-icon" size={16} />
+        </div>
+      </div>
+
 
       <section className="products-section">
-        <div className="products-rows">
-          {isLoading && <div className="products-loading">جاري تحميل المنتجات والأقسام...</div>}
-
-          {!isLoading && errorMessage && <div className="products-error">{errorMessage}</div>}
-
-          {!isLoading && !errorMessage && products.length === 0 && (
-            <div className="products-empty">لا توجد منتجات متاحة حالياً.</div>
-          )}
-
-          {showNoResults && <div className="products-empty">لا توجد نتائج مطابقة لبحثك.</div>}
-
-          {!isLoading && !errorMessage && products.length > 0 && !showNoResults && (
+        <div className="products-grid">
+          {isLoading && products.length === 0 ? (
+            Array.from({ length: 8 }).map((_, idx) => (
+              <ProductSkeleton key={idx} />
+            ))
+          ) : errorMessage ? (
+            <div className="products-error">{errorMessage}</div>
+          ) : products.length === 0 ? (
+            <div className="products-empty">
+              {hasQuery ? `لا توجد نتائج بحث تطابق "${query}"` : "لا توجد منتجات متاحة حالياً."}
+            </div>
+          ) : (
             <>
-              {isAllActive &&
-                categoryRows.map((cat) => {
-                  const rowProducts = filteredProductsByCategory(cat.id);
-                  if (rowProducts.length === 0) return null;
-
-                  return (
-                    <HScrollWrap key={cat.id} id={`products-row-${cat.id}`} className="products-row">
-                      {rowProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                      ))}
-                    </HScrollWrap>
-                  );
-                })}
-
-              {!isAllActive && (
-                <HScrollWrap id="products-row-single" className="products-row">
-                  {filteredProductsByCategory(activeCategory).map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </HScrollWrap>
-              )}
+              {products.map((product, index) => {
+                const isLastElement = products.length === index + 1;
+                return (
+                  <div
+                    key={product.id}
+                    ref={isLastElement ? lastProductElementRef : null}
+                    className="product-card-wrapper"
+                    onMouseEnter={() => ProductDetailsPage.preload()}
+                  >
+                    {/* تمرير خاصية isFeatured للبطاقة إذا أردنا تمييزها بصرياً */}
+                    <ProductCard product={product} />
+                  </div>
+                );
+              })}
+              {isFetchingNextPage && <div className="products-loading-next">جاري تحميل المزيد...</div>}
+              {!hasMore && products.length > 0 && <div className="products-end">نهاية القائمة</div>}
             </>
           )}
         </div>

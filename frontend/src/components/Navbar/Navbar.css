@@ -1,32 +1,56 @@
 /* src/components/Navbar/Navbar.css */
+/* Mobile First Refactor */
 
 /* شريط علوي ثابت فل وِدث */
 .navbar-root {
   position: fixed;
   inset-inline: 0;
   top: 0;
-  z-index: 40;
+  z-index: 1000;
   background: #ffffff;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+  /* box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08); removed to prevent shadow on banner */
+  border-bottom: 1px solid #f1f5f9;
+  /* added subtle border instead */
 }
 
 .navbar-inner {
   width: 100%;
-  margin-inline: 0;
-  padding: 0.55rem 1.2rem; /* ✅ أصغر */
-  min-height: 60px; /* ✅ أصغر */
+  max-width: 2400px;
+  /* FLUID UPDATE: Align with app container */
+  margin-inline: auto;
+  /* Ensure centering */
+  padding: 0.55rem 0;
+  /* Zero side padding on mobile */
+  padding-top: calc(0.55rem + var(--safe-inset-top));
+  /* Mobile padding with Notch support */
+  min-height: calc(60px + var(--safe-inset-top));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.85rem; /* ✅ أصغر */
+  gap: 0.45rem;
+  /* Mobile gap */
+}
+
+@media (min-width: 768px) {
+  .navbar-inner {
+    padding: 0.55rem 1.2rem;
+    gap: 0.85rem;
+  }
 }
 
 /* زر القائمة + الشعار */
 .navbar-left {
   display: flex;
   align-items: center;
-  gap: 1.1rem;
-  flex: 0 0 auto; /* ✅ لا ينكمش لصالح المنتصف */
+  gap: 0;
+  /* Removing gap to let button touch edge */
+  flex: 0 0 auto;
+}
+
+@media (min-width: 768px) {
+  .navbar-left {
+    gap: 1.1rem;
+  }
 }
 
 /* زر القائمة: ثلاثة خطوط عصرية */
@@ -35,57 +59,146 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.24rem;
+  align-items: center;
+  gap: 5px;
+  width: 32px;
+  height: 32px;
+  position: relative;
+}
+
+@media (max-width: 767px) {
+  .navbar-menu-button {
+    padding-right: 0 !important;
+    margin-right: -8px !important;
+    /* Increased to ensure bars physically touch the glass edge */
+  }
 }
 
 .navbar-menu-line {
   width: 22px;
-  height: 3px;
+  height: 2.5px;
   border-radius: 999px;
-  background-color: #0f172a;
-  transition: transform 0.15s ease, background-color 0.15s ease;
+  background-color: #4b502a;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.15s ease, opacity 0.2s ease;
+  transform-origin: center;
 }
 
 .navbar-menu-button:hover .navbar-menu-line {
-  background-color: #0f766e;
+  background-color: #3f4223;
+}
+
+/* حركة التحول إلى X */
+.navbar-menu-button.is-active .navbar-menu-line:nth-child(1) {
+  transform: translateY(7.5px) rotate(45deg);
+}
+
+.navbar-menu-button.is-active .navbar-menu-line:nth-child(2) {
+  opacity: 0;
+  transform: translateX(-5px);
+}
+
+.navbar-menu-button.is-active .navbar-menu-line:nth-child(3) {
+  transform: translateY(-7.5px) rotate(-45deg);
 }
 
 /* الشعار: كلمة طلبية بخط عربي حديث */
 .navbar-logo-text {
-  font-size: 1.22rem; /* ✅ أصغر */
+  font-size: 1.08rem;
+  /* Mobile size */
   font-weight: 800;
   letter-spacing: 0.04em;
   color: #fb923c;
-  font-family: "Tajawal", "Cairo", "Noto Sans Arabic", system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.navbar-logo-img {
+  height: 32px;
+  /* Reduced to 32px for mobile elegance (Golden Standard) */
+  width: auto;
+  display: block;
+  object-fit: contain;
+  transition: height 0.3s ease;
+}
+
+@media (min-width: 768px) {
+  .navbar-logo-text {
+    font-size: 1.22rem;
+  }
+
+  .navbar-logo-img {
+    height: 44px;
+    /* Maintain original desktop size */
+  }
 }
 
 /* المنتصف: بحث أو عنوان لوحة التحكم */
 .navbar-search {
-  flex: 1 1 auto;
-  min-width: 0; /* ✅ يسمح بانكماش المنتصف بدل دفع أيقونات اليمين خارج الشاشة */
   display: flex;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 40vw;
+  /* Mobile Default */
+}
+
+@media (min-width: 420px) {
+  .navbar-search {
+    max-width: 44vw;
+  }
+}
+
+@media (min-width: 768px) {
+  .navbar-search {
+    max-width: none;
+    justify-content: center;
+  }
+}
+
+.navbar-search.navbar-search--has-title {
   justify-content: center;
 }
 
 /* العنوان الديناميكي حسب الدور (بائع/أدمن/شركة شحن) */
 .navbar-role-title {
-  font-size: 1rem;
+  font-size: 0.88rem;
+  /* Mobile size */
   font-weight: 800;
   letter-spacing: 0.03em;
-  color: #7f1d1d; /* دم الغزال الهادئ */
-  white-space: nowrap; /* سطر واحد فقط */
-  overflow: hidden; /* ✅ يمنع تمدد العنوان */
-  text-overflow: ellipsis; /* ✅ نقاط بدل التمدد */
+  color: #7f1d1d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .navbar-role-title {
+    font-size: 1rem;
+  }
 }
 
 /* يمين الشريط: الأيقونات + اسم المستخدم */
 .navbar-right {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  flex: 0 0 auto; /* ✅ يظل ظاهر دائمًا */
+  gap: 0;
+  /* Removing gap to let button touch edge */
+  flex: 0 0 auto;
+}
+
+@media (min-width: 768px) {
+  .navbar-right {
+    gap: 0.4rem;
+  }
+}
+
+/* Hide Cart & Wishlist on Mobile/Tablet (Relocated to BottomNav) */
+@media (max-width: 1023px) {
+
+  .navbar-icon-button--cart,
+  .navbar-icon-button--wishlist {
+    display: none !important;
+  }
 }
 
 /* الأيقونات (سلة/قلب/جرس) */
@@ -94,15 +207,33 @@
   outline: none;
   cursor: pointer;
   background: transparent;
-  padding: 0.3rem;
+  padding: 0.24rem;
+  /* Mobile padding */
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #4b502a;
   transition: color 0.15s ease, transform 0.1s ease;
 }
 
+@media (max-width: 767px) {
+
+  /* Targeting the leftmost icon (Bell) in RTL */
+  .navbar-right>.navbar-icon-button:last-child {
+    padding-left: 0 !important;
+    margin-left: -2px !important;
+    /* Reduced to ensure the Red Badge is NOT clipped by the screen edge */
+  }
+}
+
+@media (min-width: 768px) {
+  .navbar-icon-button {
+    padding: 0.3rem;
+  }
+}
+
 .navbar-icon-button:hover {
-  color: #0f766e;
+  color: #3f4223;
   transform: translateY(-1px);
 }
 
@@ -130,17 +261,19 @@
   animation: badge-pulse 1s infinite ease-out;
 }
 
-/* الألوان حسب النوع */
-.navbar-badge--wishlist {
-  background: #34c759; /* أخضر للمفضلة */
-}
+/* الألوان حسب النوع (Desktop Only) - Enforced with higher specificity and !important to override global styles */
+@media (min-width: 1024px) {
+  .navbar-badge.navbar-badge--wishlist {
+    background: #a30000 !important;
+  }
 
-.navbar-badge--cart {
-  background: #007aff; /* أزرق للسلة */
+  .navbar-badge.navbar-badge--cart {
+    background: #4b502a !important;
+  }
 }
 
 .navbar-badge--notifications {
-  background: #ff3b30; /* أحمر للإشعارات */
+  background: #ff3b30;
 }
 
 /* نبض خفيف للبادجات */
@@ -149,10 +282,12 @@
     transform: translateY(0) scale(1);
     box-shadow: 0 0 0 0 rgba(15, 23, 42, 0.18);
   }
+
   70% {
     transform: translateY(0) scale(1.08);
     box-shadow: 0 0 0 6px rgba(15, 23, 42, 0);
   }
+
   100% {
     transform: translateY(0) scale(1);
     box-shadow: 0 0 0 0 rgba(15, 23, 42, 0);
@@ -165,62 +300,4 @@
   font-weight: 600;
   color: #0f172a;
   margin-inline-start: 0.5rem;
-}
-
-/* تجاوب مع الموبايل والتابلت */
-@media (max-width: 768px) {
-  .navbar-inner {
-    padding-inline: 0.65rem; /* ✅ أصغر */
-    gap: 0.45rem; /* ✅ أصغر */
-  }
-
-  /* تقليل فجوة اليسار حتى لا تزاحم الأيقونات */
-  .navbar-left {
-    gap: 0.75rem;
-  }
-
-  .navbar-logo-text {
-    font-size: 1.08rem; /* ✅ أصغر */
-  }
-
-  /* المنتصف يبقى موجود لكن ينكمش أكثر حتى لا يخفي الأيقونات */
-  .navbar-search {
-    flex: 1 1 auto;
-    min-width: 0;
-    display: flex;
-    justify-content: center;
-    max-width: 44vw; /* ✅ حتى لا تزاحم الأيقونات */
-  }
-
-  .navbar-search.navbar-search--has-title {
-    justify-content: center;
-  }
-
-  .navbar-role-title {
-    font-size: 0.88rem;
-    max-width: 44vw; /* ✅ قصّ العنوان بدل دفع الأيقونات */
-  }
-
-  .navbar-right {
-    gap: 0.25rem;
-  }
-
-  .navbar-icon-button {
-    padding: 0.24rem;
-  }
-}
-
-/* هواتف صغيرة جداً */
-@media (max-width: 420px) {
-  .navbar-inner {
-    padding-inline: 0.6rem;
-  }
-
-  .navbar-search {
-    max-width: 40vw;
-  }
-
-  .navbar-role-title {
-    max-width: 40vw;
-  }
 }

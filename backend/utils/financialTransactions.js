@@ -4,7 +4,12 @@
 import Order from "../models/Order.js";
 import Transaction from "../models/Transaction.js";
 import Category from "../models/Category.js";
-import { ORDER_STATUS_CODES } from "./orderStatus.js";
+import {
+  ORDER_STATUS_CODES,
+  isCancelled,
+  isCompleted,
+  isBillable,
+} from "./orderStatus.js";
 
 /**
  * 🧮 تطبيع نسبة العمولة:
@@ -22,14 +27,25 @@ function normalizeCommissionRate(rawRate) {
 /**
  * 🔁 تطبيع طريقة الدفع إلى واحدة من:
  * - COD
- * - ONLINE
+ * - ONLINE (Card)
+ * - BANK_TRANSFER
+ * - WALLET
  * - OTHER
  */
-function normalizePaymentMethod(pm) {
+function normalizePaymentMethod(pm, subPm) {
   if (!pm) return "COD";
   const v = String(pm).toUpperCase();
   if (v === "COD") return "COD";
-  if (v === "ONLINE") return "ONLINE";
+  if (v === "WALLET") return "WALLET";
+
+  // لو دفع إلكتروني، نشيك على النوع الفرعي (بطاقة أم حوالة)
+  if (v === "ONLINE") {
+    if (String(subPm).toUpperCase() === "BANK_TRANSFER") {
+      return "BANK_TRANSFER";
+    }
+    return "ONLINE";
+  }
+
   return "OTHER";
 }
 
@@ -50,17 +66,9 @@ function toIdString(value) {
 }
 
 // ✅ تحديد هل العنصر ملغى (لا يدخل بالحسبة)
+// ✅ تحديد هل المنتج قابل للحسبة المالية (يجب ألا يكون ملغى)
 function isCancelledItem(item) {
-  if (!item) return true;
-
-  if (item.itemStatus === "ملغى") return true;
-
-  const code = item.statusCode;
-  return (
-    code === ORDER_STATUS_CODES.CANCELLED_BY_SELLER ||
-    code === ORDER_STATUS_CODES.CANCELLED_BY_ADMIN ||
-    code === ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING
-  );
+  return isCancelled(item);
 }
 
 // ✅ بناء مفتاح مصدر ثابت لمنع التكرار (Idempotency Key)
@@ -146,10 +154,7 @@ export async function registerFinancialTransactionsForDeliveredOrder(orderOrId) 
     return;
   }
 
-  const isDeliveredNow =
-    order.status === "مكتمل" ||
-    order.status === "completed" ||
-    order.statusCode === ORDER_STATUS_CODES.DELIVERED;
+  const isDeliveredNow = isCompleted(order);
 
   console.log("[FINANCIAL] 🧾 حالة الطلب المحمَّل للتسجيل المالي:", {
     id: orderIdStr,
@@ -186,15 +191,15 @@ export async function registerFinancialTransactionsForDeliveredOrder(orderOrId) 
       typeof item.qty === "number"
         ? item.qty
         : typeof item.quantity === "number"
-        ? item.quantity
-        : 0;
+          ? item.quantity
+          : 0;
 
     const price =
       typeof item.price === "number"
         ? item.price
         : typeof item.unitPrice === "number"
-        ? item.unitPrice
-        : 0;
+          ? item.unitPrice
+          : 0;
 
     if (qty <= 0 || price < 0) continue;
 
@@ -273,15 +278,15 @@ export async function registerFinancialTransactionsForDeliveredOrder(orderOrId) 
         typeof item.qty === "number"
           ? item.qty
           : typeof item.quantity === "number"
-          ? item.quantity
-          : 0;
+            ? item.quantity
+            : 0;
 
       const price =
         typeof item.price === "number"
           ? item.price
           : typeof item.unitPrice === "number"
-          ? item.unitPrice
-          : 0;
+            ? item.unitPrice
+            : 0;
 
       if (qty <= 0 || price < 0) continue;
 
@@ -361,7 +366,7 @@ export async function registerFinancialTransactionsForDeliveredOrder(orderOrId) 
     platformCommission = 0;
   }
 
-  const paymentMethod = normalizePaymentMethod(order.paymentMethod);
+  const paymentMethod = normalizePaymentMethod(order.paymentMethod, order.paymentSubMethod);
 
   // ✅ IDs صريحة
   const buyerId = toIdString(order.buyer);

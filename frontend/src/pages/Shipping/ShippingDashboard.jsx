@@ -2,19 +2,14 @@
 
 import "./ShippingDashboard.css";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  MapPin,
-  Phone,
-  Mail,
-  Building2,
-  Calendar,
-  AlertCircle,
   Filter,
   RefreshCw,
-  CheckCircle2,
-  Save,
   X,
   Printer,
+  Truck,
+  Settings2,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import {
@@ -28,6 +23,7 @@ import {
   normalizeOrderStatusCode,
   getOrderStatusLabel,
 } from "@/config/orderStatus";
+import { formatDate, formatCurrency, formatNumber } from "@/utils/formatters";
 
 /**
  * الحالات البصرية داخل لوحة الشحن (للألوان فقط)
@@ -134,22 +130,7 @@ function mapUnifiedStatusCodeToVisualKey(unifiedStatusCode, rawStatusText) {
   return mapBackendStatusToShippingStatus(rawStatusText || "");
 }
 
-function formatDateTime(value) {
-  if (!value) return "";
-  try {
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return "";
-    return d.toLocaleString("ar-SA", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "";
-  }
-}
+
 
 function escapeHtml(input) {
   if (input === null || input === undefined) return "";
@@ -198,11 +179,13 @@ function buildProductImageUrl(image) {
     trimmed.startsWith("products/") ||
     trimmed.startsWith("static/")
   ) {
-    return API_BASE_URL ? `${API_BASE_URL}/${trimmed}` : `/${trimmed}`;
+    const p = trimmed.startsWith("uploads/") ? `/${trimmed}` : `/uploads/${trimmed}`;
+    return API_BASE_URL ? `${API_BASE_URL}${p}` : p;
   }
 
   // في باقي الحالات نعامله كمسار نسبي تحت الـ API
-  return API_BASE_URL ? `${API_BASE_URL}/${trimmed}` : trimmed;
+  const final = trimmed.startsWith("/") ? trimmed : `/uploads/${trimmed}`;
+  return API_BASE_URL ? `${API_BASE_URL}${final}` : final;
 }
 
 /**
@@ -269,11 +252,11 @@ function openPrintWindowWithBlob(html, showToast) {
       () => {
         try {
           win.focus?.();
-        } catch {}
+        } catch { }
         setTimeout(() => {
           try {
             URL.revokeObjectURL(url);
-          } catch {}
+          } catch { }
         }, 2500);
       },
       { once: true }
@@ -282,6 +265,211 @@ function openPrintWindowWithBlob(html, showToast) {
     console.error("❌ Print window error:", err);
     if (showToast) showToast("تعذّر تجهيز نافذة الطباعة.", "error");
   }
+}
+
+
+// ─────────────────────────────────────────────────
+// 💳 دالة تحويل بيانات الدفع إلى حالة موحدة للعرض
+// ─────────────────────────────────────────────────
+function resolvePaymentStatus({ paymentMethod, paymentSubMethod, bankTransferStatus, isPaid }) {
+  // كاش عند الاستلام → حالة موحدة "عند الاستلام"
+  if (!paymentMethod || paymentMethod === "COD") return "cod";
+
+  // ✅ دفع بالمحفظة → دائماً "مدفوع" لأنه خُصم مسبقاً
+  if (paymentMethod === "Wallet") return "paid";
+
+  // دفع بالبطاقة الإلكترونية
+  if (paymentSubMethod === "CARD") {
+    return isPaid ? "paid" : "pending_payment";
+  }
+
+  // حوالة بنكية → تعتمد على قرار الأدمن
+  if (paymentSubMethod === "BANK_TRANSFER" || paymentMethod === "Online") {
+    if (bankTransferStatus === "confirmed") return "paid";
+    if (bankTransferStatus === "rejected") return "rejected";
+    return "pending_review";
+  }
+
+  return "pending";
+}
+
+/**
+ * 🛠️ مساعد لتطبيع بيانات منتج واحد داخل الطلب (Item mapping)
+ * تم فصله لتحسين القراءة وإضافة معالجة دفاعية (Defensive Handling)
+ */
+function normalizeShippingOrderItem({ item, order, orderId, orderNumber, idx, dateFormatted, createdAtDate, orderShippingStatusRaw, baseStatus }) {
+  const itemId = item._id || item.id;
+
+  const itemStatusRaw =
+    item.shippingStatus ||
+    item.shipping_status ||
+    item.itemStatus ||
+    item.status ||
+    orderShippingStatusRaw ||
+    baseStatus;
+
+  const rawStatusText = (itemStatusRaw || "").toString();
+
+  const unifiedStatusCode = normalizeOrderStatusCode({
+    statusCode:
+      item.statusCode ||
+      item.status_code ||
+      order.statusCode ||
+      order.status_code,
+    sellerStatus:
+      item.sellerStatus ||
+      item.seller_status ||
+      order.sellerStatus ||
+      order.seller_status,
+    shippingStatus:
+      item.shippingStatus ||
+      item.shipping_status ||
+      orderShippingStatusRaw,
+    status: itemStatusRaw,
+    legacyStatus:
+      item.legacyStatus || order.legacyStatus || order.status || null,
+  });
+
+  const visualStatusKey = mapUnifiedStatusCodeToVisualKey(
+    unifiedStatusCode,
+    rawStatusText
+  );
+
+  const qty = item.qty || item.quantity || 1;
+  const unitPrice =
+    typeof item.price === "number"
+      ? item.price
+      : typeof item.unitPrice === "number"
+        ? item.unitPrice
+        : 0;
+  const total = unitPrice * qty;
+
+  const storeName =
+    item.store?.name || order.store?.name || order.storeName || "—";
+
+  const productName =
+    item.name || item.productName || item.product?.name || "منتج";
+
+  // بيانات البائع (تواصل وعنوان)
+  const sellerPhone =
+    item.store?.phone ||
+    order.store?.phone ||
+    order.seller?.phone ||
+    order.sellerPhone ||
+    order.storePhone ||
+    "—";
+
+  const sellerEmail =
+    item.store?.email ||
+    order.store?.email ||
+    order.seller?.email ||
+    order.sellerEmail ||
+    "—";
+
+  const rawStoreAddress = item.store?.address || order.store?.address || null;
+  let sellerAddress = "—";
+
+  if (rawStoreAddress) {
+    if (typeof rawStoreAddress === "string") {
+      sellerAddress = rawStoreAddress.trim() || "—";
+    } else if (typeof rawStoreAddress === "object") {
+      const parts = [
+        rawStoreAddress.country,
+        rawStoreAddress.city,
+        rawStoreAddress.area,
+        rawStoreAddress.street,
+        rawStoreAddress.details,
+      ].filter(Boolean);
+      if (parts.length > 0) sellerAddress = parts.join("، ");
+    }
+  }
+
+  if (sellerAddress === "—" && order.seller) {
+    const fallbackParts = [];
+    if (typeof order.seller.address === "string") fallbackParts.push(order.seller.address.trim());
+    if (typeof order.seller.country === "string") fallbackParts.push(order.seller.country.trim());
+    if (fallbackParts.length > 0) sellerAddress = fallbackParts.join("، ");
+  }
+
+  // بيانات المشتري
+  const buyerPhone =
+    order.shippingAddress?.phone ||
+    order.shippingAddress?.mobile ||
+    order.buyer?.phone ||
+    order.buyer?.mobile ||
+    "—";
+
+  const buyerEmail = order.buyer?.email || order.shippingAddress?.email || "—";
+
+  const shippingAddressParts = [
+    order.shippingAddress?.country,
+    order.shippingAddress?.city,
+    order.shippingAddress?.district,
+    order.shippingAddress?.neighborhood,
+    order.shippingAddress?.street || order.shippingAddress?.details || order.shippingAddress?.additionalInfo,
+  ].filter(Boolean);
+
+  const shippingAddress = shippingAddressParts.length > 0 ? shippingAddressParts.join("، ") : "—";
+
+  // تفاصيل المنتج
+  const productDescription = item.product?.description || item.description || "";
+  const productDimensions = item.product?.dimensions || item.dimensions || "";
+  const productWeight = item.product?.weight || item.weight || item.product?.weightKg || "";
+
+  // معالجة الصورة
+  let rawImg = item.image || item.imageUrl || "";
+  if (!rawImg && Array.isArray(item.product?.images) && item.product.images.length > 0) {
+    const first = item.product.images[0];
+    rawImg = typeof first === "string" ? first : (first?.url || first?.secure_url || first?.path || "");
+  }
+  if (!rawImg) rawImg = item.product?.mainImage || item.product?.imageUrl || "";
+
+  const productImage = buildProductImageUrl(rawImg);
+
+  const shippingPrice =
+    typeof order.shippingCost === "number" ? order.shippingCost :
+      typeof order.shippingPrice === "number" ? order.shippingPrice : null;
+
+  // ─── حالة الدفع: تُستمد من بيانات الطلب الأصلي ───
+  const paymentStatusKey = resolvePaymentStatus({
+    paymentMethod: order.paymentMethod,
+    paymentSubMethod: order.paymentSubMethod,
+    bankTransferStatus: order.bankTransferStatus,
+    isPaid: order.isPaid,
+  });
+
+  return {
+    id: `${orderNumber}-${idx + 1}`,
+    orderId,
+    itemId,
+    orderNumber,
+    itemIndex: idx + 1,
+    date: dateFormatted,
+    createdAt: createdAtDate,
+    city: order.shippingAddress?.city || "—",
+    buyerName: order.buyer?.name || order.shippingAddress?.fullName || "—",
+    storeName,
+    itemsCount: qty,
+    unitPrice,
+    total,
+    paymentMethod: order.paymentMethod === "COD" ? "الدفع عند الاستلام" : order.paymentMethod === "Wallet" ? "الدفع بالمحفظة" : order.paymentMethod === "Online" ? (order.paymentSubMethod === "BANK_TRANSFER" ? "الحوالة البنكية" : "الدفع بالبطاقة") : order.paymentMethod || "—",
+    paymentStatusKey, // 🆕 حالة الدفع الموحدة: "paid" | "pending" | "unpaid"
+    status: visualStatusKey,
+    statusCode: unifiedStatusCode || null,
+    productName,
+    rawStatusText,
+    sellerPhone,
+    sellerEmail,
+    sellerAddress,
+    buyerPhone,
+    buyerEmail,
+    shippingAddress,
+    productDescription,
+    productDimensions,
+    productWeight,
+    productImage,
+    shippingPrice,
+  };
 }
 
 /**
@@ -296,96 +484,12 @@ function normalizeShippingOrdersFromApi(raw) {
   raw.forEach((order) => {
     if (!order) return;
 
-    const orderId = order._id || order.id;
-    const createdAt = order.createdAt || order.created_at || order.date;
-    const dateFormatted = formatDateTime(createdAt) || order.date || "";
+    try {
+      const orderId = order._id || order.id;
+      const createdAt = order.createdAt || order.created_at || order.date;
+      const dateFormatted = createdAt ? formatDate(createdAt) : (order.date || "");
 
-    const buyerName =
-      order.buyer?.name ||
-      order.shippingAddress?.fullName ||
-      order.shippingAddress?.name ||
-      "—";
-
-    const city = order.shippingAddress?.city || "—";
-
-    const paymentRaw = order.paymentMethod || order.payment_method;
-    const paymentMethod =
-      paymentRaw === "COD"
-        ? "عند الاستلام"
-        : paymentRaw === "Online"
-        ? "دفع إلكتروني"
-        : paymentRaw || "—";
-
-    const baseStatus =
-      order.status || order.orderStatus || order.state || "processing";
-
-    const orderNumber =
-      order.orderNumber ||
-      order.code ||
-      order.orderCode ||
-      (orderId ? String(orderId).slice(-6) : "—");
-
-    const items = order.orderItems || order.items || [];
-
-    const orderShippingStatusRaw =
-      order.shippingStatus || order.shipping_status || null;
-
-    items.forEach((item, idx) => {
-      if (!item) return;
-
-      const itemId = item._id || item.id;
-
-      const itemStatusRaw =
-        item.shippingStatus ||
-        item.shipping_status ||
-        item.itemStatus ||
-        item.status ||
-        orderShippingStatusRaw ||
-        baseStatus;
-
-      const rawStatusText = (itemStatusRaw || "").toString();
-
-      const unifiedStatusCode = normalizeOrderStatusCode({
-        statusCode:
-          item.statusCode ||
-          item.status_code ||
-          order.statusCode ||
-          order.status_code,
-        sellerStatus:
-          item.sellerStatus ||
-          item.seller_status ||
-          order.sellerStatus ||
-          order.seller_status,
-        shippingStatus:
-          item.shippingStatus ||
-          item.shipping_status ||
-          orderShippingStatusRaw,
-        status: itemStatusRaw,
-        legacyStatus:
-          item.legacyStatus || order.legacyStatus || order.status || null,
-      });
-
-      const visualStatusKey = mapUnifiedStatusCodeToVisualKey(
-        unifiedStatusCode,
-        rawStatusText
-      );
-
-      const qty = item.qty || item.quantity || 1;
-      const unitPrice =
-        typeof item.price === "number"
-          ? item.price
-          : typeof item.unitPrice === "number"
-          ? item.unitPrice
-          : 0;
-      const total = unitPrice * qty;
-
-      const storeName =
-        item.store?.name || order.store?.name || order.storeName || "—";
-
-      const productName =
-        item.name || item.productName || item.product?.name || "منتج";
-
-      let createdAtDate = null;
+      let createdAtDate = null; // ✅ إصلاح: تعريف المتغير بشكل صحيح لتفادي ReferenceError
       if (createdAt) {
         const d = new Date(createdAt);
         if (!Number.isNaN(d.getTime())) {
@@ -393,198 +497,38 @@ function normalizeShippingOrdersFromApi(raw) {
         }
       }
 
-      const sellerPhone =
-        item.store?.phone ||
-        order.store?.phone ||
-        order.seller?.phone ||
-        order.sellerPhone ||
-        order.storePhone ||
-        "—";
+      const baseStatus = order.status || order.orderStatus || "processing";
+      const orderNumber = order.orderNumber || (orderId ? String(orderId).slice(-6) : "—");
+      const items = order.orderItems || order.items || [];
+      const orderShippingStatusRaw = order.shippingStatus || null;
 
-      const sellerEmail =
-        item.store?.email ||
-        order.store?.email ||
-        order.seller?.email ||
-        order.sellerEmail ||
-        "—";
-
-      // 👇 عنوان البائع
-      const rawStoreAddress =
-        item.store?.address || order.store?.address || null;
-
-      let sellerAddress = "—";
-
-      if (rawStoreAddress) {
-        if (typeof rawStoreAddress === "string") {
-          sellerAddress = rawStoreAddress.trim() || "—";
-        } else if (typeof rawStoreAddress === "object") {
-          const sellerAddressParts = [
-            rawStoreAddress.country,
-            rawStoreAddress.city,
-            rawStoreAddress.area,
-            rawStoreAddress.street,
-            rawStoreAddress.details,
-          ].filter(Boolean);
-
-          if (sellerAddressParts.length > 0) {
-            sellerAddress = sellerAddressParts.join("، ");
-          }
+      items.forEach((item, idx) => {
+        if (!item) return;
+        try {
+          const normalized = normalizeShippingOrderItem({
+            item,
+            order,
+            orderId,
+            orderNumber,
+            idx,
+            dateFormatted,
+            createdAtDate,
+            orderShippingStatusRaw,
+            baseStatus,
+          });
+          shipments.push(normalized);
+        } catch (itemErr) {
+          console.error(`❌ Error normalizing item ${idx} for order ${orderId}:`, itemErr);
         }
-      }
-
-      if (sellerAddress === "—" && order.seller) {
-        const fallbackParts = [];
-
-        if (
-          typeof order.seller.address === "string" &&
-          order.seller.address.trim()
-        ) {
-          fallbackParts.push(order.seller.address.trim());
-        }
-
-        if (
-          typeof order.seller.country === "string" &&
-          order.seller.country.trim()
-        ) {
-          fallbackParts.push(order.seller.country.trim());
-        }
-
-        if (fallbackParts.length > 0) {
-          sellerAddress = fallbackParts.join("، ");
-        }
-      }
-
-      const buyerPhone =
-        order.shippingAddress?.phone ||
-        order.shippingAddress?.mobile ||
-        order.buyer?.phone ||
-        order.buyer?.mobile ||
-        "—";
-
-      const buyerEmail =
-        order.buyer?.email || order.shippingAddress?.email || "—";
-
-      const shippingAddressParts = [
-        order.shippingAddress?.country,
-        order.shippingAddress?.city,
-        order.shippingAddress?.district ||
-          order.shippingAddress?.neighborhood ||
-          order.shippingAddress?.area,
-        order.shippingAddress?.street,
-        order.shippingAddress?.details ||
-          order.shippingAddress?.additionalInfo,
-      ].filter(Boolean);
-
-      const shippingAddress =
-        shippingAddressParts.length > 0
-          ? shippingAddressParts.join("، ")
-          : "—";
-
-      const productDescription =
-        item.product?.description ||
-        item.description ||
-        item.product?.shortDescription ||
-        item.product?.details ||
-        "";
-
-      const productDimensions =
-        item.product?.dimensions ||
-        item.dimensions ||
-        item.product?.size ||
-        "";
-
-      const productWeight =
-        item.product?.weight || item.weight || item.product?.weightKg || "";
-
-      // 👇 أولوية مصدر الصورة:
-      // 1) الصورة المخزّنة في الـ orderItem (item.image / item.imageUrl)
-      // 2) أول صورة من product.images
-      // 3) حقول أخرى في product
-      let rawProductImage = "";
-
-      if (item.image) {
-        rawProductImage = item.image;
-      } else if (item.imageUrl) {
-        rawProductImage = item.imageUrl;
-      }
-
-      if (
-        !rawProductImage &&
-        Array.isArray(item.product?.images) &&
-        item.product.images.length > 0
-      ) {
-        const firstImg = item.product.images[0];
-        if (typeof firstImg === "string") {
-          rawProductImage = firstImg;
-        } else if (firstImg && typeof firstImg === "object") {
-          rawProductImage =
-            firstImg.url ||
-            firstImg.secure_url ||
-            firstImg.path ||
-            firstImg.location ||
-            firstImg.imageUrl ||
-            "";
-        }
-      }
-
-      if (!rawProductImage) {
-        rawProductImage =
-          item.product?.mainImage ||
-          item.product?.mainImageUrl ||
-          item.product?.imageUrl ||
-          item.product?.image ||
-          "";
-      }
-
-      const productImage = buildProductImageUrl(rawProductImage);
-
-      const shippingPrice =
-        typeof order.shippingCost === "number"
-          ? order.shippingCost
-          : typeof order.shippingPrice === "number"
-          ? order.shippingPrice
-          : typeof item.shippingCost === "number"
-          ? item.shippingCost
-          : typeof item.shippingPrice === "number"
-          ? item.shippingPrice
-          : null;
-
-      shipments.push({
-        id: `${orderNumber}-${idx + 1}`,
-        orderId,
-        itemId,
-        orderNumber,
-        itemIndex: idx + 1,
-        date: dateFormatted,
-        createdAt: createdAtDate,
-        city,
-        buyerName,
-        storeName,
-        itemsCount: qty,
-        unitPrice,
-        total,
-        paymentMethod,
-        status: visualStatusKey,
-        statusCode: unifiedStatusCode || null,
-        productName,
-        rawStatusText,
-        sellerPhone,
-        sellerEmail,
-        sellerAddress,
-        buyerPhone,
-        buyerEmail,
-        shippingAddress,
-        productDescription,
-        productDimensions,
-        productWeight,
-        productImage,
-        shippingPrice,
       });
-    });
+    } catch (orderErr) {
+      console.error(`❌ Error normalizing order:`, orderErr);
+    }
   });
 
   return shipments;
 }
+
 
 // ✅ دمج شحنات Order محدث داخل state بدون إعادة تحميل كامل
 function mergeShipmentsFromUpdatedOrder(prevShipments, updatedOrderRaw) {
@@ -624,10 +568,7 @@ function matchesOrderFilter(order, filterKey) {
   return order.statusCode === filterKey;
 }
 
-function formatCurrency(value) {
-  if (typeof value !== "number" || Number.isNaN(value)) return "—";
-  return `${value.toLocaleString("ar-SA")} ر.ي`;
-}
+
 
 function buildPrintLabelHtml(shipment) {
   const orderNumber = escapeHtml(shipment.orderNumber || shipment.id || "—");
@@ -661,6 +602,7 @@ function buildPrintLabelHtml(shipment) {
   <html dir="rtl" lang="ar">
     <head>
       <meta charset="UTF-8" />
+      <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>ملصق شحن - طلب #${orderNumber}</title>
       <style>
@@ -668,7 +610,7 @@ function buildPrintLabelHtml(shipment) {
         @page { size: A6 portrait; margin: 10mm; }
 
         body {
-          font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+          font-family: "Tajawal", system-ui, -apple-system, sans-serif;
           margin: 0;
           color: #0f172a;
         }
@@ -841,11 +783,10 @@ function buildPrintLabelHtml(shipment) {
           <div class="box">
             <div class="title">معلومات السلعة</div>
             <div class="product">
-              ${
-                productImage
-                  ? `<div class="thumb"><img src="${productImage}" alt="product" /></div>`
-                  : ``
-              }
+              ${productImage
+      ? `<div class="thumb"><img src="${productImage}" alt="product" /></div>`
+      : ``
+    }
               <div>
                 <div class="productName">${productName}</div>
                 <div class="row">
@@ -912,22 +853,27 @@ function buildPrintLabelHtml(shipment) {
   </html>
   `;
 }
+// ─────────────────────────────────────────────────
+// 💳 فلترة حالة الدفع – مستقلة تماماً عن فلترة الشحن
+// ─────────────────────────────────────────────────
+function matchesPaymentFilter(order, filter) {
+  if (!filter || filter === "all") return true;
+  return (order.paymentStatusKey || "pending") === filter;
+}
 
 export default function ShippingDashboard() {
   const { showToast } = useApp() || {};
 
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all"); // 🆕 فلتر حالة الدفع
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const [statusModalOpen, setStatusModalOpen] = useState(false);
-  const [selectedOrderForStatus, setSelectedOrderForStatus] = useState(null);
-  const [selectedStatusValue, setSelectedStatusValue] = useState("");
+  const [manageModalOpen, setManageModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
-  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [selectedShipmentForConfirm, setSelectedShipmentForConfirm] =
-    useState(null);
+  const [selectedStatusValue, setSelectedStatusValue] = useState("");
   const [deliveryCodeInput, setDeliveryCodeInput] = useState("");
   const [isConfirmSubmitting, setIsConfirmSubmitting] = useState(false);
 
@@ -941,8 +887,12 @@ export default function ShippingDashboard() {
       const normalized = normalizeShippingOrdersFromApi(data);
       setOrders(normalized);
 
-      if (showToast && !silent) {
-        showToast("تم تحميل طلبات الشحن بنجاح.", "success");
+      if (showToast) {
+        if (!silent) {
+          showToast("تم تحميل طلبات الشحن بنجاح.", "success");
+        } else {
+          showToast("تم تحديث البيانات بنجاح.", "success");
+        }
       }
     } catch (error) {
       console.error("❌ تعذّر تحميل طلبات الشحن:", error);
@@ -956,83 +906,77 @@ export default function ShippingDashboard() {
     }
   }
 
-undefined
-
   useEffect(() => {
     loadShippingOrders({ silent: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredOrders = useMemo(
-    () => orders.filter((order) => matchesOrderFilter(order, statusFilter)),
-    [orders, statusFilter]
+    () =>
+      orders.filter(
+        (order) =>
+          matchesOrderFilter(order, statusFilter) &&   // فلتر الشحن
+          matchesPaymentFilter(order, paymentFilter)   // فلتر الدفع
+      ),
+    [orders, statusFilter, paymentFilter]
   );
 
-  const openStatusModal = (order) => {
-    setSelectedOrderForStatus(order);
-
-    // ✅ إصلاح حرج: اجعل القيمة المختارة ضمن الخيارات المسموحة فقط
+  const openManageModal = (order) => {
+    setSelectedOrder(order);
     const current = order?.status || "";
     const initial = SHIPPING_ALLOWED_KEYS.includes(current)
       ? current
       : SHIPPING_ALLOWED_KEYS[0] || "on_the_way";
 
     setSelectedStatusValue(initial);
-    setStatusModalOpen(true);
+    setDeliveryCodeInput("");
+    setManageModalOpen(true);
   };
 
-  const closeStatusModal = () => {
-    setStatusModalOpen(false);
-    setSelectedOrderForStatus(null);
+  const closeManageModal = () => {
+    setManageModalOpen(false);
+    setSelectedOrder(null);
   };
+
+
 
   const handleStatusSave = async () => {
-    if (!selectedOrderForStatus) {
-      closeStatusModal();
+    if (!selectedOrder) {
+      closeManageModal();
       return;
     }
 
-    // ✅ إصلاح حرج: لا ترسل قيم غير مسموحة للباك
     if (!STATUS_KEY_TO_CODE[selectedStatusValue]) {
       if (showToast) showToast("اختر حالة صحيحة من الخيارات المتاحة.", "warning");
       return;
     }
 
     try {
-      // ✅ المنطق الجديد: تحديث حالة "منتج واحد داخل الطلب" باستخدام orderId + itemId
       let res = null;
-
-      if (selectedOrderForStatus.orderId && selectedOrderForStatus.itemId) {
+      if (selectedOrder.orderId && selectedOrder.itemId) {
         res = await updateShippingOrderItemStatus(
-          selectedOrderForStatus.orderId,
-          selectedOrderForStatus.itemId,
+          selectedOrder.orderId,
+          selectedOrder.itemId,
           selectedStatusValue
         );
-      } else if (selectedOrderForStatus.orderId) {
-        // احتياط: لو لم يتوفر itemId لأي سبب نادر، نستخدم المسار القديم على مستوى الطلب كاملًا
+      } else if (selectedOrder.orderId) {
         res = await updateShippingOrderStatus(
-          selectedOrderForStatus.orderId,
+          selectedOrder.orderId,
           selectedStatusValue
         );
       } else {
-        throw new Error(
-          "لا توجد بيانات كافية لتحديث حالة هذه الشحنة (orderId/itemId مفقود)."
-        );
+        throw new Error("بيانات الشحنة غير مكتملة.");
       }
 
-      // ✅ لو الباك رجّع order محدث: ندمجه داخل state
-      const updatedOrderRaw =
-        res?.order || res?.data?.order || null;
+      const updatedOrderRaw = res?.order || res?.data?.order || null;
 
       if (updatedOrderRaw) {
         setOrders((prev) => mergeShipmentsFromUpdatedOrder(prev, updatedOrderRaw));
       } else {
-        // fallback سلوكك السابق
         setOrders((prev) =>
           prev.map((o) => {
-            if (o.id !== selectedOrderForStatus.id) return o;
-            const newCode =
-              STATUS_KEY_TO_CODE[selectedStatusValue] || o.statusCode || null;
+            if (o.id !== selectedOrder.id) return o;
+            const newCode = STATUS_KEY_TO_CODE[selectedStatusValue] || o.statusCode || null;
             return {
               ...o,
               status: selectedStatusValue,
@@ -1043,57 +987,22 @@ undefined
       }
 
       if (showToast) {
-        showToast("تم تحديث حالة هذا المنتج داخل الطلب بنجاح.", "success");
+        showToast("تم تحديث الحالة بنجاح.", "success");
       }
     } catch (error) {
-      console.error("❌ تعذّر تحديث حالة المنتج داخل الطلب:", error);
-      if (showToast) {
-        showToast(
-          "تعذّر تحديث حالة المنتج داخل الطلب، حاول مرة أخرى.",
-          "error"
-        );
-      }
-    } finally {
-      closeStatusModal();
+      console.error("❌ تعذّر تحديث الحالة:", error);
+      if (showToast) showToast("تعذّر تحديث الحالة، حاول مرة أخرى.", "error");
     }
   };
 
-  const openConfirmModal = (shipment) => {
-    setSelectedShipmentForConfirm(shipment);
-    setDeliveryCodeInput("");
-    setConfirmModalOpen(true);
-  };
-
-  const closeConfirmModal = () => {
-    setConfirmModalOpen(false);
-    setSelectedShipmentForConfirm(null);
-    setDeliveryCodeInput("");
-  };
-
   const handleConfirmDelivery = async () => {
-    if (!selectedShipmentForConfirm) {
-      closeConfirmModal();
+    if (!selectedOrder) {
+      closeManageModal();
       return;
     }
 
     if (!deliveryCodeInput.trim()) {
-      if (showToast) {
-        showToast("الرجاء إدخال كود التسليم.", "warning");
-      }
-      return;
-    }
-
-    if (
-      !selectedShipmentForConfirm.orderId ||
-      !selectedShipmentForConfirm.itemId
-    ) {
-      if (showToast) {
-        showToast(
-          "لا يمكن تأكيد التسليم لهذه الشحنة لعدم توفر بيانات كافية من الخادم.",
-          "warning"
-        );
-      }
-      closeConfirmModal();
+      if (showToast) showToast("الرجاء إدخال كود التسليم.", "warning");
       return;
     }
 
@@ -1101,102 +1010,70 @@ undefined
 
     try {
       const res = await confirmDeliveryForItem(
-        selectedShipmentForConfirm.orderId,
-        selectedShipmentForConfirm.itemId,
+        selectedOrder.orderId,
+        selectedOrder.itemId,
         deliveryCodeInput.trim()
       );
 
-      if (showToast) {
-        showToast("تم تأكيد تسليم المنتج بنجاح.", "success");
-      }
+      if (showToast) showToast("تم تأكيد تسليم المنتج بنجاح.", "success");
 
-      // ✅ لو الباك رجّع order محدث: ندمجه داخل state
-      const updatedOrderRaw =
-        res?.order || res?.data?.order || null;
+      const updatedOrderRaw = res?.order || res?.data?.order || null;
 
       if (updatedOrderRaw) {
         setOrders((prev) => mergeShipmentsFromUpdatedOrder(prev, updatedOrderRaw));
       } else {
-        // fallback سلوكك السابق
         setOrders((prev) =>
           prev.map((o) =>
-            o.id === selectedShipmentForConfirm.id
-              ? {
-                  ...o,
-                  status: "delivered",
-                  statusCode: ORDER_STATUS_CODES.DELIVERED,
-                }
+            o.id === selectedOrder.id
+              ? { ...o, status: "delivered", statusCode: ORDER_STATUS_CODES.DELIVERED }
               : o
           )
         );
       }
-
-      closeConfirmModal();
     } catch (error) {
       console.error("❌ تعذّر تأكيد التسليم:", error);
-      if (showToast) {
-        showToast(
-          "كود التسليم غير صحيح أو حدث خطأ أثناء التأكيد. حاول مرة أخرى.",
-          "error"
-        );
-      }
+      if (showToast) showToast("كود التسليم غير صحيح.", "error");
     } finally {
       setIsConfirmSubmitting(false);
     }
   };
 
-  // ✅ طباعة ملصق الشحن (PDF من نافذة الطباعة)
   const handlePrintLabel = (shipment) => {
     try {
       if (!shipment) return;
-
       const html = buildPrintLabelHtml(shipment);
-
-      if (!html || typeof html !== "string" || html.trim().length < 50) {
-        console.error("❌ Print HTML is empty/invalid");
-        if (showToast) showToast("تعذّر إنشاء قالب الطباعة.", "error");
-        return;
-      }
-
-      // ✅ حل ثابت: فتح صفحة HTML عبر Blob URL (بدل about:blank + document.write)
       openPrintWindowWithBlob(html, showToast);
     } catch (err) {
       console.error("❌ تعذّر طباعة الملصق:", err);
-      if (showToast) showToast("تعذّر تجهيز كرت الطباعة.", "error");
     }
   };
 
   return (
-    <div className="page-container shipping-page">
+    <div className="shipping-page">
       <OrdersTab
         orders={filteredOrders}
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
-        openStatusModal={openStatusModal}
-        openConfirmModal={openConfirmModal}
-        onPrintLabel={handlePrintLabel}
-        isLoading={isLoading || isRefreshing}
+        paymentFilter={paymentFilter}
+        setPaymentFilter={setPaymentFilter}
+        openManageModal={openManageModal}
+        isLoading={isLoading}
+        isRefreshing={isRefreshing}
         onRefresh={() => loadShippingOrders({ silent: true })}
       />
 
-      {statusModalOpen && selectedOrderForStatus && (
-        <StatusModal
-          order={selectedOrderForStatus}
+      {manageModalOpen && selectedOrder && (
+        <ManageOrderModal
+          order={selectedOrder}
           selectedStatus={selectedStatusValue}
           setSelectedStatus={setSelectedStatusValue}
-          onClose={closeStatusModal}
-          onSave={handleStatusSave}
-        />
-      )}
-
-      {confirmModalOpen && selectedShipmentForConfirm && (
-        <ConfirmDeliveryModal
-          shipment={selectedShipmentForConfirm}
           deliveryCode={deliveryCodeInput}
           setDeliveryCode={setDeliveryCodeInput}
-          onClose={closeConfirmModal}
-          onConfirm={handleConfirmDelivery}
-          isSubmitting={isConfirmSubmitting}
+          onClose={closeManageModal}
+          onSaveStatus={handleStatusSave}
+          onConfirmDelivery={handleConfirmDelivery}
+          onPrint={() => handlePrintLabel(selectedOrder)}
+          isConfirmSubmitting={isConfirmSubmitting}
         />
       )}
     </div>
@@ -1209,96 +1086,106 @@ function OrdersTab({
   orders,
   statusFilter,
   setStatusFilter,
-  openStatusModal,
-  openConfirmModal,
-  onPrintLabel,
+  paymentFilter,
+  setPaymentFilter,
+  openManageModal,
   isLoading,
+  isRefreshing,
   onRefresh,
 }) {
   return (
     <section className="shipping-orders-section">
-      <div className="shipping-orders-header">
-        <div>
-          <h2 className="shipping-orders-title">طلبات الشحن</h2>
-          <p className="shipping-orders-subtitle">
-            إدارة وتتبع جميع الطلبات المسندة إلى شركة الشحن.
-          </p>
-        </div>
+      {/* 💳 الهيدر الموحد الجديد (Unified Header Card) */}
+      <div className="shipping-header-card">
+        <div className="shipping-header-top">
+          <div className="shipping-title-group">
+            <div className="shipping-icon-badge">
+              <Truck size={22} />
+            </div>
+            <div>
+              <h2 className="shipping-orders-title">طلبات الشحن</h2>
+              <p className="shipping-orders-subtitle">إدارة وتتبع الشحنات المسندة</p>
+            </div>
+          </div>
 
-        <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
           <button
             type="button"
-            className="shipping-orders-back-btn"
+            className="shipping-refresh-btn"
             onClick={onRefresh}
-            disabled={isLoading}
+            disabled={isLoading || isRefreshing}
           >
-            <RefreshCw size={14} />
-            <span>{isLoading ? "جار التحديث..." : "تحديث الطلبات"}</span>
+            <RefreshCw size={12} className={(isLoading || isRefreshing) ? "spin-refresh" : ""} />
+            <span>{(isLoading || isRefreshing) ? "جارِ التحديث..." : "تحديث"}</span>
           </button>
         </div>
-      </div>
 
-      <div className="shipping-orders-filters">
-        <div className="shipping-status-filter">
-          <span className="shipping-status-filter-label">
-            <Filter size={14} />
-            <span>تصفية حسب حالة الطلب</span>
-          </span>
-          <div className="shipping-status-select-wrapper">
-            <select
-              className="shipping-status-select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">إجمالي الشحنات</option>
-              <option value={ORDER_STATUS_CODES.AT_SELLER_NEW}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.AT_SELLER_NEW)}
-              </option>
-              <option value={ORDER_STATUS_CODES.AT_SELLER_PROCESSING}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.AT_SELLER_PROCESSING)}
-              </option>
-              <option value={ORDER_STATUS_CODES.AT_SELLER_READY_TO_SHIP}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.AT_SELLER_READY_TO_SHIP)}
-              </option>
-              <option value={ORDER_STATUS_CODES.IN_SHIPPING}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.IN_SHIPPING)}
-              </option>
-              <option value={ORDER_STATUS_CODES.DELIVERED}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.DELIVERED)}
-              </option>
-              <option value={ORDER_STATUS_CODES.CANCELLED_BY_SELLER}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.CANCELLED_BY_SELLER)}
-              </option>
-              <option value={ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING)}
-              </option>
-              <option value={ORDER_STATUS_CODES.CANCELLED_BY_ADMIN}>
-                {getOrderStatusLabel(ORDER_STATUS_CODES.CANCELLED_BY_ADMIN)}
-              </option>
-            </select>
+        <div className="shipping-header-filters">
+          <div className="filter-item">
+            <label className="filter-label">حالة الطلب</label>
+            <div className="filter-select-wrapper">
+              <select
+                className="filter-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">كل الحالات</option>
+                <option value={ORDER_STATUS_CODES.AT_SELLER_NEW}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.AT_SELLER_NEW)}
+                </option>
+                <option value={ORDER_STATUS_CODES.AT_SELLER_PROCESSING}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.AT_SELLER_PROCESSING)}
+                </option>
+                <option value={ORDER_STATUS_CODES.AT_SELLER_READY_TO_SHIP}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.AT_SELLER_READY_TO_SHIP)}
+                </option>
+                <option value={ORDER_STATUS_CODES.IN_SHIPPING}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.IN_SHIPPING)}
+                </option>
+                <option value={ORDER_STATUS_CODES.DELIVERED}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.DELIVERED)}
+                </option>
+                <option value={ORDER_STATUS_CODES.CANCELLED_BY_SELLER}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.CANCELLED_BY_SELLER)}
+                </option>
+                <option value={ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING)}
+                </option>
+                <option value={ORDER_STATUS_CODES.CANCELLED_BY_ADMIN}>
+                  {getOrderStatusLabel(ORDER_STATUS_CODES.CANCELLED_BY_ADMIN)}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div className="filter-item">
+            <label className="filter-label">حالة الدفع</label>
+            <div className="filter-select-wrapper">
+              <select
+                className="filter-select"
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value)}
+              >
+                <option value="all">كل المدفوعات</option>
+                <option value="paid">🟢 مدفوع</option>
+                <option value="pending">🟡 بانتظار</option>
+                <option value="unpaid">🔴 غير مدفوع</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="shipping-orders-list">
         {isLoading ? (
-          <div className="shipping-orders-empty">
-            <AlertCircle size={18} />
-            <span>جار تحميل طلبات الشحن...</span>
-          </div>
+          <div className="shipping-orders-loading">جارِ التحميل...</div>
         ) : orders.length === 0 ? (
-          <div className="shipping-orders-empty">
-            <AlertCircle size={18} />
-            <span>لا توجد طلبات بهذه الحالة حالياً.</span>
-          </div>
+          <div className="shipping-orders-empty">لا توجد طلبات للعرض.</div>
         ) : (
           orders.map((order) => (
             <OrderCard
               key={order.id}
               order={order}
-              openStatusModal={openStatusModal}
-              openConfirmModal={openConfirmModal}
-              onPrintLabel={onPrintLabel}
+              openManageModal={openManageModal}
             />
           ))
         )}
@@ -1309,7 +1196,8 @@ function OrdersTab({
 
 /* ---------- كرت الطلب ---------- */
 
-function OrderCard({ order, openStatusModal, openConfirmModal, onPrintLabel }) {
+function OrderCard({ order, openManageModal }) {
+  const navigate = useNavigate();
   const unifiedLabel = order.statusCode
     ? getOrderStatusLabel(order.statusCode)
     : "غير محدد";
@@ -1320,16 +1208,9 @@ function OrderCard({ order, openStatusModal, openConfirmModal, onPrintLabel }) {
   );
   const conf = statusConfig[visualKey] || {};
 
-  const isDemo = !order.orderId || !order.itemId;
-
   const shippingPriceDisplay =
     typeof order.shippingPrice === "number"
       ? `${order.shippingPrice.toLocaleString()} ر.ي`
-      : "—";
-
-  const unitPriceDisplay =
-    typeof order.unitPrice === "number"
-      ? `${order.unitPrice.toLocaleString()} ر.ي`
       : "—";
 
   const totalDisplay =
@@ -1341,365 +1222,202 @@ function OrderCard({ order, openStatusModal, openConfirmModal, onPrintLabel }) {
   const itemIndexText =
     typeof order.itemIndex === "number" ? order.itemIndex : null;
 
-  // تجميع تفاصيل المنتج (الوصف + الأبعاد + الوزن)
-  let productFullDescription = order.productDescription || "";
-  const extraPieces = [];
-  if (order.productDimensions) {
-    extraPieces.push(`الأبعاد: ${order.productDimensions}`);
-  }
-  if (order.productWeight) {
-    extraPieces.push(`الوزن: ${order.productWeight}`);
-  }
-  if (extraPieces.length > 0) {
-    const extra = extraPieces.join(" - ");
-    productFullDescription = productFullDescription
-      ? `${productFullDescription} (${extra})`
-      : extra;
-  }
+  // 💳 تحويل paymentStatusKey إلى تسمية يونيكود عربية
+  const PAYMENT_STATUS_LABELS = {
+    paid: "مدفوع",
+    pending: "بانتظار",
+    pending_payment: "بانتظار الدفع",
+    pending_review: "بانتظار المراجعة",
+    rejected: "مرفوض",
+    unpaid: "غير مدفوع",
+    cod: "عند الاستلام",
+  };
+  const paymentKey = order.paymentStatusKey || "pending";
+  const paymentLabel = PAYMENT_STATUS_LABELS[paymentKey] || "بانتظار";
 
   return (
     <article className="shipping-order-card">
-      {/* الشريط العلوي: رقم الطلب + رقم المنتج | التاريخ | حالة الطلب */}
-      <div className="shipping-order-top-row">
-        {/* يمين: رقم الطلب + رقم المنتج */}
-        <div className="shipping-order-top-col shipping-order-top-col-id">
-          <div className="shipping-order-id-line">
-            <span className="shipping-order-id-label">رقم الطلب</span>
-            <span className="shipping-order-id-value">#{orderNumberText}</span>
-            {itemIndexText && (
-              <>
-                <span className="shipping-order-id-separator" />
-                <span className="shipping-order-item-index">{itemIndexText}</span>
-              </>
-            )}
+      {/* العمود الأول: الصورة */}
+      <div className="order-col-image" style={{ cursor: "pointer" }}>
+        <div
+          className="order-image-aspect-wrapper"
+          onClick={() =>
+            navigate(`/shipping/orders/${order.orderId}/items/${order.itemId}`)
+          }
+        >
+          <img
+            src={order.productImage}
+            alt={order.productName}
+            className="order-card-img"
+          />
+          <div className="order-status-badge">{unifiedLabel}</div>
+          <div className={`order-payment-badge payment-${paymentKey}`}>
+            {paymentLabel}
           </div>
-        </div>
-
-        {/* الوسط: التاريخ */}
-        <div className="shipping-order-top-col shipping-order-top-col-date">
-          <div className="shipping-order-date-rect">
-            <Calendar size={13} />
-            <span>{order.date}</span>
-          </div>
-        </div>
-
-        {/* اليسار: حالة الطلب (مستطيل ناعم) */}
-        <div className="shipping-order-top-col shipping-order-top-col-status">
-          <span
-            className={
-              "shipping-status-chip shipping-status-chip-lg " +
-              (conf.colorClass || "")
-            }
-          >
-            {unifiedLabel}
-          </span>
         </div>
       </div>
 
-      {/* الجسم الرئيسي للكرت */}
-      <div className="shipping-order-main-layout">
-        <div className="shipping-order-details-grid shipping-order-details-grid-main">
-          {/* بيانات المشتري */}
-          <section className="shipping-order-section shipping-order-section-card">
-            <h4 className="shipping-order-section-title">بيانات المشتري</h4>
-            <div className="shipping-order-section-body">
-              <div className="shipping-order-person-name">
-                {order.buyerName || "—"}
-              </div>
-              <div className="shipping-order-person-address">
-                {order.shippingAddress || "—"}
-              </div>
-              <div className="shipping-order-inline-row">
-                <span className="shipping-order-inline-item">
-                  <Phone size={13} />
-                  <span>{order.buyerPhone || "—"}</span>
-                </span>
-                <span className="shipping-order-inline-item">
-                  <Mail size={13} />
-                  <span>{order.buyerEmail || "—"}</span>
-                </span>
-              </div>
-            </div>
-          </section>
-
-          {/* بيانات البائع */}
-          <section className="shipping-order-section shipping-order-section-card">
-            <h4 className="shipping-order-section-title">بيانات البائع</h4>
-            <div className="shipping-order-section-body">
-              <div className="shipping-order-person-name">
-                {order.storeName || "—"}
-              </div>
-              <div className="shipping-order-person-address">
-                {order.sellerAddress || "—"}
-              </div>
-              <div className="shipping-order-inline-row">
-                <span className="shipping-order-inline-item">
-                  <Phone size={13} />
-                  <span>{order.sellerPhone || "—"}</span>
-                </span>
-                <span className="shipping-order-inline-item">
-                  <Mail size={13} />
-                  <span>{order.sellerEmail || "—"}</span>
-                </span>
-              </div>
-            </div>
-          </section>
-
-          {/* بطاقة المنتج */}
-          <section className="shipping-order-section shipping-order-section-card shipping-order-section-product">
-            <h4 className="shipping-order-section-title">معلومات السلعة</h4>
-
-            <div className="shipping-order-product-layout">
-              {order.productImage && (
-                <div className="shipping-order-product-image-wrapper">
-                  <img
-                    src={order.productImage}
-                    alt={order.productName || "المنتج"}
-                    className="shipping-order-product-image"
-                  />
-                </div>
-              )}
-
-              <div className="shipping-order-product-info">
-                {/* الكمية: الرقم قريب من الكلمة */}
-                <div className="shipping-order-qty-row">
-                  <span className="shipping-order-qty-label">الكمية:</span>
-                  <span className="shipping-order-qty-value">{order.itemsCount}</span>
-                </div>
-
-                <div className="shipping-order-product-name">
-                  {order.productName || "—"}
-                </div>
-
-                <div className="shipping-order-product-desc">
-                  {productFullDescription || "—"}
-                </div>
-
-                <div className="shipping-order-product-price">
-                  {totalDisplay !== "—" ? totalDisplay : unitPriceDisplay}
-                </div>
-              </div>
-            </div>
-          </section>
+      {/* العمود الثاني: بيانات المنتج + زر الإدارة */}
+      <div className="order-col-product">
+        <h3 className="order-product-name">{order.productName || "—"}</h3>
+        <div className="order-product-meta">
+          <p className="order-product-detail">
+            <span className="label">الكمية:</span> <span className="num-accent">{order.itemsCount}</span>
+          </p>
+          <p className="order-product-detail price-highlight">
+            <span className="label">السعر:</span> <span className="num-accent">{totalDisplay}</span>
+          </p>
+          {/* آخر صف: رسوم الشحن + زر الإدارة في نفس الصف */}
+          <div className="order-product-actions-row">
+            <p className="order-product-detail order-shipping-fee">
+              <span className="label">الشحن:</span> <span className="num-accent">{shippingPriceDisplay}</span>
+            </p>
+            <button
+              type="button"
+              className="order-manage-btn order-manage-btn--mobile"
+              onClick={() => openManageModal(order)}
+            >
+              إدارة الطلب
+            </button>
+          </div>
         </div>
+      </div>
 
-        {/* رسوم الشحن + طريقة الدفع + الشريط السفلي */}
-        <section className="shipping-order-section shipping-order-section-shippingwide">
-          {/* تم حذف عنوان "معلومات الشحن" حتى يصغر الفراغ */}
-          <div className="shipping-order-shipping-info-row">
-            <div className="shipping-order-field-row">
-              <span className="shipping-order-field-label">رسوم الشحن</span>
-              <span className="shipping-order-field-value">{shippingPriceDisplay}</span>
-            </div>
+      {/* العمود الثالث: بيانات الطلب المضغوطة */}
+      <div className="order-col-order">
+        <div className="order-id-display">
+          <span className="order-hash">#</span>
+          <span className="order-num num-accent">{orderNumberText}</span>
+          <span className="order-divider">|</span>
+          <span className="order-index num-accent">{itemIndexText || "01"}</span>
+        </div>
+        <div className="order-date-display">{order.date}</div>
+        <div className="order-payment-display num-accent">
+          {order.paymentMethod || "—"}
+        </div>
+        {/* زر الإدارة يُخفى هنا على الموبايل - يظهر أعلى في القسم الأول */}
+        <button
+          type="button"
+          className="order-manage-btn order-manage-btn--desktop"
+          onClick={() => openManageModal(order)}
+        >
+          <Settings2 size={14} />
+          <span>إدارة الطلب</span>
+        </button>
+      </div>
 
-            <div className="shipping-order-field-row">
-              <span className="shipping-order-field-label">طريقة الدفع</span>
-              <span className="shipping-order-field-value">
-                {order.paymentMethod || "—"}
-              </span>
-            </div>
-          </div>
+      {/* العمود الرابع: بيانات البائع */}
+      <div className="order-col-seller">
+        <h4 className="card-section-title">البائع: {order.storeName || "—"}</h4>
+        <p className="order-address-text">{order.sellerAddress || "—"}</p>
+        <div className="order-contact-row">
+          <span className="order-contact-text">{order.sellerEmail || "—"}</span>
+          <span className="contact-divider">|</span>
+          <span className="order-contact-phone num-accent">{order.sellerPhone || "—"}</span>
+        </div>
+      </div>
 
-          <div className="shipping-order-footer-bar">
-            {/* يسار: زر تأكيد التسليم + زر الطباعة */}
-            <div className="shipping-order-footer-left">
-              <button
-                type="button"
-                className="shipping-order-action-btn primary"
-                onClick={() => openConfirmModal(order)}
-                disabled={isDemo}
-                title={
-                  isDemo
-                    ? "هذه الشحنة لا تحتوي على بيانات كافية لتأكيد التسليم من الخادم."
-                    : "تأكيد التسليم لهذا المنتج عبر كود التسليم من المشتري."
-                }
-              >
-                <CheckCircle2 size={14} />
-                <span>تأكيد التسليم</span>
-              </button>
-
-              <button
-                type="button"
-                className="shipping-order-action-btn secondary"
-                onClick={() => onPrintLabel?.(order)}
-                disabled={false}
-                title={
-                  isDemo
-                    ? "طباعة ملصق الشحن (قد تنقص بعض البيانات القادمة من الخادم)."
-                    : "طباعة ملصق الشحن (يمكن حفظه PDF من نافذة الطباعة)."
-                }
-              >
-                <Printer size={14} />
-                <span>طباعة الكرت</span>
-              </button>
-            </div>
-
-            {/* يمين: تغيير حالة الطلب */}
-            <div className="shipping-order-footer-right">
-              <button
-                type="button"
-                className="shipping-order-status-dropdown"
-                onClick={() => openStatusModal(order)}
-              >
-                <span className="shipping-order-status-dropdown-label">
-                  تغيير حالة الطلب
-                </span>
-                <span
-                  className={
-                    "shipping-status-chip shipping-status-chip-sm " +
-                    (conf.colorClass || "")
-                  }
-                >
-                  {unifiedLabel}
-                </span>
-              </button>
-            </div>
-          </div>
-        </section>
+      {/* العمود الخامس: بيانات المشتري */}
+      <div className="order-col-buyer">
+        <h4 className="card-section-title">المشتري: {order.buyerName || "—"}</h4>
+        <p className="order-address-text">{order.shippingAddress || "—"}</p>
+        <div className="order-contact-row">
+          <span className="order-contact-text">{order.buyerEmail || "—"}</span>
+          <span className="contact-divider">|</span>
+          <span className="order-contact-phone num-accent">{order.buyerPhone || "—"}</span>
+        </div>
       </div>
     </article>
   );
 }
 
-/* ---------- مودال تحديث الحالة ---------- */
+/* ---------- نافذة إدارة الطلب الموحدة ---------- */
 
-function StatusModal({ order, selectedStatus, setSelectedStatus, onClose, onSave }) {
-  return (
-    <div className="shipping-modal-backdrop">
-      <div className="shipping-modal">
-        <div className="shipping-modal-header">
-          <h3>تحديث حالة الشحنة</h3>
-          <button type="button" className="shipping-modal-close" onClick={onClose}>
-            <X size={16} />
-          </button>
-        </div>
-        <p className="shipping-modal-subtitle">
-          رقم الشحنة: <strong>{order.id}</strong>
-        </p>
-
-        <div className="shipping-modal-body">
-          <div className="shipping-modal-status-options">
-            {SHIPPING_STATUS_ACTIONS.map((action) => {
-              const statusKey = action.key;
-              const conf = statusConfig[statusKey] || {};
-              const label = getOrderStatusLabel(action.code);
-              return (
-                <label
-                  key={statusKey}
-                  className={
-                    "shipping-modal-status-option" +
-                    (selectedStatus === statusKey
-                      ? " shipping-modal-status-option-active"
-                      : "")
-                  }
-                >
-                  <input
-                    type="radio"
-                    name="shipmentStatus"
-                    value={statusKey}
-                    checked={selectedStatus === statusKey}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                  />
-                  <span className={"shipping-status-chip " + (conf.colorClass || "")}>
-                    {label}
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-          <p className="shipping-modal-note">
-            يمكن لشركة الشحن تعديل الحالة فقط إلى <strong>في الشحن</strong> و{" "}
-            <strong>ملغى من قبل الشحن</strong>. أما الحالات التي تبدأ بـ{" "}
-            <strong>عند البائع</strong> فهي من صلاحية البائع، و{" "}
-            <strong>ملغى من قبل المدير</strong> من صلاحية المدير فقط. حالة{" "}
-            <strong>تم التسليم</strong> لا يمكن الوصول إليها إلا من خلال تأكيد كود
-            التسليم.
-          </p>
-        </div>
-
-        <div className="shipping-modal-footer">
-          <button type="button" className="shipping-modal-btn ghost" onClick={onClose}>
-            إلغاء
-          </button>
-          <button type="button" className="shipping-modal-btn primary" onClick={onSave}>
-            <Save size={15} />
-            <span>حفظ التغييرات</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ---------- مودال تأكيد التسليم ---------- */
-
-function ConfirmDeliveryModal({
-  shipment,
+function ManageOrderModal({
+  order,
+  selectedStatus,
+  setSelectedStatus,
   deliveryCode,
   setDeliveryCode,
   onClose,
-  onConfirm,
-  isSubmitting,
+  onSaveStatus,
+  onConfirmDelivery,
+  onPrint,
+  isConfirmSubmitting,
 }) {
   return (
-    <div className="shipping-modal-backdrop">
-      <div className="shipping-modal">
+    <div className="shipping-modal-backdrop" onClick={onClose}>
+      <div className="shipping-modal manage-modal" onClick={(e) => e.stopPropagation()}>
         <div className="shipping-modal-header">
-          <h3>تأكيد تسليم المنتج</h3>
+          <h3>إدارة الطلب #<span>{order.orderNumber || order.id}</span></h3>
           <button type="button" className="shipping-modal-close" onClick={onClose}>
-            <X size={16} />
+            <X size={20} />
           </button>
         </div>
-        <p className="shipping-modal-subtitle">
-          رقم الطلب: <strong>{shipment.id}</strong>
-          {shipment.productName && (
-            <>
-              {" "}
-              · المنتج: <strong>{shipment.productName}</strong>
-            </>
-          )}
-        </p>
 
         <div className="shipping-modal-body">
-          <div className="shipping-profile-field">
-            <div className="shipping-profile-field-label-row">
-              <span className="shipping-profile-field-label">
-                أدخل كود التسليم الذي يظهر في صفحة طلبات المشتري
-              </span>
+          {/* القسم الأول: حالة الطلب */}
+          <section className="manage-section">
+            <h4 className="manage-section-title">القسم الأول: حالة الطلب</h4>
+            <div className="status-options-grid">
+              {SHIPPING_STATUS_ACTIONS.map((action) => (
+                <label
+                  key={action.key}
+                  className={`status-radio-label ${selectedStatus === action.key ? "active" : ""}`}
+                >
+                  <input
+                    type="radio"
+                    name="orderStatus"
+                    value={action.key}
+                    checked={selectedStatus === action.key}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                  />
+                  <span>{getOrderStatusLabel(action.code)}</span>
+                </label>
+              ))}
+              <button type="button" className="manage-action-btn primary" onClick={onSaveStatus}>
+                حفظ
+              </button>
             </div>
-            <input
-              type="text"
-              className="shipping-profile-input"
-              value={deliveryCode}
-              onChange={(e) => setDeliveryCode(e.target.value)}
-              placeholder="مثال: 123456"
-              inputMode="numeric"
-            />
-          </div>
-          <p className="shipping-modal-note">
-            لا يتم عرض كود التسليم في لوحة شركة الشحن لأسباب أمنية، يجب أن تحصل
-            عليه مباشرة من المشتري عند التسليم، ثم تدخله هنا لتأكيد استلامه للمنتج.
-          </p>
-        </div>
+          </section>
 
-        <div className="shipping-modal-footer">
-          <button
-            type="button"
-            className="shipping-modal-btn ghost"
-            onClick={onClose}
-            disabled={isSubmitting}
-          >
-            إلغاء
-          </button>
-          <button
-            type="button"
-            className="shipping-modal-btn primary"
-            onClick={onConfirm}
-            disabled={isSubmitting}
-          >
-            <CheckCircle2 size={15} />
-            <span>{isSubmitting ? "جار التأكيد..." : "تأكيد التسليم"}</span>
-          </button>
+          <hr className="manage-divider" />
+
+          {/* القسم الثاني: تأكيد التسليم */}
+          <section className="manage-section">
+            <h4 className="manage-section-title">القسم الثاني: تأكيد التسليم</h4>
+            <div className="delivery-confirm-row">
+              <input
+                type="text"
+                className="delivery-code-input"
+                placeholder="حقل إدخال كود..."
+                value={deliveryCode}
+                onChange={(e) => setDeliveryCode(e.target.value)}
+              />
+              <button
+                type="button"
+                className="manage-action-btn success"
+                onClick={onConfirmDelivery}
+                disabled={isConfirmSubmitting}
+              >
+                {isConfirmSubmitting ? "جارِ التأكيد..." : "تأكيد التسليم"}
+              </button>
+            </div>
+            {order.status === "delivered" && (
+              <p className="status-success-text">✔ تم التسليم</p>
+            )}
+          </section>
+
+          <hr className="manage-divider" />
+
+          {/* القسم الثالث: الطباعة */}
+          <section className="manage-section">
+            <h4 className="manage-section-title">القسم الثالث: الطباعة</h4>
+            <button type="button" className="print-large-btn" onClick={onPrint}>
+              <Printer size={20} />
+              <span>🖨 طباعة الكرت</span>
+            </button>
+          </section>
         </div>
       </div>
     </div>

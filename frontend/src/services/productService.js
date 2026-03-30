@@ -15,6 +15,7 @@ import { api } from "./api";
  * يستدعي: GET /api/products
  */
 export async function listProducts(params = {}) {
+  // params can include: category, limit, cursor_score, cursor_id
   const res = await api.get("/products", { params });
   return res.data;
 }
@@ -60,6 +61,15 @@ export async function getAdminProductDetails(id) {
  */
 export async function getProductById(id) {
   const res = await api.get(`/products/${id}`);
+  return res.data;
+}
+
+/**
+ * تتبع الإضافة للسلة (لأغراض نظام الترتيب الذكي)
+ * POST /api/products/:id/track-cart
+ */
+export async function trackCartAddition(id) {
+  const res = await api.post(`/products/${id}/track-cart`);
   return res.data;
 }
 
@@ -151,6 +161,15 @@ export async function deleteProductAsAdmin(productId) {
 }
 
 /**
+ * 🧠 جلب التوصيات الذكية للمنتج
+ * يستدعي: GET /api/products/:id/recommendations
+ */
+export async function getProductRecommendations(productId) {
+  const res = await api.get(`/products/${productId}/recommendations`);
+  return res.data;
+}
+
+/**
  * 📸 رفع صور المنتجات
  *
  * يرسل FormData يحتوي على حقل "images" (ملف أو أكثر)
@@ -187,6 +206,8 @@ const productService = {
   deleteProduct,
   deleteProductAsAdmin,
   uploadProductImages,
+  trackCartAddition,
+  getProductRecommendations,
 };
 
 export default productService;

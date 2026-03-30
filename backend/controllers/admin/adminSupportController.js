@@ -6,6 +6,7 @@
 import asyncHandler from "express-async-handler";
 import SupportTicket from "../../models/SupportTicket.js";
 import Notification from "../../models/Notification.js";
+import { sanitizeHTML } from "../../utils/sanitize.js";
 
 // GET /api/admin/support-tickets
 export const getAdminSupportTickets = asyncHandler(async (req, res) => {
@@ -65,7 +66,7 @@ export const replyToSupportTicket = asyncHandler(async (req, res) => {
     throw new Error("نص الرد مطلوب");
   }
 
-  ticket.adminReply = reply.trim();
+  ticket.adminReply = sanitizeHTML(reply);
   ticket.adminReplyAt = new Date();
   ticket.adminReplyBy = req.user?._id || null;
 

@@ -143,9 +143,8 @@ export const getSystemStats = asyncHandler(async (req, res) => {
     codSales,
     onlineSales,
     platformCommission,
-    unpaidPayouts,
   ] = await Promise.all([
-    // إجمالي المبيعات (كل ما دُفع من المشتري = مجموع مستحقات البائع + الشحن + عمولة المنصة)
+    // إجمالي المبيعات + أجرة الشحن (كل ما دُفع من المشتري = مستحقات البائع + الشحن + عمولة المنصة)
     sumTransactions({
       ...txBaseMatch,
       type: { $in: earningsTypes },
@@ -156,23 +155,16 @@ export const getSystemStats = asyncHandler(async (req, res) => {
       type: { $in: earningsTypes },
       paymentMethod: 'COD',
     }),
-    // مبيعات الدفع الإلكتروني ONLINE
+    // الدفع الإلكتروني = الدفع بالبطاقة (ONLINE) + التحويل البنكي (BANK_TRANSFER)
     sumTransactions({
       ...txBaseMatch,
       type: { $in: earningsTypes },
-      paymentMethod: 'ONLINE',
+      paymentMethod: { $in: ['ONLINE', 'BANK_TRANSFER'] },
     }),
     // إجمالي عمولة المنصة
     sumTransactions({
       ...txBaseMatch,
       type: 'ORDER_EARNING_PLATFORM',
-    }),
-    // مبالغ مستحقة (غير مسددة) للبائعين وشركات الشحن
-    sumTransactions({
-      ...txBaseMatch,
-      status: 'PENDING',
-      role: { $in: ['SELLER', 'SHIPPING'] },
-      direction: 'DEBIT',
     }),
   ]);
 
@@ -181,7 +173,6 @@ export const getSystemStats = asyncHandler(async (req, res) => {
     codSales,
     onlineSales,
     platformCommission,
-    unpaidPayouts,
   };
 
   // ──────────────────────────────────────────
@@ -349,15 +340,6 @@ export const getSystemStats = asyncHandler(async (req, res) => {
     alerts.push({
       level: 'warning',
       message: `هناك ${newOrProcessingCount} طلبًا جديدًا أو قيد المعالجة في الفترة الحالية، قد تحتاج إلى متابعة.`,
-    });
-  }
-
-  if (financial.unpaidPayouts > 0) {
-    alerts.push({
-      level: financial.unpaidPayouts > 10000 ? 'danger' : 'warning',
-      message: `هناك مبالغ غير مسددة للبائعين/شركات الشحن بقيمة ${financial.unpaidPayouts.toFixed(
-        2
-      )}.`,
     });
   }
 

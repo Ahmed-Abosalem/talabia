@@ -1,0 +1,179 @@
+/* ──────────────────────────────────────────────────────────────
+   📁 frontend/src/pages/Admin/AdminPayoutPage.css
+   Specialized Styles for the Intelligent Financial Settlement Page
+   Reference: Golden Standard 10/10 (AdminUserDetailsPage)
+   ────────────────────────────────────────────────────────────── */
+
+/* ─── Financial Simulator Dashboard ─── */
+.fin-simulator-dashboard {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: var(--sp-4);
+    background: #f8fafc;
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-lg);
+    gap: var(--sp-3);
+    margin: 1rem 0;
+}
+
+.sim-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.sim-block .lbl {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--adm-text-muted);
+    text-transform: uppercase;
+}
+
+.sim-block .val {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--adm-text-main);
+}
+
+.sim-block.entry .val {
+    color: var(--adm-primary);
+}
+
+.sim-block.result .val.final {
+    color: var(--adm-success);
+}
+
+.sim-block.result .val.alert {
+    color: var(--adm-danger);
+}
+
+.sim-operator {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--adm-text-soft);
+}
+
+/* ─── Transaction Type Toggle ─── */
+.fin-type-toggle-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.type-btn {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: white;
+    border: 1.5px solid var(--adm-border);
+    border-radius: var(--rad-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 700;
+    color: var(--adm-text-muted);
+}
+
+.type-btn:hover {
+    border-color: var(--adm-border-hover);
+    background: var(--adm-bg);
+}
+
+.type-btn.active {
+    background: var(--adm-primary);
+    color: white;
+    border-color: var(--adm-primary);
+    box-shadow: 0 4px 12px rgba(75, 80, 42, 0.2);
+}
+
+/* ─── Form & Input Highlights ─── */
+.highlight-input {
+    border: 2px solid var(--adm-primary);
+    box-shadow: 0 0 0 4px rgba(75, 80, 42, 0.05);
+}
+
+.bold-price {
+    font-size: 1.5rem !important;
+    font-weight: 900 !important;
+    color: var(--adm-primary) !important;
+    letter-spacing: -0.5px;
+}
+
+/* ─── Mini Lists ─── */
+.fin-summary-mini-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--adm-border);
+}
+
+.fin-mini-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+}
+
+.fin-mini-item .lbl {
+    color: var(--adm-text-muted);
+    font-weight: 600;
+}
+
+.fin-mini-item .val {
+    color: var(--adm-text-main);
+    font-weight: 700;
+    margin-right: auto;
+}
+
+/* ─── Modal Specifics ─── */
+.fin-modal-summary {
+    background: var(--adm-bg);
+    padding: var(--sp-2);
+    border-radius: var(--rad-md);
+    margin-top: 1rem;
+}
+
+.sim-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+/* ─── Responsive Optimizations ─── */
+@media (max-width: 1024px) {
+    .span-8, .span-4 {
+        grid-column: span 12;
+    }
+}
+
+@media (max-width: 768px) {
+    .fin-simulator-dashboard {
+        flex-direction: column;
+        gap: var(--sp-2);
+        text-align: center;
+    }
+    
+    .sim-operator {
+        transform: rotate(90deg);
+        height: 20px;
+        display: flex;
+        align-items: center;
+    }
+
+    .fin-type-toggle-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .adm-page-title {
+        font-size: 1.1rem;
+    }
+}

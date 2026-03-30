@@ -3,8 +3,27 @@
 // إدارة البائعين (Stores / Sellers)
 // ────────────────────────────────────────────────
 
+import mongoose from 'mongoose';
 import asyncHandler from 'express-async-handler';
 import Store from '../../models/Store.js';
+import Product from '../../models/Product.js';
+import Order from '../../models/Order.js';
+import Notification from '../../models/Notification.js';
+
+// GET /api/admin/sellers/:id
+export const getAdminSellerById = asyncHandler(async (req, res) => {
+  const store = await Store.findById(req.params.id).populate(
+    'owner',
+    'name email phone role isActive nationality birthDate idType idNumber idIssuer idDocumentUrl address'
+  );
+
+  if (!store) {
+    res.status(404);
+    throw new Error('المتجر غير موجود');
+  }
+
+  res.json({ seller: store });
+});
 
 // GET /api/admin/sellers
 export const getAdminSellers = asyncHandler(async (req, res) => {
@@ -71,6 +90,25 @@ export const updateSellerStatus = asyncHandler(async (req, res) => {
 
   await store.save();
 
+  // 🔔 إرسال إشعار للمالك بالتحديث اليدوي
+  if (store.owner) {
+    if (status === 'approved') {
+      await Notification.create({
+        user: store.owner._id,
+        title: 'تم تفعيل حساب المتجر ✅',
+        message: `تم إعادة تفعيل متجرك "${store.name}". يمكنك الآن ممارسة نشاطك التجاري كالمعتاد.`,
+        type: 'system'
+      });
+    } else if (status === 'suspended') {
+      await Notification.create({
+        user: store.owner._id,
+        title: 'تنبيه: تم إيقاف المتجر مؤقتاً ⚠️',
+        message: `تم إيقاف متجرك "${store.name}" مؤقتاً من قبل الإدارة. يرجى التواصل مع الدعم الفني للمزيد من التفاصيل.`,
+        type: 'system'
+      });
+    }
+  }
+
   res.json({ store });
 });
 
@@ -94,6 +132,16 @@ export const approveSeller = asyncHandler(async (req, res) => {
   }
 
   await store.save();
+
+  // 🔔 إرسال إشعار للمالك بالقبول
+  if (store.owner) {
+    await Notification.create({
+      user: store.owner._id,
+      title: 'تم تفعيل متجرك بنجاح 🎉',
+      message: `تهانينا! تم قبول طلبك لتفعيل متجر "${store.name}". يمكنك الآن البدء بإضافة المنتجات والبيع عبر المنصة.`,
+      type: 'system'
+    });
+  }
 
   res.json({ store });
 });
@@ -124,5 +172,67 @@ export const rejectSeller = asyncHandler(async (req, res) => {
 
   await store.save();
 
+  // 🔔 إرسال إشعار للمالك بالرفض مع السبب
+  if (store.owner) {
+    await Notification.create({
+      user: store.owner._id,
+      title: 'بخصوص طلب تفعيل المتجر ⚠️',
+      message: `تم رفض طلبك لتفعيل متجر "${store.name}". سبب الرفض: ${reason.trim()}. يرجى معالجة الملاحظات وإعادة المحاولة.`,
+      type: 'system'
+    });
+  }
+
   res.json({ store });
+});
+
+// GET /api/admin/sellers/:id/stats
+export const getAdminSellerStats = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const store = await Store.findById(id);
+  if (!store) {
+    res.status(404);
+    throw new Error('المتجر غير موجود');
+  }
+
+  // 1. إحصائيات المنتجات (Products) المجمعة بعملية واحدة
+  const productStatsRaw = await Product.aggregate([
+    { $match: { store: new mongoose.Types.ObjectId(id) } },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        active: { $sum: { $cond: [{ $and: [{ $eq: ["$isActive", true] }, { $eq: ["$adminLocked", false] }] }, 1, 0] } },
+        inactive: { $sum: { $cond: [{ $eq: ["$isActive", false] }, 1, 0] } },
+        locked: { $sum: { $cond: [{ $eq: ["$adminLocked", true] }, 1, 0] } }
+      }
+    }
+  ]);
+
+  const productStats = productStatsRaw[0] || { total: 0, active: 0, inactive: 0, locked: 0 };
+  delete productStats._id;
+
+  // 2. إحصائيات الطلبات (Orders)
+  const orderStatsRaw = await Order.aggregate([
+    { $unwind: "$orderItems" },
+    { $match: { "orderItems.store": new mongoose.Types.ObjectId(id) } },
+    {
+      $group: {
+        _id: "$orderItems.statusCode",
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const orderStats = {};
+  orderStatsRaw.forEach(item => {
+    if (item._id) {
+      orderStats[item._id] = item.count;
+    }
+  });
+
+  res.json({
+    products: productStats,
+    orders: orderStats
+  });
 });

@@ -1,0 +1,67 @@
+/* 
+ * Responsive Core System - Overflow Guard
+ * Prevents horizontal filtering and ensures content safety
+ */
+
+html,
+body {
+    overflow-x: hidden;
+    /* Critical: Prevent horizontal scroll globally */
+    max-width: 100vw;
+    width: 100%;
+}
+
+/* Fluid Images */
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    /* Removes bottom whitespace */
+}
+
+/* Text Safety - Prevent long words from breaking layout */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+a,
+li,
+div {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    /* Legacy support */
+}
+
+/* Flexbox Safety Rule */
+/* Ensures flex children don't force width beyond container */
+.flex-safe>* {
+    min-width: 0;
+}
+
+/* Table Safety */
+/* Tables must be wrapped in .table-responsive to scroll internally */
+.table-responsive {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+table {
+    max-width: 100%;
+    width: 100%;
+}
+
+/* Input Safety */
+input,
+textarea,
+select {
+    max-width: 100%;
+}

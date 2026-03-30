@@ -7,6 +7,7 @@
 // - تفعيل / تعطيل القسم (إخفاؤه من الواجهة العامة)
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Trash2,
@@ -17,6 +18,9 @@ import {
   ToggleLeft,
   ToggleRight,
   Search,
+  Lock,
+  RefreshCw,
+  Layers,
 } from "lucide-react";
 import {
   getAdminCategories,
@@ -24,6 +28,10 @@ import {
   updateAdminCategory,
   deleteAdminCategory,
 } from "@/services/adminService";
+import { useApp } from "@/context/AppContext";
+import AdminModal from "@/components/Admin/AdminModal/AdminModal";
+
+import "./AdminCategoriesSection.css";
 
 // عنوان ثابت لعرض الصور القادمة من الباك إند
 // يمكنك تعديله لاحقاً ليعتمد على env لو أحببت
@@ -35,34 +43,28 @@ function resolveCategoryImage(image) {
   return `${API_BASE_URL}${image}`;
 }
 
-const emptyForm = {
-  id: null,
-  name: "",
-  sortOrder: "",
-  imageFile: null,
-  rawImageUrl: "", // الصورة الأصلية من الجهاز
-  previewUrl: "", // لمعاينة داخل إطار القص
-  cropZoom: 1,
-  cropOffsetX: 0,
-  cropOffsetY: 0,
-  // نسبة عمولة المنصة كـ "نسبة مئوية" في الواجهة (مثال: 10 تعني 10٪)
-  commissionRate: "",
-};
-
 export default function AdminCategoriesSection() {
+  const navigate = useNavigate();
+  const { showToast } = useApp() || {};
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [orderSaving, setOrderSaving] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [form, setForm] = useState(emptyForm);
-  const [isEditing, setIsEditing] = useState(false);
+  // Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [catToDelete, setCatToDelete] = useState(null);
 
   const [draggingId, setDraggingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const filteredCategories = categories.filter((cat) =>
+    (cat.name || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // ─────────────────────────────
   // تحميل الأقسام من الباك إند
@@ -74,7 +76,6 @@ export default function AdminCategoriesSection() {
   async function loadCategories() {
     try {
       setLoading(true);
-      setErrorMessage("");
       const data = await getAdminCategories(); // { categories: [...] }
 
       const list = (data.categories || []).map((cat) => ({
@@ -95,267 +96,52 @@ export default function AdminCategoriesSection() {
       setCategories(list);
     } catch (error) {
       console.error("خطأ في تحميل الأقسام:", error);
-      setErrorMessage("حدث خطأ أثناء تحميل الأقسام، يرجى المحاولة لاحقاً.");
+      showToast?.("حدث خطأ أثناء تحميل الأقسام.", "error");
     } finally {
       setLoading(false);
     }
   }
 
   // ─────────────────────────────
-  // فتح وإغلاق النافذة (Modal)
+  // الانتقال لصفحة الإضافة/التعديل
   // ─────────────────────────────
   function openCreateModal() {
-    setIsEditing(false);
-    setForm({
-      ...emptyForm,
-      sortOrder: categories.length ? categories.length + 1 : 1,
-    });
-    setIsModalOpen(true);
-    setErrorMessage("");
-    setSuccessMessage("");
+    navigate("/admin/categories/add");
   }
 
   function openEditModal(category) {
-    setIsEditing(true);
-    setForm({
-      id: category._id,
-      name: category.name || "",
-      sortOrder:
-        typeof category.sortOrder === "number"
-          ? category.sortOrder
-          : category.sortOrder || "",
-      imageFile: null,
-      rawImageUrl: category.image ? resolveCategoryImage(category.image) : "",
-      previewUrl: category.image ? resolveCategoryImage(category.image) : "",
-      cropZoom: 1,
-      cropOffsetX: 0,
-      cropOffsetY: 0,
-      // نحول القيمة من 0–1 إلى نسبة مئوية للواجهة
-      commissionRate:
-        typeof category.commissionRate === "number"
-          ? String(Math.round(category.commissionRate * 100))
-          : "",
-    });
-    setIsModalOpen(true);
-    setErrorMessage("");
-    setSuccessMessage("");
+    navigate("/admin/categories/add", { state: { category } });
   }
 
-  function closeModal() {
-    if (saving) return;
-    // تنظيف URL السابقة إن وجدت
-    if (form.rawImageUrl && form.rawImageUrl.startsWith("blob:")) {
-      URL.revokeObjectURL(form.rawImageUrl);
-    }
-    setIsModalOpen(false);
-    setForm(emptyForm);
-  }
-
-  // ─────────────────────────────
-  // التعامل مع نموذج القسم
-  // ─────────────────────────────
-  function handleInputChange(e) {
-    const { name, value } = e.target;
-    setForm((prev) => {
-      if (name === "sortOrder") {
-        return {
-          ...prev,
-          [name]: value.replace(/[^\d]/g, ""),
-        };
-      }
-      if (name === "commissionRate") {
-        // نسمح بالأرقام والنقطة العشرية فقط
-        return {
-          ...prev,
-          [name]: value.replace(/[^\d.]/g, ""),
-        };
-      }
-      return {
-        ...prev,
-        [name]: value,
-      };
-    });
-  }
-
-  function handleSearchChange(e) {
-    setSearchTerm(e.target.value);
-  }
-
-  function handleImageChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) {
-      // إعادة الضبط عند إزالة الاختيار
-      if (form.rawImageUrl && form.rawImageUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(form.rawImageUrl);
-      }
-      setForm((prev) => ({
-        ...prev,
-        imageFile: null,
-        rawImageUrl: "",
-        previewUrl: "",
-        cropZoom: 1,
-        cropOffsetX: 0,
-        cropOffsetY: 0,
-      }));
-      return;
-    }
-
-    const rawUrl = URL.createObjectURL(file);
-
-    // نعيد الضبط بالكامل لو تغيّرت الصورة
-    if (form.rawImageUrl && form.rawImageUrl.startsWith("blob:")) {
-      URL.revokeObjectURL(form.rawImageUrl);
-    }
-
-    setForm((prev) => ({
-      ...prev,
-      imageFile: file,
-      rawImageUrl: rawUrl,
-      previewUrl: rawUrl,
-      cropZoom: 1,
-      cropOffsetX: 0,
-      cropOffsetY: 0,
-    }));
-  }
-
-  function handleCropChange(field, value) {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  }
-
-  function resetCrop() {
-    setForm((prev) => ({
-      ...prev,
-      cropZoom: 1,
-      cropOffsetX: 0,
-      cropOffsetY: 0,
-    }));
-  }
-
-  // ─────────────────────────────
-  // حفظ (إنشاء أو تعديل قسم)
-  // ─────────────────────────────
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.name.trim()) {
-      setErrorMessage("اسم القسم مطلوب.");
-      return;
-    }
-
-    // تحويل نسبة العمولة من % في الواجهة إلى قيمة 0–1 للبك إند
-    let normalizedCommission = null;
-    if (form.commissionRate !== "") {
-      const num = Number(form.commissionRate);
-      if (!Number.isNaN(num) && num >= 0) {
-        normalizedCommission = num / 100;
-      }
-    }
-
-    try {
-      setSaving(true);
-      setErrorMessage("");
-      setSuccessMessage("");
-
-      const payload = {
-        name: form.name.trim(),
-        sortOrder: form.sortOrder
-          ? Number(form.sortOrder)
-          : categories.length + 1,
-        description: "", // يمكن إضافة حقل وصف مستقبلاً في الواجهة
-        imageFile: form.imageFile || undefined,
-        // قيم القص (حالياً تُستخدم للمعاينة ويمكن لاحقاً إرسالها وحفظها في الباك إند)
-        cropZoom: form.cropZoom,
-        cropOffsetX: form.cropOffsetX,
-        cropOffsetY: form.cropOffsetY,
-      };
-
-      if (normalizedCommission !== null) {
-        payload.commissionRate = normalizedCommission;
-      }
-
-      // يمكن عند الإنشاء إضافة isActive إن أردت (مثلاً جعل القسم معطّل افتراضياً)
-      // payload.isActive = true; // حالياً نترك الافتراضي من الباك إند
-
-      if (isEditing && form.id) {
-        const data = await updateAdminCategory(form.id, payload);
-        const updated = data.category;
-
-        setCategories((prev) =>
-          prev
-            .map((cat) =>
-              cat._id === updated._id
-                ? {
-                    ...cat,
-                    ...updated,
-                  }
-                : cat
-            )
-            .sort((a, b) => {
-              if (a.sortOrder !== b.sortOrder) {
-                return a.sortOrder - b.sortOrder;
-              }
-              return (a.name || "").localeCompare(b.name || "", "ar");
-            })
-        );
-
-        setSuccessMessage("تم تحديث القسم بنجاح.");
-      } else {
-        const data = await createAdminCategory(payload);
-        const created = data.category;
-
-        setCategories((prev) =>
-          [...prev, created].sort((a, b) => {
-            if (a.sortOrder !== b.sortOrder) {
-              return a.sortOrder - b.sortOrder;
-            }
-            return (a.name || "").localeCompare(b.name || "", "ar");
-          })
-        );
-
-        setSuccessMessage("تم إنشاء القسم بنجاح.");
-      }
-
-      setTimeout(() => {
-        closeModal();
-      }, 300);
-    } catch (error) {
-      console.error("خطأ في حفظ القسم:", error);
-      const msg =
-        error?.response?.data?.message || "حدث خطأ أثناء حفظ بيانات القسم.";
-      setErrorMessage(msg);
-    } finally {
-      setSaving(false);
-    }
-  }
 
   // ─────────────────────────────
   // حذف قسم
   // ─────────────────────────────
-  async function handleDelete(categoryId) {
-    const ok = window.confirm("هل أنت متأكد من حذف هذا القسم؟");
-    if (!ok) return;
+  function confirmDelete(id) {
+    setCatToDelete(id);
+    setModalOpen(true);
+  }
 
+  async function executeDelete() {
+    if (!catToDelete) return;
     try {
       setSaving(true);
-      setErrorMessage("");
-      setSuccessMessage("");
-
-      await deleteAdminCategory(categoryId);
+      await deleteAdminCategory(catToDelete);
 
       setCategories((prev) =>
         prev
-          .filter((cat) => cat._id !== categoryId)
+          .filter((cat) => cat._id !== catToDelete)
           .map((cat, index) => ({ ...cat, sortOrder: index + 1 }))
       );
 
-      setSuccessMessage("تم حذف القسم بنجاح.");
+      showToast?.("تم حذف القسم بنجاح.", "success");
+      setModalOpen(false);
+      setCatToDelete(null);
     } catch (error) {
       console.error("خطأ في حذف القسم:", error);
       const msg =
         error?.response?.data?.message || "حدث خطأ أثناء حذف القسم.";
-      setErrorMessage(msg);
+      showToast?.(msg, "error");
     } finally {
       setSaving(false);
     }
@@ -367,11 +153,7 @@ export default function AdminCategoriesSection() {
   async function handleToggleStatus(category) {
     try {
       setSaving(true);
-      setErrorMessage("");
-      setSuccessMessage("");
-
       const nextActive = category.isActive === false ? true : false;
-
       const data = await updateAdminCategory(category._id, {
         isActive: nextActive,
       });
@@ -384,17 +166,18 @@ export default function AdminCategoriesSection() {
         )
       );
 
-      setSuccessMessage(
+      showToast?.(
         updated.isActive
           ? "تم تفعيل القسم بنجاح."
-          : "تم تعطيل القسم بنجاح."
+          : "تم تعطيل القسم بنجاح.",
+        "success"
       );
     } catch (error) {
       console.error("خطأ في تغيير حالة القسم:", error);
       const msg =
         error?.response?.data?.message ||
         "حدث خطأ أثناء تغيير حالة القسم.";
-      setErrorMessage(msg);
+      showToast?.(msg, "error");
     } finally {
       setSaving(false);
     }
@@ -415,6 +198,19 @@ export default function AdminCategoriesSection() {
 
   async function handleDrop(e, targetId) {
     e.preventDefault();
+
+    // 🛡️ حماية: منع تغيير ترتيب قسم "الكل" (سواء كان هو المسحوب أو الهدف)
+    const targetCat = categories.find(c => c._id === targetId);
+    const draggedCat = categories.find(c => c._id === draggingId);
+
+    if (
+      (targetCat && (targetCat.isProtected || targetCat.slug === 'all')) ||
+      (draggedCat && (draggedCat.isProtected || draggedCat.slug === 'all'))
+    ) {
+      setDraggingId(null);
+      return;
+    }
+
     if (!draggingId || draggingId === targetId) {
       setDraggingId(null);
       return;
@@ -447,121 +243,84 @@ export default function AdminCategoriesSection() {
           updateAdminCategory(cat._id, { sortOrder: cat.sortOrder })
         )
       );
-      setSuccessMessage("تم تحديث ترتيب الأقسام بنجاح.");
+      showToast?.("تم تحديث ترتيب الأقسام بنجاح.", "success");
     } catch (error) {
       console.error("خطأ في تحديث ترتيب الأقسام:", error);
-      setErrorMessage(
-        "حدث خطأ أثناء حفظ ترتيب الأقسام. سيتم إعادة التحميل لاحقاً."
-      );
+      showToast?.("فشل في حفظ الترتيب الجديد.", "error");
+      loadCategories();
     } finally {
       setOrderSaving(false);
     }
   }
 
-  // ─────────────────────────────
-  // فلترة الأقسام بحسب البحث
-  // ─────────────────────────────
-  const filteredCategories = categories.filter((cat) => {
-    if (!searchTerm.trim()) return true;
-    const term = searchTerm.trim().toLowerCase();
-    return (cat.name || "").toLowerCase().includes(term);
-  });
+
 
   // ─────────────────────────────
   // الواجهة
   // ─────────────────────────────
   return (
-    <section className="admin-section-card">
-      <div className="admin-section-header">
-        <div>
-          <h2 className="admin-section-title">إدارة الأقسام</h2>
-          <p className="admin-section-subtitle">
-            من هنا يمكنك إضافة وتعديل وحذف الأقسام الرئيسية، والتحكم في
-            ترتيبها ومعاينة صورة كل قسم كما ستظهر في الواجهة، وتحديد نسبة
-            عمولة المنصة لكل قسم، وتفعيل أو تعطيل ظهور القسم في المتجر.
+    <section className="adm-section-panel">
+      <header className="adm-section-inner-header">
+        <div className="adm-section-icon">
+          <Layers size={22} />
+        </div>
+        <div className="adm-section-title-group">
+          <h2 className="adm-section-title">إدارة الأقسام</h2>
+          <p className="adm-section-subtitle">
+            إضافة وتعديل الأقسام الرئيسية وتحديد نسب العمولات لكل منها.
           </p>
         </div>
-        <div className="admin-section-actions" style={{ gap: "0.75rem" }}>
-          <div className="admin-search-field">
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.35rem",
-                padding: "0.4rem 0.75rem",
-                borderRadius: "999px",
-                backgroundColor: "#f3f4f6",
-                border: "1px solid #e5e7eb",
-              }}
-            >
-              <Search size={16} style={{ color: "#9ca3af" }} />
-              <input
-                type="text"
-                placeholder="بحث باسم القسم..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                style={{
-                  border: "none",
-                  outline: "none",
-                  background: "transparent",
-                  fontSize: "0.85rem",
-                }}
-              />
-            </div>
-          </div>
-
+        <div className="adm-section-actions">
           <button
             type="button"
-            className="admin-btn primary"
+            className="adm-btn primary"
             onClick={openCreateModal}
           >
             <Plus size={18} />
             <span>إضافة قسم جديد</span>
           </button>
         </div>
+      </header>
+
+      <div className="adm-toolbar">
+        <div className="adm-search-wrapper">
+          <Search size={16} className="adm-search-icon" />
+          <input
+            type="text"
+            className="adm-search-input"
+            placeholder="بحث باسم القسم..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+          />
+        </div>
       </div>
 
-      {(errorMessage || successMessage || orderSaving) && (
-        <div className="admin-section-messages">
-          {errorMessage && (
-            <div className="alert alert-error">{errorMessage}</div>
-          )}
-          {successMessage && (
-            <div className="alert alert-success">{successMessage}</div>
-          )}
-          {orderSaving && !errorMessage && (
-            <div className="alert alert-info">
-              جاري حفظ ترتيب الأقسام الجديد...
-            </div>
-          )}
+      {orderSaving && (
+        <div className="adm-messages">
+          <div className="adm-notice-box">
+            <RefreshCw size={16} className="spin" />
+            <span>جاري حفظ ترتيب الأقسام الجديد...</span>
+          </div>
         </div>
       )}
 
-      <div className="admin-section-body">
+      <div className="adm-section-body">
         {loading ? (
-          <div className="admin-loading">جاري تحميل الأقسام...</div>
+          <div className="adm-loading">
+            <RefreshCw size={24} className="spin" />
+            <span>جاري تحميل الأقسام...</span>
+          </div>
         ) : filteredCategories.length === 0 ? (
-          <div className="admin-empty-state">
+          <div className="adm-empty-msg">
             لا توجد أقسام مطابقة لخيارات البحث الحالية.
-            <button
-              type="button"
-              className="admin-btn link"
-              onClick={openCreateModal}
-            >
-              إضافة قسم جديد
-            </button>
           </div>
         ) : (
-          <div className="admin-table-wrapper">
-            <p className="admin-table-hint">
-              يمكنك سحب الصف باستخدام المقبض{" "}
-              <span className="drag-handle-icon">
-                <GripVertical size={14} />
-              </span>{" "}
-              لتغيير ترتيب الأقسام.
+          <div className="adm-table-wrapper">
+            <p className="adm-table-hint">
+              يمكنك سحب الصف باستخدام المقبض <GripVertical size={14} /> لتغيير الترتيب.
             </p>
 
-            <table className="admin-table categories-table">
+            <table className="adm-table categories-table">
               <thead>
                 <tr>
                   <th style={{ width: "40px" }}></th>
@@ -578,116 +337,116 @@ export default function AdminCategoriesSection() {
                 {filteredCategories.map((cat) => (
                   <tr
                     key={cat._id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, cat._id)}
+                    draggable={!(cat.isProtected || cat.slug === 'all')}
+                    onDragStart={(e) => {
+                      if (cat.isProtected || cat.slug === 'all') {
+                        e.preventDefault();
+                        return;
+                      }
+                      handleDragStart(e, cat._id);
+                    }}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, cat._id)}
                     className={
                       draggingId === cat._id ? "row-dragging" : undefined
                     }
+                    style={{
+                      opacity: draggingId === cat._id ? 0.5 : 1,
+                      backgroundColor: (cat.isProtected || cat.slug === 'all') ? '#f9f9f9' : undefined
+                    }}
                   >
                     <td className="drag-handle-cell">
-                      <span className="drag-handle">
-                        <GripVertical size={16} />
-                      </span>
+                      {!(cat.isProtected || cat.slug === 'all') ? (
+                        <span className="adm-drag-handle">
+                          <GripVertical size={16} />
+                        </span>
+                      ) : (
+                        <span className="adm-drag-handle disabled" title="قسم ثابت">
+                          <Lock size={16} />
+                        </span>
+                      )}
                     </td>
                     <td>
-                      <div className="category-image-cell">
-                        {cat.image ? (
-                          <div
-                            style={{
-                              width: 56,
-                              height: 56,
-                              borderRadius: 16,
-                              overflow: "hidden",
-                              position: "relative",
-                              backgroundColor: "#f9fafb",
-                              border: "1px solid #e5e7eb",
-                            }}
-                          >
-                            <img
-                              src={resolveCategoryImage(cat.image)}
-                              alt={cat.name}
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                                objectPosition: "center",
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div className="category-image-placeholder">
-                            <ImageIcon size={18} />
-                          </div>
-                        )}
+                      <div className="adm-table-main">
+                        <div className="global-product-frame is-thumbnail" style={{ width: '40px', height: '40px', borderRadius: 'var(--rad-sm)' }}>
+                          {cat.image ? (
+                            <img src={resolveCategoryImage(cat.image)} alt={cat.name} />
+                          ) : (
+                            <div className="adm-placeholder-box">
+                              <ImageIcon size={18} />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td>{cat.name}</td>
                     <td>{cat.sortOrder}</td>
                     <td>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.25rem",
-                          justifyContent: "center",
-                        }}
-                      >
+                      <div className="adm-status-wrapper">
                         {cat.isActive !== false ? (
-                          <>
-                            <ToggleRight size={18} color="#16a34a" />
-                            <span className="status-label">مفعل</span>
-                          </>
+                          <div className="adm-status-chip active">
+                            <span className="adm-status-dot"></span>
+                            <span>مفعل</span>
+                          </div>
                         ) : (
-                          <>
-                            <ToggleLeft size={18} color="#9ca3af" />
-                            <span className="status-label muted">
-                              غير مفعل
-                            </span>
-                          </>
+                          <div className="adm-status-chip inactive">
+                            <span className="adm-status-dot"></span>
+                            <span>معطل</span>
+                          </div>
                         )}
                       </div>
                     </td>
                     <td>
-                      <span className="badge-soft">
+                      <span className="adm-badge-soft">
                         {typeof cat.commissionRate === "number"
                           ? `${Math.round(cat.commissionRate * 100)}٪`
                           : "0٪"}
                       </span>
                     </td>
                     <td>
-                      <span className="badge-soft">
-                        {typeof cat.productCount === "number"
-                          ? cat.productCount
-                          : 0}
-                      </span>
+                      <strong>{cat.productCount ?? 0}</strong>
                     </td>
                     <td>
-                      <div className="admin-table-actions">
+                      <div className="adm-table-actions">
                         <button
                           type="button"
-                          className="admin-icon-btn"
+                          className="adm-icon-btn primary"
                           onClick={() => openEditModal(cat)}
+                          title="تعديل"
                         >
                           <Edit3 size={16} />
-                          <span>تعديل</span>
                         </button>
-                        <button
-                          type="button"
-                          className="admin-icon-btn"
-                          onClick={() => handleToggleStatus(cat)}
-                        >
-                          {cat.isActive !== false ? "تعطيل" : "تفعيل"}
-                        </button>
-                        <button
-                          type="button"
-                          className="admin-icon-btn danger"
-                          onClick={() => handleDelete(cat._id)}
-                        >
-                          <Trash2 size={16} />
-                          <span>حذف</span>
-                        </button>
+
+                        {!(cat.isProtected || cat.slug === 'all') && (
+                          <button
+                            type="button"
+                            className={`adm-icon-btn ${cat.isActive !== false ? 'muted' : 'success'}`}
+                            onClick={() => handleToggleStatus(cat)}
+                            title={cat.isActive !== false ? "تعطيل" : "تفعيل"}
+                          >
+                            {cat.isActive !== false ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                          </button>
+                        )}
+
+                        {!(cat.isProtected || cat.slug === 'all') ? (
+                          <button
+                            type="button"
+                            className="adm-icon-btn danger"
+                            onClick={() => confirmDelete(cat._id)}
+                            title="حذف"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="adm-icon-btn disabled"
+                            disabled
+                            title="قسم ثابت"
+                          >
+                            <Lock size={16} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -698,288 +457,18 @@ export default function AdminCategoriesSection() {
         )}
       </div>
 
-      {/* نافذة إضافة/تعديل القسم */}
-      {isModalOpen && (
-        <div className="admin-modal-backdrop">
-          <div className="admin-modal">
-            <div className="admin-modal-header">
-              <h3 className="admin-modal-title">
-                {isEditing ? "تعديل القسم" : "إضافة قسم جديد"}
-              </h3>
-              <button
-                type="button"
-                className="admin-modal-close"
-                onClick={closeModal}
-                disabled={saving}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form className="admin-modal-body" onSubmit={handleSubmit}>
-              <div className="admin-form-group">
-                <label className="admin-label">اسم القسم *</label>
-                <input
-                  type="text"
-                  name="name"
-                  className="admin-input"
-                  placeholder="مثال: الإلكترونيات، الأجهزة المنزلية..."
-                  value={form.name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="admin-form-row">
-                <div className="admin-form-group">
-                  <label className="admin-label">ترتيب القسم</label>
-                  <input
-                    type="text"
-                    name="sortOrder"
-                    className="admin-input"
-                    placeholder="مثال: 1، 2، 3..."
-                    value={form.sortOrder}
-                    onChange={handleInputChange}
-                  />
-                  <small className="admin-help-text">
-                    كلما كان الرقم أصغر ظهر القسم في مقدمة القائمة.
-                  </small>
-                </div>
-
-                <div className="admin-form-group">
-                  <label className="admin-label">صورة القسم</label>
-                  <div className="image-upload-field">
-                    <label className="image-upload-btn">
-                      <ImageIcon size={16} />
-                      <span>اختر صورة</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        hidden
-                      />
-                    </label>
-                    <small className="admin-help-text">
-                      يُفضل استخدام صورة مربعة أو قريبة من المربع.
-                    </small>
-                  </div>
-                </div>
-              </div>
-
-              <div className="admin-form-group">
-                <label className="admin-label">
-                  نسبة عمولة المنصة لهذا القسم (%)
-                </label>
-                <input
-                  type="number"
-                  name="commissionRate"
-                  className="admin-input"
-                  placeholder="مثال: 10 تعني 10٪"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={form.commissionRate}
-                  onChange={handleInputChange}
-                />
-                <small className="admin-help-text">
-                  اتركها 0 إن لم تكن هناك عمولة خاصة لهذا القسم.
-                </small>
-              </div>
-
-              {/* معاينة الصورة داخل إطار مربع مع شبكة (3×3) + تحكم في الموضع */}
-              <div className="admin-form-group">
-                <label className="admin-label">
-                  معاينة الصورة كما ستظهر في الواجهة
-                </label>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.75rem",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 220,
-                      height: 220,
-                      borderRadius: 24,
-                      overflow: "hidden",
-                      position: "relative",
-                      border: "1px solid #e5e7eb",
-                      background: "#f9fafb",
-                      alignSelf: "flex-start",
-                    }}
-                  >
-                    {form.previewUrl ? (
-                      <>
-                        <img
-                          src={form.previewUrl}
-                          alt="معاينة القسم"
-                          style={{
-                            position: "absolute",
-                            inset: 0,
-                            margin: "auto",
-                            width: "120%",
-                            height: "120%",
-                            objectFit: "cover",
-                            transform: `translate(${form.cropOffsetX}%, ${form.cropOffsetY}%) scale(${form.cropZoom})`,
-                            transition: "transform 0.12s ease-out",
-                          }}
-                        />
-                        {/* شبكة 3×3 */}
-                        <div
-                          style={{
-                            position: "absolute",
-                            inset: 0,
-                            backgroundImage:
-                              "linear-gradient(to right, rgba(255,255,255,0.18) 1px, transparent 1px)," +
-                              "linear-gradient(to bottom, rgba(255,255,255,0.18) 1px, transparent 1px)",
-                            backgroundSize: "33.33% 100%, 100% 33.33%",
-                            pointerEvents: "none",
-                            boxShadow:
-                              "inset 0 0 0 1px rgba(15,23,42,0.25), inset 0 0 40px rgba(15,23,42,0.25)",
-                          }}
-                        />
-                      </>
-                    ) : (
-                      <div
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "0.35rem",
-                          color: "#9ca3af",
-                          fontSize: "0.85rem",
-                        }}
-                      >
-                        <ImageIcon size={22} />
-                        <span>لم يتم اختيار صورة بعد</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {form.previewUrl && (
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                        gap: "0.75rem",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div>
-                        <label
-                          className="admin-label"
-                          style={{ fontSize: "0.8rem" }}
-                        >
-                          التكبير
-                        </label>
-                        <input
-                          type="range"
-                          min={1}
-                          max={2}
-                          step={0.01}
-                          value={form.cropZoom}
-                          onChange={(e) =>
-                            handleCropChange("cropZoom", Number(e.target.value))
-                          }
-                          style={{ width: "100%" }}
-                        />
-                      </div>
-
-                      <div>
-                        <label
-                          className="admin-label"
-                          style={{ fontSize: "0.8rem" }}
-                        >
-                          تحريك أفقيًا
-                        </label>
-                        <input
-                          type="range"
-                          min={-50}
-                          max={50}
-                          step={1}
-                          value={form.cropOffsetX}
-                          onChange={(e) =>
-                            handleCropChange(
-                              "cropOffsetX",
-                              Number(e.target.value)
-                            )
-                          }
-                          style={{ width: "100%" }}
-                        />
-                      </div>
-
-                      <div>
-                        <label
-                          className="admin-label"
-                          style={{ fontSize: "0.8rem" }}
-                        >
-                          تحريك عموديًا
-                        </label>
-                        <input
-                          type="range"
-                          min={-50}
-                          max={50}
-                          step={1}
-                          value={form.cropOffsetY}
-                          onChange={(e) =>
-                            handleCropChange(
-                              "cropOffsetY",
-                              Number(e.target.value)
-                            )
-                          }
-                          style={{ width: "100%" }}
-                        />
-                      </div>
-
-                      <div>
-                        <button
-                          type="button"
-                          className="admin-btn ghost"
-                          onClick={resetCrop}
-                          style={{ marginTop: "0.4rem" }}
-                        >
-                          إعادة ضبط موضع الصورة
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {errorMessage && (
-                <div className="alert alert-error">{errorMessage}</div>
-              )}
-
-              <div className="admin-modal-footer">
-                <button
-                  type="button"
-                  className="admin-btn ghost"
-                  onClick={closeModal}
-                  disabled={saving}
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  className="admin-btn primary"
-                  disabled={saving}
-                >
-                  {saving
-                    ? "جاري الحفظ..."
-                    : isEditing
-                    ? "حفظ التعديلات"
-                    : "حفظ القسم"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AdminModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onConfirm={executeDelete}
+        title="حذف القسم"
+        confirmText="تأكيد الحذف"
+        cancelText="إلغاء"
+        type="danger"
+        isConfirming={saving}
+      >
+        <p>هل أنت متأكد من حذف هذا القسم؟ سيتم إزالة القسم نهائياً من المتجر وكافة المنتجات المرتبطة به قد تتأثر.</p>
+      </AdminModal>
     </section>
   );
 }

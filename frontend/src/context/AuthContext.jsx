@@ -3,23 +3,46 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import {
   loginRequest,
+  registerRequest,
   getCurrentUser,
   logoutRequest,
 } from "../services/authService";
+// import { preloadForRole } removed due to circular dependency.
+const AuthContext = createContext({
+  login: async () => { throw new Error("AuthContext provider is missing!"); },
+  logout: async () => {},
+  register: async () => {},
+  isLoggedIn: false,
+  isReady: false,
+});
 
-const AuthContext = createContext(null);
-
-// تطبيع الدور القادم من الخادم إلى دور الواجهة
-// shipper (في الباك إند) → shipping (في الواجهة)
 function normalizeRole(rawRole) {
   if (!rawRole) return null;
-  if (rawRole === "shipper") return "shipping";
-  return rawRole;
+  const r = rawRole.toString().toLowerCase().trim();
+
+  if (r.includes("admin")) return "admin";
+  if (r.includes("owner")) return "admin";
+  if (r.includes("buyer")) return "buyer";
+  if (r.includes("customer")) return "buyer";
+  if (r.includes("seller")) return "seller";
+  if (r.includes("vendor")) return "seller";
+  if (r.includes("store")) return "seller";
+  if (
+    r.includes("ship") ||
+    r.includes("delivery") ||
+    r.includes("courier") ||
+    r.includes("logistics") ||
+    r.includes("driver")
+  ) {
+    return "shipper";
+  }
+  return r;
 }
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null); // buyer | seller | shipping | admin | ...
+  const [token, setToken] = useState(null); // ✅ إضافة token state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
@@ -27,11 +50,13 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const token = localStorage.getItem("talabia_token");
-        if (!token) {
+        const storedToken = localStorage.getItem("talabia_token");
+        if (!storedToken) {
           setIsReady(true);
           return;
         }
+
+        setToken(storedToken); // ✅ حفظ token في state
 
         const data = await getCurrentUser();
         const currentUser = data?.user || data || null;
@@ -45,15 +70,18 @@ export function AuthProvider({ children }) {
             "talabia-auth",
             JSON.stringify({ user: currentUser, role: userRole })
           );
+          // Pre-fetch removed to avoid circular dependency
         } else {
           localStorage.removeItem("talabia_token");
           localStorage.removeItem("talabia-auth");
+          setToken(null);
         }
       } catch {
         localStorage.removeItem("talabia_token");
         localStorage.removeItem("talabia-auth");
         setUser(null);
         setRole(null);
+        setToken(null);
         setIsLoggedIn(false);
       } finally {
         setIsReady(true);
@@ -81,15 +109,82 @@ export function AuthProvider({ children }) {
   }, [isLoggedIn, user, role, isReady]);
 
   // تسجيل الدخول الفعلي عبر الـ API
-  const login = async ({ email, password }) => {
+  const handleLogin = async ({ email, password }) => {
     const data = await loginRequest({ email, password });
 
-    const token = data?.token || data?.accessToken || null;
+    const newToken = data?.token || data?.accessToken || null;
     const currentUser = data?.user || data || null;
     const userRole = normalizeRole(currentUser?.role || null);
 
-    if (token) {
-      localStorage.setItem("talabia_token", token);
+    if (newToken) {
+      localStorage.setItem("talabia_token", newToken);
+      setToken(newToken); // ✅ حفظ token في state
+    }
+
+    if (currentUser && userRole) {
+      setUser(currentUser);
+      setRole(userRole);
+      setIsLoggedIn(true);
+
+      localStorage.setItem(
+        "talabia-auth",
+        JSON.stringify({ user: currentUser, role: userRole })
+      );
+
+      // Pre-fetch removed to avoid circular dependency
+    }
+
+    return currentUser;
+  };
+
+  // تسجيل الخروج الفعلي
+  const logout = async () => {
+    try {
+      await logoutRequest();
+    } catch {
+      // حتى لو فشل الـ API، نكمل تنظيف الجلسة محليًا
+    } finally {
+      setUser(null);
+      setRole(null);
+      setToken(null); // ✅ مسح token
+      setIsLoggedIn(false);
+      localStorage.removeItem("talabia_token");
+      localStorage.removeItem("talabia-auth");
+    }
+  };
+
+  // ✅ تحديث بيانات المستخدم من الـ API (لمزامنة التغييرات من الملف الشخصي)
+  const refreshUser = async () => {
+    try {
+      const data = await getCurrentUser();
+      const currentUser = data?.user || data || null;
+      if (currentUser) {
+        setUser(currentUser);
+        // تحديث localStorage أيضاً لضمان الاستمرارية
+        const storedRole = role || normalizeRole(currentUser.role);
+        localStorage.setItem(
+          "talabia-auth",
+          JSON.stringify({ user: currentUser, role: storedRole })
+        );
+      }
+      return currentUser;
+    } catch (error) {
+      console.error("AuthContext: refreshUser failed", error);
+      return null;
+    }
+  };
+
+  // تسجيل مستخدم جديد
+  const register = async (payload) => {
+    const data = await registerRequest(payload);
+
+    const newToken = data?.token || data?.accessToken || null;
+    const currentUser = data?.user || data || null;
+    const userRole = normalizeRole(currentUser?.role || null);
+
+    if (newToken) {
+      localStorage.setItem("talabia_token", newToken);
+      setToken(newToken);
     }
 
     if (currentUser && userRole) {
@@ -106,28 +201,16 @@ export function AuthProvider({ children }) {
     return currentUser;
   };
 
-  // تسجيل الخروج الفعلي
-  const logout = async () => {
-    try {
-      await logoutRequest();
-    } catch {
-      // حتى لو فشل الـ API، نكمل تنظيف الجلسة محليًا
-    } finally {
-      setUser(null);
-      setRole(null);
-      setIsLoggedIn(false);
-      localStorage.removeItem("talabia_token");
-      localStorage.removeItem("talabia-auth");
-    }
-  };
-
   const value = {
     user,
     role,
+    token, // ✅ تصدير token
     isLoggedIn,
     isReady,
-    login,
+    login: handleLogin,
+    register,
     logout,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

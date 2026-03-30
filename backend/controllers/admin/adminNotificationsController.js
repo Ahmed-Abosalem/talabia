@@ -9,12 +9,32 @@ import User from '../../models/User.js';
 
 // GET /api/admin/notifications
 export const getAdminNotifications = asyncHandler(async (req, res) => {
-  // نعرض فقط سجلات الحملات (التي تملك audience)
-  const notifications = await Notification.find({
-    audience: { $exists: true, $ne: null },
-  }).sort({ createdAt: -1 });
+  // نعرض فقط سجلات الحملات (التي تملك audience) مع pagination إنتاجي
+  const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
+  const limitRaw = Number.parseInt(req.query.limit, 10) || 20;
+  const limit = Math.min(Math.max(limitRaw, 1), 100);
+  const skip = (page - 1) * limit;
 
-  res.json({ notifications });
+  const filter = { audience: { $exists: true, $ne: null } };
+
+  const [notifications, total] = await Promise.all([
+    Notification.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Notification.countDocuments(filter),
+  ]);
+
+  const totalPages = Math.max(Math.ceil(total / limit), 1);
+
+  res.json({
+    notifications,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    },
+  });
 });
 
 // POST /api/admin/notifications
@@ -82,7 +102,7 @@ export const createAdminNotification = asyncHandler(async (req, res) => {
   }
 
   // 3️⃣ في غير ذلك → حملة عامة كما كان المنطق سابقًا
-  const allowedAudiences = ['all', 'buyers', 'sellers', 'shipping'];
+  const allowedAudiences = ['all', 'buyers', 'sellers', 'shipper'];
   const normalizedAudience = allowedAudiences.includes(audience)
     ? audience
     : 'all';
@@ -102,7 +122,7 @@ export const createAdminNotification = asyncHandler(async (req, res) => {
     userFilter.role = 'buyer';
   } else if (normalizedAudience === 'sellers') {
     userFilter.role = 'seller';
-  } else if (normalizedAudience === 'shipping') {
+  } else if (normalizedAudience === 'shipper') {
     userFilter.role = 'shipper';
   }
 

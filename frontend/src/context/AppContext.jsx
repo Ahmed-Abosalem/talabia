@@ -7,6 +7,7 @@ import {
   useEffect,
 } from "react";
 import { listNotifications } from "@/services/notificationService";
+import { trackCartAddition } from "@/services/productService";
 
 const AppContext = createContext(null);
 
@@ -127,6 +128,10 @@ export function AppProvider({ children }) {
         // إزالة من السلة
         return prev.filter((p) => p.id !== product.id);
       }
+
+      // ✅ تتبع الإضافة للسلة في الباك إند
+      trackCartAddition(product.id || product._id).catch(() => { });
+
       const initialQuantity =
         typeof product.quantity === "number" && product.quantity > 0
           ? product.quantity
@@ -139,29 +144,45 @@ export function AppProvider({ children }) {
     setCartItems((prev) => {
       const exists = prev.find((p) => p.id === product.id);
       if (exists) return prev;
+
+      // ✅ تتبع الإضافة للسلة في الباك إند
+      trackCartAddition(product.id || product._id).catch(() => { });
+
+      const stock = typeof product.stock === "number" ? product.stock : 0;
       const initialQuantity =
         typeof product.quantity === "number" && product.quantity > 0
-          ? product.quantity
-          : 1;
+          ? Math.min(product.quantity, stock)
+          : Math.min(1, stock);
+
+      if (stock <= 0) {
+        showToast("عذراً، هذا المنتج نفذ من المخزون", "error");
+        return prev;
+      }
+
       return [...prev, { ...product, quantity: initialQuantity }];
     });
-  }, []);
+  }, [showToast]);
 
   const updateCartItemQuantity = useCallback((productId, quantity) => {
     setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === productId
-          ? {
-              ...item,
-              quantity:
-                typeof quantity === "number" && quantity > 0
-                  ? quantity
-                  : 1,
-            }
-          : item
-      )
+      prev.map((item) => {
+        if (item.id !== productId) return item;
+
+        const stock = typeof item.stock === "number" ? item.stock : 0;
+        let newQuantity = typeof quantity === "number" && quantity > 0 ? quantity : 1;
+
+        if (newQuantity > stock) {
+          showToast(`الكمية المتاحة هي فقط (${stock})`, "error");
+          newQuantity = stock;
+        }
+
+        return {
+          ...item,
+          quantity: newQuantity,
+        };
+      })
     );
-  }, []);
+  }, [showToast]);
 
   // =========================================================
   // 🤍 منطق المفضلة (كما هو)

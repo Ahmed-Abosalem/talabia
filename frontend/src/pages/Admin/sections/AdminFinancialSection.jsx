@@ -1,763 +1,507 @@
-// src/pages/Admin/sections/AdminFinancialSection.jsx
-// واجهة الإدارة المالية في لوحة تحكم طلبية (Talabia)
+// ──────────────────────────────────────────────────────────────
+// 📁 frontend/src/pages/Admin/sections/AdminFinancialSection.jsx
+// الإدارة المالية — الصفحة الرئيسية (إعادة بناء كاملة)
+// Golden Standard: AdminUserDetailsPage المرجعية التصميمية
+// ──────────────────────────────────────────────────────────────
 
 import { useEffect, useMemo, useState } from "react";
-import { CreditCard, Filter, Calendar, Search, RefreshCw, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  CreditCard,
+  Search,
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  ArrowLeftRight,
+  Filter,
+} from "lucide-react";
 import {
   getAdminFinancialAccounts,
-  getAdminTransactions,
-  createAdminFinancialSettlement,
+  getAdminFinancialSummary,
 } from "@/services/adminService";
+import { formatCurrency } from "@/utils/formatters";
 import { useApp } from "@/context/AppContext";
+
+import {
+  getRoleLabel,
+  computeDateRange,
+  ROLE_CONFIG,
+  DATE_PRESET_LABELS,
+  PAGE_SIZE,
+} from "../utils/financialHelpers";
 
 import "./AdminFinancialSection.css";
 
-// تنسيق مبسط للعملة
-function formatCurrency(value) {
-  if (value == null) return "-";
-  const num = Number(value);
-  if (Number.isNaN(num)) return "-";
-  return `${num.toFixed(2)} ر.ي`;
-}
-
-// تنسيق التاريخ
-function formatDate(value) {
-  if (!value) return "-";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "-";
-  return d.toLocaleString("ar-SA");
-}
-
-// تسمية الدور بالعربي
-function getRoleLabel(role) {
-  switch (role) {
-    case "SELLER":
-      return "بائع";
-    case "SHIPPING":
-      return "شركة شحن";
-    case "PLATFORM":
-      return "المنصة";
-    case "SALES":
-      return "إجمالي المبيعات";
-    default:
-      return role || "-";
-  }
-}
-
-// تسمية نوع العملية بالعربي
-function getTypeLabel(type) {
-  switch (type) {
-    case "ORDER_EARNING_SELLER":
-      return "مستحقات البائع من الطلبات";
-    case "ORDER_EARNING_SHIPPING":
-      return "مستحقات شركة الشحن";
-    case "ORDER_EARNING_PLATFORM":
-      return "عمولة المنصة";
-    case "PAYOUT":
-      return "تحويل / إرسال";
-    case "REFUND":
-      return "استرجاع";
-    case "SUPPLY":
-      return "توريد";
-    default:
-      return type || "-";
-  }
-}
-
-// تحويل فلتر التاريخ إلى from/to
-function computeDateRange(preset, customFrom, customTo) {
-  const now = new Date();
-
-  if (preset === "custom" && customFrom && customTo) {
-    return {
-      from: new Date(customFrom).toISOString(),
-      to: new Date(customTo).toISOString(),
-    };
-  }
-
-  let from;
-  const to = now.toISOString();
-
-  if (preset === "today") {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    from = d.toISOString();
-  } else if (preset === "week") {
-    const d = new Date();
-    d.setDate(d.getDate() - 7);
-    from = d.toISOString();
-  } else if (preset === "year") {
-    const d = new Date();
-    d.setFullYear(d.getFullYear() - 1);
-    from = d.toISOString();
-  } else {
-    // الافتراضي: الشهر الحالي (آخر 30 يوم تقريباً)
-    const d = new Date();
-    d.setMonth(d.getMonth() - 1);
-    from = d.toISOString();
-  }
-
-  return { from, to };
-}
-
+// ──────────────────────────────────────────────────────
+// Component
+// ──────────────────────────────────────────────────────
 export default function AdminFinancialSection() {
+  const navigate = useNavigate();
   const { showToast } = useApp() || {};
 
-  // بيانات الجدول الرئيسي (الحسابات)
+  // البيانات
   const [accounts, setAccounts] = useState([]);
+  const [summary, setSummary] = useState(null);
 
-  // الحركات المالية (للسجل)
-  const [transactions, setTransactions] = useState([]);
-
-  // حالات التحميل / الأخطاء
+  // حالات التحميل
   const [loading, setLoading] = useState(true);
-  const [loadingAccounts, setLoadingAccounts] = useState(false);
-  const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // فلاتر الشريط العلوي
+  // الفلاتر
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
-  const [datePreset, setDatePreset] = useState("month"); // today / week / month / year / custom
+  const [datePreset, setDatePreset] = useState("all");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
-  const [paymentFilter, setPaymentFilter] = useState("ALL"); // ALL / COD / ONLINE / OTHER
+  const [paymentFilter, setPaymentFilter] = useState("ALL");
 
-  // مودال التسوية
-  const [isSettlementOpen, setIsSettlementOpen] = useState(false);
+  // ترقيم الصفحات
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // مودال السجل
-  const [isLogOpen, setIsLogOpen] = useState(false);
-  const [accountTransactions, setAccountTransactions] = useState([]);
-
-  const [selectedAccount, setSelectedAccount] = useState(null);
-  const [settlementForm, setSettlementForm] = useState({
-    operationType: "PAYOUT", // PAYOUT / REFUND / SUPPLY
-    amount: "",
-    paymentMethod: "OTHER", // COD / ONLINE / OTHER
-    note: "",
-  });
-  const [savingSettlement, setSavingSettlement] = useState(false);
-
-  function getCurrentRange() {
-    return computeDateRange(datePreset, customFrom, customTo);
-  }
-
-  // تحميل البيانات عند تغيير الفلاتر
+  // ─── جلب البيانات ────────────────────────────────────
   useEffect(() => {
-    loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const range = computeDateRange(datePreset, customFrom, customTo);
+    if (datePreset === "custom" && (!customFrom || !customTo)) return;
+
+    let cancelled = false;
+
+    async function fetchData() {
+      try {
+        setLoading(true);
+        setErrorMessage("");
+
+        // باراميترات الحسابات
+        const accountsParams = { ...range };
+        if (roleFilter && roleFilter !== "ALL") {
+          accountsParams.role = roleFilter;
+        }
+        if (paymentFilter && paymentFilter !== "ALL") {
+          accountsParams.paymentMethod = paymentFilter;
+        }
+
+        // باراميترات الملخص
+        const summaryParams = { ...range };
+        if (paymentFilter && paymentFilter !== "ALL") {
+          summaryParams.paymentMethod = paymentFilter;
+        }
+        if (roleFilter && roleFilter !== "ALL") {
+          summaryParams.role = roleFilter;
+        }
+
+        const [accountsData, summaryData] = await Promise.all([
+          getAdminFinancialAccounts(accountsParams),
+          getAdminFinancialSummary(summaryParams),
+        ]);
+
+        if (cancelled) return;
+
+        const accList = accountsData?.accounts || accountsData || [];
+        setAccounts(Array.isArray(accList) ? accList : []);
+        setSummary(summaryData || null);
+      } catch (err) {
+        if (cancelled) return;
+        const msg =
+          err?.response?.data?.message ||
+          err?.message ||
+          "تعذر تحميل البيانات المالية.";
+        setErrorMessage(msg);
+        showToast?.(msg, "error");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchData();
+    return () => { cancelled = true; };
   }, [roleFilter, datePreset, customFrom, customTo, paymentFilter]);
 
-  async function loadAll() {
+  // ─── إعادة التحميل اليدوي ──────────────────────────
+  async function reloadData() {
+    const range = computeDateRange(datePreset, customFrom, customTo);
     try {
       setLoading(true);
       setErrorMessage("");
-      const range = getCurrentRange();
-      await Promise.all([loadAccounts(range), loadTransactions(range)]);
-    } catch {
-      // سيتم التعامل مع الخطأ داخل كل دالة
+
+      const accountsParams = { ...range };
+      if (roleFilter && roleFilter !== "ALL") accountsParams.role = roleFilter;
+      if (paymentFilter && paymentFilter !== "ALL") accountsParams.paymentMethod = paymentFilter;
+
+      const summaryParams = { ...range };
+      if (paymentFilter && paymentFilter !== "ALL") summaryParams.paymentMethod = paymentFilter;
+      if (roleFilter && roleFilter !== "ALL") summaryParams.role = roleFilter;
+
+      const [accountsData, summaryData] = await Promise.all([
+        getAdminFinancialAccounts(accountsParams),
+        getAdminFinancialSummary(summaryParams),
+      ]);
+
+      const accList = accountsData?.accounts || accountsData || [];
+      setAccounts(Array.isArray(accList) ? accList : []);
+      setSummary(summaryData || null);
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "تعذر تحميل البيانات المالية.";
+      setErrorMessage(msg);
+      showToast?.(msg, "error");
     } finally {
       setLoading(false);
     }
   }
 
-  async function loadAccounts(range) {
-    try {
-      setLoadingAccounts(true);
-      const params = { ...range };
-      if (roleFilter && roleFilter !== "ALL") {
-        params.role = roleFilter;
-      }
-      const data = await getAdminFinancialAccounts(params);
-      const list = data?.accounts || data || [];
-      setAccounts(Array.isArray(list) ? list : []);
-    } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        "تعذر تحميل الحسابات المالية.";
-      setErrorMessage(msg);
-      showToast?.(msg, "error");
-    } finally {
-      setLoadingAccounts(false);
-    }
-  }
-
-  async function loadTransactions(range) {
-    try {
-      setLoadingTransactions(true);
-      const params = { ...range, limit: 500 };
-
-      // لا نرسل role=SALES لأن SALES حساب تجميعي ولا توجد معاملات بدور SALES في قاعدة البيانات
-      if (roleFilter && roleFilter !== "ALL" && roleFilter !== "SALES") {
-        params.role = roleFilter;
-      }
-
-      if (paymentFilter && paymentFilter !== "ALL") {
-        params.paymentMethod = paymentFilter;
-      }
-      const data = await getAdminTransactions(params);
-      const list = data?.transactions || data || [];
-      setTransactions(Array.isArray(list) ? list : []);
-    } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        "تعذر تحميل سجل الحركات المالية.";
-      setErrorMessage(msg);
-      showToast?.(msg, "error");
-    } finally {
-      setLoadingTransactions(false);
-    }
-  }
-
-  // تطبيق فلتر البحث على جدول الحسابات
+  // ─── فلتر البحث + ترقيم الصفحات ──────────────────
   const filteredAccounts = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return accounts;
-
     return accounts.filter((acc) => {
       const name = (acc.name || "").toLowerCase();
       const email = (acc.email || "").toLowerCase();
       const phone = (acc.phone || "").toLowerCase();
       const roleLabel = getRoleLabel(acc.role || "").toLowerCase();
-
-      return (
-        name.includes(q) ||
-        email.includes(q) ||
-        phone.includes(q) ||
-        roleLabel.includes(q)
-      );
+      return name.includes(q) || email.includes(q) || phone.includes(q) || roleLabel.includes(q);
     });
   }, [accounts, search]);
 
-  function openSettlementModal(account) {
-    setSelectedAccount(account);
-    setSettlementForm({
-      operationType: "PAYOUT",
-      amount: "",
-      paymentMethod: "OTHER",
-      note: "",
-    });
-    setIsSettlementOpen(true);
-    setIsLogOpen(false);
-  }
+  // إعادة ضبط الصفحة عند تغيير الفلاتر
+  useEffect(() => { setCurrentPage(1); }, [search, roleFilter, paymentFilter, datePreset]);
 
-  function closeSettlementModal() {
-    if (savingSettlement) return;
-    setIsSettlementOpen(false);
-    setSelectedAccount(null);
-  }
+  const totalPages = Math.max(1, Math.ceil(filteredAccounts.length / PAGE_SIZE));
+  const pagedAccounts = filteredAccounts.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
-  async function handleSettlementSubmit(e) {
-    e.preventDefault();
-    if (!selectedAccount) return;
-
-    const numericAmount = Number(settlementForm.amount);
-    if (!numericAmount || numericAmount <= 0) {
-      showToast?.("الرجاء إدخال مبلغ صالح للتسوية.", "error");
-      return;
+  // ─── الملخص المحسوب ───────────────────────────────
+  const computedSummary = useMemo(() => {
+    // نستخدم بيانات الملخص من الباك إند إن توافرت
+    if (summary) {
+      const revenues =
+        (summary.totalSellerEarnings || 0) +
+        (summary.totalShippingEarnings || 0) +
+        (summary.totalPlatformCommission || 0);
+      const expenses =
+        (summary.totalSellerPayouts || 0) +
+        (summary.totalShippingPayouts || 0);
+      return {
+        revenues,
+        expenses,
+        net: revenues - expenses,
+        transactions: summary.totalTransactions || 0,
+      };
     }
 
-    const payload = {
-      role: selectedAccount.role,
-      partyId: selectedAccount.partyId,
-      operationType: settlementForm.operationType,
-      amount: numericAmount,
-      paymentMethod: settlementForm.paymentMethod || "OTHER",
-      note: settlementForm.note || "",
-    };
-
-    try {
-      setSavingSettlement(true);
-      await createAdminFinancialSettlement(payload);
-      showToast?.("تم تسجيل عملية التسوية بنجاح.", "success");
-      closeSettlementModal();
-
-      const range = getCurrentRange();
-      await Promise.all([loadAccounts(range), loadTransactions(range)]);
-    } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        "تعذر تنفيذ عملية التسوية.";
-      showToast?.(msg, "error");
-    } finally {
-      setSavingSettlement(false);
-    }
-  }
-
-  // فتح مودال السجل لحساب معيّن
-  function openLogModal(account) {
-    setSelectedAccount(account);
-
-    const accRole = account.role;
-    const accId = String(account.partyId || "");
-
-    const listForAccount = transactions.filter((t) => {
-      if (!t) return false;
-
-      // 🟦 سجل البائع: كل حركات هذا المتجر
-      if (accRole === "SELLER") {
-        if (t.role !== "SELLER") return false;
-        const storeId = t.store?._id || t.store;
-        return storeId && String(storeId) === accId;
+    // fallback: حساب من الحسابات
+    let revenues = 0;
+    let expenses = 0;
+    accounts.forEach((acc) => {
+      if (acc.role === "SHIPPING" || acc.role === "SALES") {
+        revenues += acc.totalDue || 0;
       }
-
-      // 🟧 سجل شركة الشحن: كل حركات هذه الشركة
-      if (accRole === "SHIPPING") {
-        if (t.role !== "SHIPPING") return false;
-        const companyId = t.shippingCompany?._id || t.shippingCompany;
-        return companyId && String(companyId) === accId;
-      }
-
-      // 🟨 سجل المنصّة: كل حركات PLATFORM
-      if (accRole === "PLATFORM") {
-        return t.role === "PLATFORM";
-      }
-
-      // 🟥 سجل إجمالي المبيعات – COD (SALES)
-      // نعرض فيه كل عمليات التوريد SUPPLY من شركات الشحن بالدفع عند الاستلام COD
-      // حتى ترى كل توريدات شركات الشحن في مكان واحد، بالإضافة إلى ظهورها في سجل كل شركة.
-      if (accRole === "SALES") {
-        return (
-          t.role === "SHIPPING" &&
-          t.type === "SUPPLY" &&
-          t.paymentMethod === "COD"
-        );
-      }
-
-      return false;
+      revenues += acc.totalSupply || 0;
+      expenses += acc.totalSent || 0;
     });
+    return { revenues, expenses, net: revenues - expenses, transactions: 0 };
+  }, [summary, accounts]);
 
-    setAccountTransactions(listForAccount);
-    setIsLogOpen(true);
-    setIsSettlementOpen(false);
+  // ─── التنقل ──────────────────────────────────────
+  function openLogPage(account) {
+    navigate("/admin/financial/log", { 
+      state: { 
+        account,
+        filters: {
+          datePreset,
+          customFrom,
+          customTo,
+          paymentFilter
+        }
+      } 
+    });
+  }
+  function openPayoutPage(account) {
+    navigate("/admin/financial/payout", { state: { account } });
   }
 
-  function closeLogModal() {
-    setIsLogOpen(false);
-    setSelectedAccount(null);
-    setAccountTransactions([]);
-  }
-
-  const isBusy =
-    loading || loadingAccounts || loadingTransactions || savingSettlement;
-
+  // ──────────────────────────────────────────────────────
+  // JSX
+  // ──────────────────────────────────────────────────────
   return (
-    <section className="admin-section-card">
-      {/* الهيدر العلوي */}
-      <div className="admin-section-header">
-        <div className="admin-section-header-main">
-          <div className="admin-section-icon">
-            <CreditCard size={18} />
+    <section className="adm-section-panel">
+      {/* ─── Header ─────────────────────────────────── */}
+      <header className="adm-section-inner-header">
+        <div className="adm-section-icon">
+          <CreditCard size={22} />
+        </div>
+        <div className="adm-section-title-group">
+          <h2 className="adm-section-title">الإدارة المالية</h2>
+          <p className="adm-section-subtitle">
+            مراقبة الأرصدة، مستحقات الأطراف، وتسوية الحسابات المالية.
+          </p>
+        </div>
+        <div className="adm-section-actions">
+          <button
+            type="button"
+            className="adm-btn primary"
+            onClick={reloadData}
+            disabled={loading}
+          >
+            <RefreshCw size={18} className={loading ? "spin" : ""} />
+            <span>تحديث البيانات</span>
+          </button>
+        </div>
+      </header>
+
+      {/* ─── Summary Cards ──────────────────────────── */}
+      <div className="fin-summary-grid">
+        <div className="fin-summary-card fin-card-revenue">
+          <div className="fin-card-icon">
+            <TrendingUp size={22} />
           </div>
-          <div>
-            <div className="admin-section-title">الإدارة المالية</div>
-            <div className="admin-section-subtitle">
-              عرض أرصدة البائعين وشركات الشحن، مع إمكانية التسوية ومتابعة السجل المالي.
-            </div>
+          <div className="fin-card-content">
+            <span className="fin-card-label">إجمالي الإيرادات</span>
+            <span className="fin-card-value">{formatCurrency(computedSummary.revenues)}</span>
           </div>
         </div>
 
-        <div className="admin-section-actions">
-          <button
-            type="button"
-            className="admin-button admin-button-ghost"
-            onClick={loadAll}
-            disabled={isBusy}
-          >
-            <RefreshCw size={14} />
-            <span>تحديث</span>
-          </button>
+        <div className="fin-summary-card fin-card-expense">
+          <div className="fin-card-icon">
+            <TrendingDown size={22} />
+          </div>
+          <div className="fin-card-content">
+            <span className="fin-card-label">إجمالي المصروفات</span>
+            <span className="fin-card-value">{formatCurrency(computedSummary.expenses)}</span>
+          </div>
+        </div>
+
+        <div className="fin-summary-card fin-card-net">
+          <div className="fin-card-icon">
+            <Wallet size={22} />
+          </div>
+          <div className="fin-card-content">
+            <span className="fin-card-label">صافي الرصيد</span>
+            <span className="fin-card-value">{formatCurrency(computedSummary.net)}</span>
+          </div>
+        </div>
+
+        <div className="fin-summary-card fin-card-count">
+          <div className="fin-card-icon">
+            <BarChart3 size={22} />
+          </div>
+          <div className="fin-card-content">
+            <span className="fin-card-label">عدد المعاملات</span>
+            <span className="fin-card-value">{computedSummary.transactions}</span>
+          </div>
         </div>
       </div>
 
-      {errorMessage && (
-        <div className="admin-error" style={{ marginBottom: "0.6rem" }}>
-          {errorMessage}
-        </div>
-      )}
-
-      {/* شريط الفلاتر العلوي */}
-      <div className="financial-toolbar">
-        {/* البحث في أقصى اليمين */}
-        <div className="financial-toolbar-right">
-          <div className="financial-search-wrapper">
-            <Search className="financial-search-icon" size={14} />
+      {/* ─── Toolbar ────────────────────────────────── */}
+      <div className="fin-toolbar">
+        <div className="fin-toolbar-row">
+          <div className="adm-search-wrapper fin-search">
+            <Search size={16} className="adm-search-icon" />
             <input
-              className="financial-input"
-              placeholder="بحث بالاسم، الإيميل، الهاتف..."
+              type="text"
+              className="adm-search-input"
+              placeholder="بحث باسم الجهة، البريد، الهاتف..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+
+          <div className="fin-filters">
+            <select
+              className="adm-filter-select"
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+            >
+              <option value="ALL">كل الأدوار</option>
+              <option value="SELLER">البائعين</option>
+              <option value="SHIPPING">شركات الشحن</option>
+              <option value="PLATFORM">المنصة</option>
+              <option value="SALES">المبيعات</option>
+            </select>
+
+            <select
+              className="adm-filter-select"
+              value={paymentFilter}
+              onChange={(e) => setPaymentFilter(e.target.value)}
+            >
+              <option value="ALL">كل طرق الدفع</option>
+              <option value="COD">الدفع عند الاستلام</option>
+              <option value="ONLINE">الدفع بالبطاقة</option>
+              <option value="BANK_TRANSFER">الحوالة البنكية</option>
+              <option value="WALLET">الدفع بالمحفظة</option>
+            </select>
+          </div>
         </div>
 
-        {/* الفلاتر على يسار البحث */}
-        <div className="financial-toolbar-left">
-          <span className="financial-filter-label">
-            <Filter size={14} />
-            <span>الفلاتر</span>
-          </span>
-
-          <select
-            className="financial-select"
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-          >
-            <option value="ALL">الكل (كافة الأدوار)</option>
-            <option value="SELLER">البائعون</option>
-            <option value="SHIPPING">شركات الشحن</option>
-            <option value="PLATFORM">المنصة</option>
-            <option value="SALES">إجمالي المبيعات</option>
-          </select>
-
-          <div className="financial-inline">
-            <Calendar size={14} className="financial-inline-icon" />
+        <div className="fin-toolbar-row">
+          <div className="adm-filter-group">
+            <Filter size={14} className="adm-filter-icon" />
             <select
-              className="financial-select"
+              className="adm-filter-select"
               value={datePreset}
               onChange={(e) => setDatePreset(e.target.value)}
             >
-              <option value="today">اليوم</option>
-              <option value="week">هذا الأسبوع</option>
-              <option value="month">الشهر الحالي</option>
-              <option value="year">هذه السنة</option>
-              <option value="custom">مخصص</option>
+              {Object.entries(DATE_PRESET_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
             </select>
           </div>
 
           {datePreset === "custom" && (
-            <>
+            <div className="fin-custom-dates adm-fade-in">
               <input
-                type="datetime-local"
-                className="financial-select"
+                type="date"
+                className="adm-form-input sm"
                 value={customFrom}
                 onChange={(e) => setCustomFrom(e.target.value)}
               />
+              <span className="fin-date-sep">إلى</span>
               <input
-                type="datetime-local"
-                className="financial-select"
+                type="date"
+                className="adm-form-input sm"
                 value={customTo}
                 onChange={(e) => setCustomTo(e.target.value)}
               />
-            </>
+            </div>
           )}
-
-          <select
-            className="financial-select"
-            value={paymentFilter}
-            onChange={(e) => setPaymentFilter(e.target.value)}
-          >
-            <option value="ALL">كل طرق الدفع</option>
-            <option value="COD">الدفع عند الاستلام</option>
-            <option value="ONLINE">دفع إلكتروني</option>
-            <option value="OTHER">طرق أخرى</option>
-          </select>
         </div>
       </div>
 
-      {/* عنوان جدول الحسابات */}
-      <div className="financial-section-title-row">
-        <div>
-          <h3>الحسابات المالية</h3>
-          <span>
+      {/* ─── Accounts Table Header ──────────────────── */}
+      <div className="fin-table-header">
+        <div className="adm-section-title-group">
+          <h3 className="adm-section-title">الحسابات المالية</h3>
+          <p className="adm-section-subtitle">
             كل صف يمثل بائعًا أو شركة شحن مع إجمالي المستحقات والمرسل والاسترجاع والتوريد.
-          </span>
+          </p>
         </div>
-        <div className="financial-small-note">
-          الرصيد الحالي = إجمالي المستحقات - إجمالي المرسل - إجمالي الاسترجاع
-          (التوريد لا يدخل في رصيدهم لأنه حق للمنصة).
+        <div className="fin-balance-formula">
+          الرصيد الحالي = المستحقات − المرسل − الاسترجاع
         </div>
       </div>
 
-      {/* جدول الحسابات */}
-      <div className="users-table-wrapper">
-        {loadingAccounts ? (
-          <div className="users-empty-state">جاري تحميل الحسابات...</div>
-        ) : filteredAccounts.length === 0 ? (
-          <div className="users-empty-state">
-            لا توجد حسابات مطابقة لخيارات البحث / التصفية.
-          </div>
-        ) : (
-          <table className="users-table">
-            <thead>
-              <tr>
-                <th>الجهة / الدور</th>
-                <th>المعلومات الشخصية</th>
-                <th>إجمالي المستحقات</th>
-                <th>إجمالي المرسل</th>
-                <th>إجمالي الاسترجاع</th>
-                <th>الرصيد الحالي</th>
-                <th>إجمالي التوريد</th>
-                <th>الإجراءات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAccounts.map((acc) => {
-                const badgeClass =
-                  acc.role === "SELLER"
-                    ? "financial-badge financial-badge-seller"
-                    : acc.role === "SHIPPING"
-                    ? "financial-badge financial-badge-shipping"
-                    : acc.role === "PLATFORM"
-                    ? "financial-badge financial-badge-platform"
-                    : acc.role === "SALES"
-                    ? "financial-badge financial-badge-sales"
-                    : "financial-badge";
-
-                return (
-                  <tr key={`${acc.role}-${acc.partyId || ""}`}>
-                    <td>
-                      <div className="financial-entity-cell">
-                        <span className="financial-entity-name">
-                          {acc.name || "-"}
-                        </span>
-                        <span>
-                          <span className={badgeClass}>{getRoleLabel(acc.role)}</span>
-                        </span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="financial-contact-cell">
-                        <span className="financial-contact-email">
-                          {acc.email || "-"}
-                        </span>
-                        <span className="financial-contact-phone">
-                          {acc.phone || "-"}
-                        </span>
-                      </div>
-                    </td>
-                    <td>{formatCurrency(acc.totalDue)}</td>
-                    <td>{formatCurrency(acc.totalSent)}</td>
-                    <td>{formatCurrency(acc.totalRefund)}</td>
-                    <td>{formatCurrency(acc.currentBalance)}</td>
-                    <td>{formatCurrency(acc.totalSupply)}</td>
-                    <td>
-                      <div className="financial-actions-cell">
-                        <button
-                          type="button"
-                          className="admin-button admin-button-xs"
-                          onClick={() => openSettlementModal(acc)}
-                        >
-                          تسوية
-                        </button>
-                        <button
-                          type="button"
-                          className="admin-button admin-button-ghost admin-button-xs"
-                          onClick={() => openLogModal(acc)}
-                          disabled={loadingTransactions}
-                        >
-                          السجل
-                        </button>
-                      </div>
-                    </td>
+      {/* ─── Accounts Table ─────────────────────────── */}
+      <div className="adm-section-body">
+        <div className="adm-table-wrapper">
+          {loading ? (
+            <div className="adm-loading">
+              <RefreshCw size={24} className="spin" />
+              <span>جاري تحميل الحسابات...</span>
+            </div>
+          ) : errorMessage ? (
+            <div className="adm-empty-msg fin-error-state">
+              <span>{errorMessage}</span>
+              <button type="button" className="adm-btn primary sm" onClick={reloadData}>
+                إعادة المحاولة
+              </button>
+            </div>
+          ) : filteredAccounts.length === 0 ? (
+            <div className="adm-empty-msg">
+              لا توجد حسابات مطابقة لخيارات البحث / التصفية.
+            </div>
+          ) : (
+            <>
+              <table className="adm-table">
+                <thead>
+                  <tr>
+                    <th>الجهة / الدور</th>
+                    <th>المعلومات الشخصية</th>
+                    <th className="fin-col-num">المستحقات</th>
+                    <th className="fin-col-num">المرسل</th>
+                    <th className="fin-col-num">الاسترجاع</th>
+                    <th className="fin-col-num">الرصيد</th>
+                    <th className="fin-col-num">التوريد</th>
+                    <th className="fin-col-actions">الإجراءات</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* مودال التسوية */}
-      {isSettlementOpen && selectedAccount && (
-        <div className="settlement-modal-backdrop" onClick={closeSettlementModal}>
-          <div
-            className="settlement-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="settlement-modal-header">
-              <div className="settlement-modal-header-title">
-                <h2>تسوية مالية للحساب</h2>
-                <span>
-                  {getRoleLabel(selectedAccount.role)} · {selectedAccount.name || "-"}
-                </span>
-                <span className="financial-small-note">
-                  الرصيد الحالي: {formatCurrency(selectedAccount.currentBalance)} (لا
-                  يتم احتساب التوريد ضمن رصيد الطرف لأنه حق للمنصة).
-                </span>
-              </div>
-              <button
-                type="button"
-                className="settlement-modal-close"
-                onClick={closeSettlementModal}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSettlementSubmit}>
-              <div className="settlement-modal-body">
-                <div>
-                  <div className="settlement-field-label">نوع العملية</div>
-                  <select
-                    className="settlement-select"
-                    value={settlementForm.operationType}
-                    onChange={(e) =>
-                      setSettlementForm((prev) => ({
-                        ...prev,
-                        operationType: e.target.value,
-                      }))
-                    }
-                  >
-                    <option value="PAYOUT">تحويل / إرسال للطرف (PAYOUT)</option>
-                    <option value="REFUND">استرجاع مبلغ من الطرف (REFUND)</option>
-                    <option value="SUPPLY">
-                      توريد من الطرف إلى المنصة (SUPPLY)
-                    </option>
-                  </select>
-                  <div className="settlement-field-hint">
-                    التوريد (SUPPLY) يستخدم للإيجارات ولتوريد مبالغ الدفع عند
-                    الاستلام من شركات الشحن، ولا يدخل في رصيدهم الحالي.
-                  </div>
-                </div>
-
-                <div>
-                  <div className="settlement-field-label">المبلغ</div>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className="settlement-input"
-                    value={settlementForm.amount}
-                    onChange={(e) =>
-                      setSettlementForm((prev) => ({
-                        ...prev,
-                        amount: e.target.value,
-                      }))
-                    }
-                    placeholder="أدخل مبلغ التسوية..."
-                  />
-                </div>
-
-                <div>
-                  <div className="settlement-field-label">طريقة الدفع</div>
-                  <select
-                    className="settlement-select"
-                    value={settlementForm.paymentMethod}
-                    onChange={(e) =>
-                      setSettlementForm((prev) => ({
-                        ...prev,
-                        paymentMethod: e.target.value,
-                      }))
-                    }
-                  >
-                    <option value="OTHER">أخرى</option>
-                    <option value="COD">الدفع عند الاستلام</option>
-                    <option value="ONLINE">دفع إلكتروني</option>
-                  </select>
-                </div>
-
-                <div>
-                  <div className="settlement-field-label">ملاحظة</div>
-                  <textarea
-                    className="settlement-textarea"
-                    value={settlementForm.note}
-                    onChange={(e) =>
-                      setSettlementForm((prev) => ({
-                        ...prev,
-                        note: e.target.value,
-                      }))
-                    }
-                    placeholder="مثال: تسوية مستحقات شهرية، توريد مبالغ الدفع عند الاستلام لطلبات رقم ..."
-                  />
-                </div>
-              </div>
-
-              <div className="settlement-modal-footer">
-                <button
-                  type="button"
-                  className="settlement-btn settlement-btn-cancel"
-                  onClick={closeSettlementModal}
-                  disabled={savingSettlement}
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  className="settlement-btn settlement-btn-save"
-                  disabled={savingSettlement}
-                >
-                  {savingSettlement ? "جارٍ الحفظ..." : "حفظ التسوية"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* مودال السجل المالي للحساب – واسع تقريبًا بعرض الشاشة */}
-      {isLogOpen && selectedAccount && (
-        <div className="settlement-modal-backdrop" onClick={closeLogModal}>
-          <div
-            className="settlement-modal settlement-modal--wide"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="settlement-modal-header">
-              <div className="settlement-modal-header-title">
-                <h2>سجل الحركات المالية للحساب</h2>
-                <span>
-                  {getRoleLabel(selectedAccount.role)} · {selectedAccount.name || "-"}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="settlement-modal-close"
-                onClick={closeLogModal}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="settlement-modal-body log-modal-body">
-              {loadingTransactions ? (
-                <div className="users-empty-state">جاري تحميل السجل...</div>
-              ) : accountTransactions.length === 0 ? (
-                <div className="users-empty-state">
-                  لا توجد حركات مالية مسجلة ضمن النطاق الحالي لهذا الحساب.
-                </div>
-              ) : (
-                <div className="log-table-wrapper">
-                  <table className="users-table">
-                    <thead>
-                      <tr>
-                        <th>نوع العملية</th>
-                        <th>المبلغ</th>
-                        <th>طريقة الدفع</th>
-                        <th>التاريخ</th>
-                        <th>ملاحظة</th>
+                </thead>
+                <tbody>
+                  {pagedAccounts.map((acc) => {
+                    const cfg = ROLE_CONFIG[acc.role] || ROLE_CONFIG.SELLER;
+                    return (
+                      <tr key={`${acc.role}-${acc.partyId || "platform"}`} className="fin-row">
+                        <td>
+                          <div className="fin-entity-cell">
+                            <span className="fin-entity-name">{acc.name || "جهة غير معروفة"}</span>
+                            <span className={`adm-status-chip ${cfg.color}`}>
+                              <span className="adm-status-dot"></span>
+                              {getRoleLabel(acc.role)}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="fin-contact-cell">
+                            <span className="fin-contact-email">{acc.email || "-"}</span>
+                            <span className="fin-contact-phone">{acc.phone || "-"}</span>
+                          </div>
+                        </td>
+                        <td className="fin-col-num fin-amount-due">{formatCurrency(acc.totalDue)}</td>
+                        <td className="fin-col-num">{formatCurrency(acc.totalSent)}</td>
+                        <td className="fin-col-num fin-amount-refund">{formatCurrency(acc.totalRefund)}</td>
+                        <td className="fin-col-num fin-amount-balance">{formatCurrency(acc.currentBalance)}</td>
+                        <td className="fin-col-num fin-amount-supply">{formatCurrency(acc.totalSupply)}</td>
+                        <td className="fin-col-actions">
+                          <div className="adm-table-actions">
+                            <button
+                              type="button"
+                              className="adm-icon-btn primary"
+                              onClick={() => openPayoutPage(acc)}
+                              title="تسوية مالية"
+                            >
+                              <ArrowLeftRight size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              className="adm-icon-btn muted"
+                              onClick={() => openLogPage(acc)}
+                              title="السجل المالي"
+                            >
+                              <FileText size={16} />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {accountTransactions.map((t) => {
-                        const paymentLabel =
-                          t.paymentMethod === "COD"
-                            ? "الدفع عند الاستلام"
-                            : t.paymentMethod === "ONLINE"
-                            ? "دفع إلكتروني"
-                            : t.paymentMethod || "-";
+                    );
+                  })}
+                </tbody>
+              </table>
 
-                        return (
-                          <tr key={t._id}>
-                            <td>{getTypeLabel(t.type)}</td>
-                            <td>{formatCurrency(t.amount)}</td>
-                            <td>{paymentLabel}</td>
-                            <td>{formatDate(t.createdAt)}</td>
-                            <td>{t.note || "-"}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="fin-pagination">
+                  <button
+                    type="button"
+                    className="fin-page-btn"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                  <span className="fin-page-info">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className="fin-page-btn"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="fin-page-total">
+                    ({filteredAccounts.length} حساب)
+                  </span>
                 </div>
               )}
-            </div>
-          </div>
+            </>
+          )}
         </div>
-      )}
+      </div>
     </section>
   );
 }

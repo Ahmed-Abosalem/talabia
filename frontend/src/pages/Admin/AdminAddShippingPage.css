@@ -1,0 +1,470 @@
+/* AdminAddShippingPage.css — Refined for adm-* Design System (Golden Standard) */
+@import "./adm-shared.css";
+
+.admin-user-details-page {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--adm-bg);
+}
+
+/* 🏔️ Header Accent Sync */
+.adm-header::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--adm-accent-solid);
+}
+
+/* 💎 Stepper UI (GS Standard) */
+.shipping-stepper {
+    display: flex;
+    justify-content: center;
+    gap: var(--sp-4);
+    width: 100%;
+    margin: 10px 0;
+}
+
+.adm-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    opacity: 0.5;
+    transition: var(--transition-fast);
+}
+
+.adm-step.active {
+    opacity: 1;
+}
+
+.adm-step.done {
+    opacity: 1;
+}
+
+.adm-step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--rad-md);
+    background: var(--adm-border);
+    color: var(--adm-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+    border: 2px solid transparent;
+}
+
+.adm-step.active .adm-step-num {
+    background: var(--adm-primary);
+    color: white;
+    box-shadow: 0 0 0 4px rgba(75, 80, 42, 0.1);
+}
+
+.adm-step.done .adm-step-num {
+    background: var(--adm-success);
+    color: white;
+}
+
+.adm-step-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--adm-text-muted);
+}
+
+.adm-step.active .adm-step-label {
+    color: var(--adm-primary);
+}
+
+/* 📦 Scope Selector Premium Design (Golden Standard Inline) */
+.shipping-scope-module {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #fdfdfb;
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-lg);
+    padding: 20px;
+    margin-bottom: var(--sp-2);
+    transition: all 0.3s ease;
+}
+
+.adm-form-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.shipping-scope-segmented {
+    display: flex;
+    background: #e2e8f0;
+    padding: 4px;
+    border-radius: var(--rad-md);
+    gap: 4px;
+}
+
+.segmented-item {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px;
+    border-radius: calc(var(--rad-md) - 2px);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--adm-text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.segmented-item.active {
+    background: white;
+    color: var(--adm-primary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* 💎 Scope Summary Box (Golden Standard) */
+.shipping-scope-summary-box {
+    margin-top: 12px;
+    padding: 16px;
+    background: #f8fafc;
+    border: 1px dashed var(--adm-border);
+    border-radius: var(--rad-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    animation: fadeIn 0.3s ease;
+}
+
+.summary-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.summary-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--adm-text-main);
+}
+
+.summary-subtitle {
+    font-size: 0.75rem;
+    color: var(--adm-text-soft);
+    flex: 1;
+    /* Allow text to occupy available space */
+    min-width: 150px;
+    /* Prevent text from becoming too narrow */
+}
+
+/* ─────────────────────────────────────────────────────────
+   📦 Expanded View & Grid (GS Standard)
+   ───────────────────────────────────────────────────────── */
+.shipping-scope-expanded-view {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* Compact spacing */
+    animation: fadeIn 0.3s ease;
+    width: 100%;
+}
+
+.shipping-scope-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    /* Tight spacing between search and bulk actions */
+}
+
+.adm-search-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    /* Clear any accidental margins */
+}
+
+.adm-search-icon {
+    position: absolute;
+    right: 14px;
+    /* Inside the input on the right for RTL */
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--adm-text-soft);
+    pointer-events: none;
+    z-index: 10;
+    display: block !important;
+    /* Ensure it's not hidden or inline-weirdness */
+}
+
+.adm-search-input {
+    width: 100%;
+    height: 44px;
+    /* Explicit height for stability */
+    padding: 10px 44px 10px 16px !important;
+    /* Force padding: R 44px for icon */
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-md);
+    font-size: 0.95rem;
+    background: white;
+    transition: var(--transition-fast);
+    box-sizing: border-box;
+    /* Critical for width: 100% with padding */
+}
+
+.adm-search-input:focus {
+    border-color: var(--adm-primary);
+    box-shadow: 0 0 0 3px rgba(75, 80, 42, 0.05);
+    outline: none;
+}
+
+.clear-search-btn {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: var(--adm-bg-soft);
+    color: var(--adm-text-soft);
+    width: 24px;
+    height: 24px;
+    border-radius: var(--rad-sm);
+    /* Unified rectangle-lite instead of circle */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.clear-search-btn:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.shipping-scope-bulk {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-start;
+    padding: 4px 0;
+}
+
+.shipping-scope-bulk button {
+    border-radius: var(--rad-md) !important;
+    /* Force Golden Standard rectangle */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition-fast);
+}
+
+.shipping-scope-grid-container {
+    min-height: 450px;
+    /* Strong stabilization */
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 4px;
+    margin-top: 8px;
+}
+
+.shipping-scope-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+/* Seller Cards */
+.shipping-scope-card {
+    background: white;
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-md);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.shipping-scope-card:hover {
+    border-color: var(--adm-primary-light);
+    background: #fafaf9;
+    transform: translateY(-1px);
+}
+
+.shipping-scope-card.active {
+    border-color: var(--adm-primary);
+    background: #f1f2ef;
+}
+
+.card-check {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--adm-border);
+    border-radius: var(--rad-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.shipping-scope-card.active .card-check {
+    background: var(--adm-primary);
+    border-color: var(--adm-primary);
+}
+
+.card-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.card-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--adm-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-owner {
+    font-size: 0.7rem;
+    color: var(--adm-text-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+
+/* Scrollbar Style */
+.shipping-scope-grid-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.shipping-scope-grid-container::-webkit-scrollbar-thumb {
+    background: var(--adm-border);
+    border-radius: 10px;
+}
+
+.shipping-scope-loading,
+.shipping-scope-empty {
+    padding: 40px;
+    text-align: center;
+    color: var(--adm-text-soft);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.shipping-add-card-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 16px;
+    padding: var(--sp-3) !important;
+}
+
+.adm-card-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--adm-primary);
+    margin-bottom: var(--sp-1);
+}
+
+.shipping-add-card-body {
+    min-height: 400px;
+    padding: var(--sp-3) !important;
+}
+
+.shipping-add-card-footer {
+    border-top: 2px solid var(--adm-bg-soft) !important;
+    padding: var(--sp-3) !important;
+    background: #f8fafc !important;
+}
+
+.shipping-add-actions {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    width: 100%;
+    display: flex;
+    justify-content: space-between !important;
+    align-items: center;
+}
+
+.adm-actions-right {
+    display: flex;
+    gap: var(--sp-2);
+}
+
+/* 📱 Responsive Physics */
+@media (max-width: 768px) {
+    .adm-header-inner {
+        padding: var(--sp-2) !important;
+    }
+
+    .adm-main-container {
+        padding: 0 !important;
+    }
+
+    .adm-details-grid {
+        gap: 0 !important;
+    }
+
+    .adm-card::before {
+        display: block !important;
+    }
+
+    .adm-details-grid {
+        gap: 0 !important;
+        background: transparent !important;
+    }
+
+    .shipping-stepper {
+        gap: var(--sp-2);
+    }
+
+    .adm-step-label {
+        display: none;
+    }
+
+    .shipping-add-actions {
+        flex-direction: column-reverse;
+        gap: 16px;
+    }
+
+    .adm-actions-right {
+        width: 100%;
+        flex-direction: column;
+    }
+
+}

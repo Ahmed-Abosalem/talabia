@@ -1,0 +1,56 @@
+/* AdminSynonymsSection.css — Refined for adm-* Design System */
+@import "../adm-shared.css";
+
+/* ── Synonym Specifics ────────────────────────────── */
+.synonym-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Ensure the pills don't shrink too much */
+.adm-pill.sm {
+    font-size: 0.75rem;
+    padding: 2px 10px;
+    border-radius: var(--rad-full);
+    font-weight: 500;
+}
+
+/* ── Responsive Overrides ────────────────────────── */
+@media (max-width: 768px) {
+    .adm-table td:nth-child(2) {
+        min-width: 150px;
+    }
+
+    /* 🛡️ Edge-to-Edge Safety Check Override */
+    .adm-section-panel {
+        padding: 0 !important;
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+    }
+
+    .adm-section-inner-header {
+        padding: var(--sp-2) !important;
+    }
+
+    .adm-toolbar {
+        padding: var(--sp-2) !important;
+    }
+
+    /* Stack form columns on mobile */
+    .adm-syn-form-col-8,
+    .adm-syn-form-col-4 {
+        grid-column: span 12 !important;
+    }
+}
+
+/* Category Add Form Desktop Grid */
+.adm-syn-form-col-8 {
+    grid-column: span 8;
+}
+
+.adm-syn-form-col-4 {
+    grid-column: span 4;
+}

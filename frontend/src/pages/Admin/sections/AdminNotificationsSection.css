@@ -1,0 +1,210 @@
+/* AdminNotificationsSection.css — Gold Standard Alignment */
+@import "../adm-shared.css";
+
+/* ── Page Root ─────────────────────────────────────────── */
+.notif-page-root {
+    width: 100%;
+    direction: rtl;
+    text-align: right;
+}
+
+/* ── Card Grid (Two-column on desktop, stacked on mobile) ── */
+.notif-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--sp-3);
+    margin-top: var(--sp-2);
+    padding: 0;
+}
+
+.notif-card-create {
+    grid-column: span 5;
+}
+
+.notif-card-history {
+    grid-column: span 7;
+}
+
+/* ── Form Layout ───────────────────────────────────────── */
+.notif-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.notif-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: var(--sp-2);
+    border-top: 1px dashed var(--adm-border);
+    margin-top: var(--sp-1);
+}
+
+/* ── Notification History List ─────────────────────────── */
+.notif-history-body {
+    padding: var(--sp-2) !important;
+}
+
+.notif-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.notif-history-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-2);
+    padding: var(--sp-2);
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-md);
+    background: var(--adm-bg);
+    transition: var(--transition-fast);
+}
+
+.notif-history-item:hover {
+    border-color: var(--adm-border-hover);
+    box-shadow: var(--shd-standard);
+}
+
+.notif-history-item-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-history-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--adm-text-main);
+    margin-bottom: 6px;
+}
+
+.notif-history-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.notif-history-date {
+    font-size: 0.72rem;
+    color: var(--adm-text-muted);
+    font-weight: 500;
+}
+
+.notif-history-message {
+    font-size: 0.8rem;
+    color: var(--adm-text-muted);
+    line-height: 1.6;
+    margin: 0;
+    padding: var(--sp-1);
+    background: var(--adm-surface);
+    border-radius: var(--rad-sm);
+    border-right: 2px solid var(--adm-primary-light);
+}
+
+/* ── Status Chip Overrides ─────────────────────────────── */
+.adm-status-chip.mini {
+    padding: 3px 10px;
+    font-size: 0.68rem;
+    border-radius: var(--rad-sm);
+    gap: 5px;
+}
+
+.adm-status-chip.mini.info {
+    background: var(--adm-info-bg);
+    color: #1e40af;
+    border: 1px solid var(--adm-info-border);
+}
+
+/* ── Empty State ───────────────────────────────────────── */
+.adm-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--sp-5) var(--sp-3);
+    color: var(--adm-text-muted);
+    gap: var(--sp-1);
+}
+
+.adm-empty-state-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--adm-bg);
+    border: 1px dashed var(--adm-border);
+    color: var(--adm-text-soft);
+    margin-bottom: var(--sp-1);
+}
+
+.adm-empty-state h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--adm-text-main);
+    margin: 0;
+}
+
+.adm-empty-state p {
+    font-size: 0.85rem;
+    margin: 0;
+    max-width: 320px;
+}
+
+/* ── Modal Title Danger Variant ────────────────────────── */
+.adm-modal-title.danger {
+    color: var(--adm-danger);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.adm-notice-box.danger {
+    background: var(--adm-danger-bg);
+    border-right-color: var(--adm-danger);
+    color: #7f1d1d;
+}
+
+/* ── 📱 Responsive (Gold Standard Mobile) ──────────────── */
+@media (max-width: 1024px) {
+    .notif-card-create {
+        grid-column: span 6;
+    }
+
+    .notif-card-history {
+        grid-column: span 6;
+    }
+}
+
+@media (max-width: 768px) {
+    .notif-grid {
+        gap: 1px;
+        background: var(--adm-border);
+        padding: 0;
+    }
+
+    .notif-card-create,
+    .notif-card-history {
+        grid-column: span 12 !important;
+        border-radius: 0 !important;
+        border-right: none !important;
+        border-left: none !important;
+        border-bottom: none !important;
+        box-shadow: none !important;
+    }
+
+    /* 🛡️ Edge-to-Edge Safety */
+    .adm-section-inner-header {
+        padding: var(--sp-2) !important;
+    }
+
+    .notif-history-list {
+        max-height: none;
+    }
+}

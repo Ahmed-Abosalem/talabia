@@ -115,10 +115,10 @@ function createUploader({ subfolder, fileFilter, maxSizeMB = 3, maxFiles = 10 })
       // ✅ عدد الملفات
       files: maxFiles,
       // ✅ حماية إضافية ضد spam في الحقول/الأجزاء
-      fields: 20,
+      fields: 50,
       fieldNameSize: 100,
       fieldSize: 1024 * 50, // 50KB للنصوص المصاحبة
-      parts: 30,
+      parts: 60,
       headerPairs: 200,
     },
   });
@@ -164,18 +164,18 @@ export function handleMulterError(err, req, res, next) {
       err.code === "LIMIT_FILE_SIZE"
         ? "حجم الملف أكبر من الحد المسموح به."
         : err.code === "LIMIT_FILE_COUNT" || err.code === "LIMIT_FILE_COUNT"
-        ? "عدد الملفات أكبر من الحد المسموح به."
-        : err.code === "LIMIT_UNEXPECTED_FILE"
-        ? "تم إرسال ملف بحقل غير متوقع."
-        : err.code === "LIMIT_PART_COUNT"
-        ? "عدد أجزاء الطلب أكبر من المسموح."
-        : err.code === "LIMIT_FIELD_COUNT"
-        ? "عدد الحقول النصية أكبر من المسموح."
-        : err.code === "LIMIT_FIELD_KEY"
-        ? "اسم أحد الحقول طويل جدًا."
-        : err.code === "LIMIT_FIELD_VALUE"
-        ? "قيمة أحد الحقول كبيرة جدًا."
-        : `خطأ في رفع الملف: ${err.message}`;
+          ? "عدد الملفات أكبر من الحد المسموح به."
+          : err.code === "LIMIT_UNEXPECTED_FILE"
+            ? "تم إرسال ملف بحقل غير متوقع."
+            : err.code === "LIMIT_PART_COUNT"
+              ? "عدد أجزاء الطلب أكبر من المسموح."
+              : err.code === "LIMIT_FIELD_COUNT"
+                ? "عدد الحقول النصية أكبر من المسموح."
+                : err.code === "LIMIT_FIELD_KEY"
+                  ? "اسم أحد الحقول طويل جدًا."
+                  : err.code === "LIMIT_FIELD_VALUE"
+                    ? "قيمة أحد الحقول كبيرة جدًا."
+                    : `خطأ في رفع الملف: ${err.message}`;
 
     return res.status(400).json({ message: msg });
   }

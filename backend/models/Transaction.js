@@ -25,7 +25,7 @@ export const TRANSACTION_STATUS = ["PENDING", "COMPLETED", "CANCELLED"];
 export const TRANSACTION_DIRECTIONS = ["CREDIT", "DEBIT"];
 
 // 🔢 وسائل الدفع
-export const TRANSACTION_PAYMENT_METHODS = ["COD", "ONLINE", "OTHER"];
+export const TRANSACTION_PAYMENT_METHODS = ["COD", "ONLINE", "WALLET", "BANK_TRANSFER", "OTHER"];
 
 // 💳 مخطط المعاملة (Transaction Schema)
 const transactionSchema = new mongoose.Schema(

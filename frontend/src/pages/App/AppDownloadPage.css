@@ -1,0 +1,232 @@
+/* s:\Talabia_new\frontend\src\pages\App\AppDownloadPage.css */
+@import "../Admin/adm-shared.css";
+
+.download-page {
+  background-color: transparent !important;
+  overflow-y: auto !important;
+}
+
+/* 🏔️ Header Customizations */
+.download-page-header-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.download-page-header-title svg {
+  color: var(--adm-accent-solid) !important; /* Official Golden Standard Orange */
+}
+
+/* 🚀 Main Layout - ZERO GAP DOCKING */
+.adm-main-container {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.adm-details-grid {
+  margin-top: 0 !important;
+}
+
+/* 📦 Grid & Cards - Using adm-card standard with Rich Visuals */
+.download-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.download-option-card {
+  padding: 50px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-radius: 32px !important;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.download-option-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.12) !important;
+}
+
+.option-visual-container {
+  margin-bottom: 32px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-app-icon-preview {
+  width: 100px;
+  height: 100px;
+  background: white;
+  border-radius: 22px; /* Standard app icon radius (approx) */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08); /* Realistic app icon depth */
+  border: 1px solid #f1f5f9;
+  padding: 12px;
+  transition: transform 0.3s ease;
+}
+
+.download-option-card:hover .mobile-app-icon-preview {
+  transform: scale(1.05) rotate(2deg);
+}
+
+.android-logo-large {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.apple-logo-large {
+  width: 60px;
+  height: 60px;
+  color: #1a1a1a;
+  filter: none !important;
+}
+
+.option-title {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+}
+
+.option-desc {
+  font-size: 1.1rem;
+  color: #64748b;
+  line-height: 1.8;
+  margin-bottom: 40px;
+  max-width: 320px;
+}
+
+.badge-wrapper {
+  margin-top: auto;
+  width: 100%;
+}
+
+.google-play-badge {
+  height: 60px;
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.google-play-badge:hover {
+  transform: scale(1.05);
+}
+
+/* 🏆 Benefits List */
+.benefits-section {
+  padding: 40px;
+}
+
+.benefits-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  margin-bottom: 40px;
+  color: #1a1a1a;
+  text-align: center;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.benefit-item {
+  text-align: center;
+}
+
+.benefit-icon-ring {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7c9070;
+  background: #f8fafc;
+  border-radius: 50%;
+}
+
+.benefit-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.benefit-text {
+  font-size: 0.95rem;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* 📱 Responsive Adjustments */
+@media (max-width: 768px) {
+  .download-page .adm-main-container {
+    padding-inline: 0 !important;
+  }
+
+  .download-page .adm-details-grid {
+    background: transparent !important;
+    gap: 0 !important;
+  }
+
+  .download-options-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin-bottom: 0;
+  }
+
+  .download-option-card {
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid var(--adm-border) !important;
+    padding: 30px 20px;
+  }
+  
+  .benefits-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  
+  .download-hero-title {
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 992px) {
+  /* Cleanup old grid references */
+  .features-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 50px;
+  color: #94a3b8;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: #7c9070;
+}

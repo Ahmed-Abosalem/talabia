@@ -1,0 +1,45 @@
+:root {
+    /* 
+   * Responsive Core System - Spacing Scale
+   * Consistent spacing across the platform
+   */
+
+    /* Atomic Spacing */
+    --sp-xs: 0.25rem;
+    /* 4px */
+    --sp-sm: 0.5rem;
+    /* 8px */
+    --sp-md: 1rem;
+    /* 16px */
+    --sp-lg: 1.5rem;
+    /* 24px */
+    --sp-xl: 2rem;
+    /* 32px */
+    --sp-2xl: 3rem;
+    /* 48px */
+
+    /* Layout Spacing */
+    --section-gap: var(--sp-xl);
+    --grid-gap: var(--sp-md);
+    --card-padding: var(--sp-md);
+
+    /* Container Padding */
+    /* Container Padding - SMART FLUID ADJUSTMENTS */
+    --container-padding-mobile: 0.5rem;
+    /* 8px - Maximize mobile space */
+    --container-padding-desktop: 2.5rem;
+    /* 40px - Comfortable edges on wide screens */
+
+    /* 🛡️ SMART FLUID LAW: Safe Content Insets */
+    --safe-inset-left: max(1rem, env(safe-area-inset-left));
+    --safe-inset-right: max(1rem, env(safe-area-inset-right));
+    --fluid-grip-margin: var(--safe-inset-right) var(--safe-inset-left);
+}
+
+@media (min-width: 768px) {
+    :root {
+        --section-gap: var(--sp-2xl);
+        --grid-gap: var(--sp-lg);
+        --card-padding: var(--sp-lg);
+    }
+}

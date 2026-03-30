@@ -144,6 +144,89 @@ export function mapAdminStatusInputToCode(input) {
   return null;
 }
 
+// ────────────────────────────────────────────────
+// 🏗️ البناء المعماري الجديد (Single Source of Truth)
+// ────────────────────────────────────────────────
+
+/**
+ * ✅ التزامن الذري (Atomic Synchronization)
+ * تقوم بتحديث الكود البرمجي والنص العربي المرافق له في خطوة واحدة لضمان عدم التعارض.
+ */
+export function syncItemStatus(item, newCode) {
+  if (!item || !newCode) return;
+  if (!Object.values(ORDER_STATUS_CODES).includes(newCode)) {
+    console.warn(`[STATUS] محاولة تعيين كود غير صالح: ${newCode}`);
+    return;
+  }
+
+  item.statusCode = newCode;
+  const legacy = mapStatusCodeToLegacyArabic(newCode);
+  if (legacy) {
+    item.itemStatus = legacy;
+  }
+}
+
+/**
+ * ✅ التزامن الذري على مستوى الطلب ككل
+ */
+export function syncOrderStatus(order, newCode) {
+  if (!order || !newCode) return;
+  if (!Object.values(ORDER_STATUS_CODES).includes(newCode)) {
+    console.warn(`[STATUS] محاولة تعيين كود غير صالح للطلب: ${newCode}`);
+    return;
+  }
+
+  order.statusCode = newCode;
+  const legacy = mapStatusCodeToLegacyArabic(newCode);
+  if (legacy) {
+    order.status = legacy;
+  }
+}
+
+/**
+ * ✅ التأكد من نجاح التسليم
+ */
+export function isCompleted(item) {
+  if (!item) return false;
+  return (
+    item.statusCode === ORDER_STATUS_CODES.DELIVERED ||
+    item.itemStatus === "مكتمل" || // Legacy support
+    item.status === "completed" // Legacy support
+  );
+}
+
+/**
+ * ✅ التأكد من إلغاء المنتج
+ */
+export function isCancelled(item) {
+  if (!item) return false;
+  return (
+    [
+      ORDER_STATUS_CODES.CANCELLED_BY_SELLER,
+      ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING,
+      ORDER_STATUS_CODES.CANCELLED_BY_ADMIN,
+    ].includes(item.statusCode) ||
+    item.itemStatus === "ملغى" ||
+    item.status === "cancelled" ||
+    item.sellerStatus === "cancelled"
+  );
+}
+
+/**
+ * ✅ التأكد من انتهاء دورة حياة المنتج (نجاح أو فشل)
+ */
+export function isFinal(item) {
+  return isCompleted(item) || isCancelled(item);
+}
+
+/**
+ * ✅ هل المنتج قابل للتحصيل المالي؟
+ * (يجب أن يكون اكتمل ولم يُلغَ)
+ */
+export function isBillable(item) {
+  return isCompleted(item) && !isCancelled(item);
+}
+
 // 🧮 دالة مساعدة في حال أردنا إعادة احتساب الكود من كيان الطلب كاملًا
 export function recomputeOrderStatusCode(order) {
   if (!order) return null;

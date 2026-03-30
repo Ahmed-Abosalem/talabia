@@ -1,0 +1,171 @@
+/* AdminCategoriesSection.css — Refined for adm-* Design System */
+@import "../adm-shared.css";
+
+/* ── Drag & Drop Styling ──────────────────────────── */
+.adm-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--adm-text-soft);
+    cursor: grab;
+    padding: 8px;
+    border-radius: var(--rad-sm);
+    transition: var(--transition-fast);
+}
+
+.adm-drag-handle:hover:not(.disabled) {
+    background: var(--adm-bg);
+    color: var(--adm-text-main);
+}
+
+.adm-drag-handle.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+tr.row-dragging {
+    background: var(--adm-bg) !important;
+    box-shadow: var(--shd-standard);
+    opacity: 0.8;
+}
+
+/* ── Image Editor (Crop System) ────────────────────── */
+.adm-image-editor {
+    display: flex;
+    gap: 20px;
+    background: var(--adm-bg);
+    padding: 20px;
+    border-radius: var(--rad-lg);
+    border: 1px solid var(--adm-border);
+}
+
+.adm-editor-preview {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    background: #000;
+    border-radius: var(--rad-md);
+    overflow: hidden;
+    border: 2px solid var(--adm-border);
+}
+
+.adm-editor-preview img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.adm-editor-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+    background-size: 33.33% 33.33%;
+    pointer-events: none;
+}
+
+.adm-editor-empty {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--adm-text-soft);
+    gap: 12px;
+}
+
+.adm-editor-controls {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.adm-control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.adm-control-group label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--adm-text-muted);
+}
+
+.adm-control-group input[type="range"] {
+    width: 100%;
+    accent-color: var(--adm-primary);
+}
+
+/* ── Badge ─────────────────────────────────────────── */
+.adm-badge-soft {
+    display: inline-flex;
+    padding: 4px 10px;
+    background: var(--adm-bg);
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-md);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--adm-text-main);
+}
+
+/* ── Category Specific ─────────────────────────────── */
+.categories-table .adm-table-main {
+    justify-content: center;
+}
+
+.categories-table td {
+    vertical-align: middle;
+}
+
+/* 📱 Golden Standard Mobile Layout Protection */
+@media (max-width: 768px) {
+
+    /* 🛡️ Edge-to-Edge Safety Check Override */
+    .adm-section-panel {
+        padding: 0 !important;
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+    }
+
+    .adm-section-inner-header {
+        padding: var(--sp-2) !important;
+    }
+
+    .adm-toolbar {
+        padding: var(--sp-2) !important;
+    }
+
+    /* Responsive overrides for Add Category Form */
+    .adm-cat-form-col-8,
+    .adm-cat-form-col-4 {
+        grid-column: span 12 !important;
+    }
+}
+
+/* Category Add Form Desktop Grid */
+.adm-cat-form-col-8 {
+    grid-column: span 8;
+}
+
+.adm-cat-form-col-4 {
+    grid-column: span 4;
+}
+
+/* Fallback for Image Placeholders */
+.adm-placeholder-box {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(75, 80, 42, 0.05);
+    color: var(--adm-text-soft);
+}

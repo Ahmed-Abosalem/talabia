@@ -27,6 +27,11 @@ const addressSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    district: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     street: {
       type: String,
       trim: true,

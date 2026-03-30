@@ -1,0 +1,177 @@
+/* ────────────────────────────────────────────────
+   📁 frontend/src/pages/Admin/AdminWalletDetailsPage.css
+   صفحة تفاصيل المحفظة - التصميم الإداري الموحد (Unified Layout)
+   Golden Standard Architecture: adm-* (High-Contrast Matte)
+   Enforcement: Tight-System (8px Radius Mustattil)
+   ──────────────────────────────────────────────── */
+
+@import "./adm-shared.css";
+
+.admin-wallet-details-page {
+    direction: rtl;
+    font-family: 'Tajawal', sans-serif;
+    color: var(--adm-text-main);
+    background: var(--adm-bg);
+    min-height: 100vh;
+}
+
+/* 🏔️ Header Architecture (Glassmorphic Standard) */
+.adm-header {
+    background: #ffffff;
+    border-bottom: 1px solid var(--adm-border);
+    padding: var(--sp-1) var(--sp-3);
+    /* 🏔️ Sticky position is now inherited from adm-shared.css with top: 60px */
+    z-index: 1000;
+}
+
+.adm-header::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #ff7f00;
+}
+
+.adm-header-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; margin: 0; }
+.adm-header-right { display: flex; align-items: center; gap: var(--sp-2); }
+
+/* 💎 Grid System (Liquid 8/4) */
+.adm-main-container { width: 100%; }
+.adm-details-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--sp-3); }
+
+/* 🧩 Cards Architecture (Tight Spacing) */
+.adm-card {
+    background: var(--adm-surface);
+    border-radius: var(--rad-lg);
+    border: 1px solid var(--adm-border);
+    overflow: hidden;
+    position: relative;
+    box-shadow: var(--shd-standard);
+    transition: var(--transition-fast);
+}
+
+.adm-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #4b502a; /* RESTORED OLIVE STANDARD */
+    z-index: 10;
+}
+
+.adm-card-header {
+    background: #f1f2ef;
+    padding: var(--sp-1) var(--sp-2);
+    border-bottom: 1px solid var(--adm-border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.adm-card-header h2 { font-size: 0.9rem; font-weight: 800; margin: 0; color: var(--adm-text-main); }
+.adm-card-body { padding: var(--sp-2); }
+
+/* 💊 Status Chips (Strict Mustattil 8px) */
+.adm-status-chip {
+    padding: 6px 14px;
+    border-radius: var(--rad-md); /* 8px Rectangle */
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid transparent;
+}
+
+.adm-status-chip.active { background: var(--adm-success-bg); color: var(--adm-success); border-color: var(--adm-success-border); }
+.adm-status-chip.inactive { background: var(--adm-danger-bg); color: var(--adm-danger); border-color: var(--adm-danger-border); }
+
+/* 🔘 Action Buttons (Geometry Enforcement) */
+.adm-btn-mgmt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-1);
+    height: 44px;
+    padding: 0 var(--sp-3);
+    border-radius: var(--rad-md) !important; /* Forces 8px Rectangle */
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.adm-btn-mgmt.success { background: var(--adm-success); color: white; }
+.adm-btn-mgmt.warning { background: var(--adm-warning); color: white; }
+.adm-btn-mgmt.primary { background: var(--adm-primary); color: white; }
+.adm-btn-mgmt.danger  { background: var(--adm-danger);  color: white; }
+.adm-btn-mgmt.outline { background: white; color: var(--adm-text-main); border: 1.5px solid var(--adm-border); }
+
+/* 📊 Info Grid (Tight Alignment) */
+.adm-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-2); }
+.adm-info-point { display: flex; flex-direction: column; gap: 4px; }
+.adm-info-point .label { font-size: 0.7rem; color: var(--adm-text-muted); font-weight: 600; text-transform: uppercase; }
+.adm-info-point .value { font-size: 0.95rem; font-weight: 700; color: var(--adm-text-main); }
+
+/* 🏔️ SHARED MODAL SYSTEM CSS (Strict Mustattil 8px) */
+.adm-modal-backdrop {
+    z-index: 2000;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.adm-modal {
+    border-radius: var(--rad-lg);
+    box-shadow: var(--shd-elevated);
+    border-top: 4px solid var(--adm-primary);
+    overflow: hidden;
+}
+
+.adm-modal-header {
+    background: #f1f2ef;
+    padding: var(--sp-2) var(--sp-3);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-1);
+}
+
+.adm-modal-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--rad-md);
+    background: white;
+    border: 1px solid var(--adm-border);
+    color: var(--adm-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.adm-modal-body { padding: var(--sp-3); background: white; }
+.adm-modal-footer { padding: var(--sp-2) var(--sp-3); background: #f8fafc; border-top: 1px solid var(--adm-border); display: flex; gap: var(--sp-2); }
+
+.adm-modal-btn {
+    border-radius: var(--rad-md) !important;
+    height: 48px;
+    font-size: 0.9rem;
+}
+
+/* 📱 Mobile Optimization (Tight System) */
+@media (max-width: 1024px) {
+    .adm-details-grid { grid-template-columns: 1fr; }
+    .adm-card.span-8, .adm-card.span-4 { grid-column: span 12; }
+}
+
+@media (max-width: 600px) {
+    .adm-header-inner { flex-direction: row; padding: var(--sp-1) var(--sp-2); }
+    .adm-page-title { font-size: 1rem; }
+    .adm-modal-footer { flex-direction: column; }
+}

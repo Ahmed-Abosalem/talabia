@@ -1,0 +1,21 @@
+:root {
+    /* 
+   * Responsive Core System - Breakpoints
+   * Based on Mobile First Architecture
+   */
+    --bp-xs: 360px;
+    /* Small Mobile */
+    --bp-sm: 480px;
+    /* Large Mobile */
+    --bp-md: 768px;
+    /* Tablet */
+    --bp-lg: 1024px;
+    /* Laptop/Desktop */
+    --bp-xl: 1280px;
+    /* Large Screens */
+}
+
+/* Custom Media Queries for consistent usage (PostCSS/Next envs) 
+   Note: Native CSS variables cannot be used in @media yet, 
+   so we keep these reference values for consistency.
+*/

@@ -1,289 +1,283 @@
-/* src/pages/Notifications/Notifications.css */
+/* s:\Talabia_new\frontend\src\pages\Notifications\Notifications.css */
+@import "../Admin/adm-shared.css";
+
+/* 🌌 NOTIFICATIONS - GOLDEN STANDARD UI
+   Unified with BuyerOrdersSection Design
+   Premium, Fluid, Edge-to-Edge Aesthetics
+   Final Audit: Meticulous Variable Unification & RTL Precision
+*/
 
 .notifications-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding-block: 1.5rem 2rem;
-  direction: rtl;
+  background-color: transparent !important;
 }
 
-/* ========= Hero / Header ========= */
-
-.notifications-hero {
-  width: 100%;
-  border-radius: 1.2rem;
-  padding: 1.1rem 1.25rem;
-  background: radial-gradient(circle at top right, #22c55e33, transparent 60%),
-    linear-gradient(135deg, #0ea5e9, #22c55e);
-  color: #f9fafb;
-  display: flex;
+/* 🏔️ Header Customizations */
+.notifications-page .adm-header-inner {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  grid-template-areas: "right banner left" !important;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+  gap: var(--sp-2);
 }
 
-.notifications-hero-main {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
+.notifications-page .adm-header-right {
+  grid-area: right;
 }
 
-.notifications-hero-icon-wrapper {
-  flex-shrink: 0;
+.notifications-page .adm-header-left {
+  grid-area: left;
 }
 
-.notifications-hero-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.18);
+.notifications-page .buyer-page-title {
+  color: var(--adm-primary) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  font-weight: 900 !important;
+}
+
+.notifications-page .buyer-page-title svg {
+  color: var(--adm-accent-solid);
+  margin-left: 0;
+}
+
+.notifications-page .adm-page-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--sp-1) !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+}
+
+/* 🧡 Centered Unread Banner & Pulsing Dot */
+.notifications-unread-banner {
+  grid-area: banner;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: var(--sp-1);
+  background: rgba(255, 127, 0, 0.05);
+  padding: 6px var(--sp-2);
+  border-radius: var(--rad-md);
+  border: 1px solid rgba(255, 127, 0, 0.1);
+  justify-self: center;
 }
 
-.notifications-hero-text h1 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+.unread-text {
+  font-size: 0.85rem;
+  color: var(--adm-text-main);
+  font-weight: 700;
+  letter-spacing: -0.2px;
 }
 
-.notifications-hero-text p {
-  margin: 0.25rem 0 0;
-  font-size: 0.82rem;
-  color: #e5e7eb;
-}
-
-.notifications-hero-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.4rem;
-}
-
-.notifications-hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.22rem 0.6rem;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.22);
-  font-size: 0.78rem;
-}
-
-.notifications-hero-badge-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #bbf7d0;
-}
-
-.notifications-hero-btn {
-  padding: 0.28rem 0.75rem;
-  border-radius: 999px;
-  border: none;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #0f172a;
-  background: #f9fafb;
-  cursor: pointer;
-  transition:
-    transform 0.1s ease,
-    box-shadow 0.15s ease,
-    background-color 0.15s ease;
-}
-
-.notifications-hero-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.22);
-  background: #e5e7eb;
-}
-
-/* ========= Surface Card (filters + list) ========= */
-
-.notifications-surface {
-  margin-top: 0.3rem;
-  background: #ffffff;
-  border-radius: 1.1rem;
-  border: 1px solid #e5e7eb;
-  padding: 0.9rem 1rem 1.1rem;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-/* ========= Filters ========= */
-
-.notifications-filters-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  margin-bottom: 0.25rem;
-}
-
-.notifications-filter-chip {
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.78rem;
-  color: #374151;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease,
-    transform 0.1s ease;
-}
-
-.notifications-filter-chip:hover {
-  background: #eef2ff;
-  transform: translateY(-1px);
-}
-
-.notifications-filter-chip.is-active {
-  background: #eff6ff;
-  border-color: #2563eb;
-  color: #1d4ed8;
-}
-
-/* ========= Timeline + List ========= */
-
-.notifications-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.notifications-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.6rem;
-  align-items: stretch;
-}
-
-/* خط زمني رأسي بسيط على اليمين (في وضع RTL) */
-
-.notifications-timeline {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 0.2rem;
-}
-
-.notifications-timeline-dot {
+.pulse-dot-orange {
   width: 10px;
   height: 10px;
-  border-radius: 999px;
-  border: 2px solid #e5e7eb;
-  background: #ffffff;
-}
-
-.notifications-timeline-dot.is-unread {
-  border-color: #22c55e;
-  background: #bbf7d0;
-}
-
-.notifications-timeline-dot.is-read {
-  border-color: #cbd5f5;
-  background: #e5e7eb;
-}
-
-.notifications-timeline-line {
-  flex: 1;
-  width: 2px;
-  margin-top: 0.2rem;
-  background: linear-gradient(
-    to bottom,
-    #e5e7eb,
-    rgba(229, 231, 235, 0.1)
-  );
-}
-
-/* ========= Notification Card ========= */
-
-.notification-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.8rem 0.9rem;
-  border-radius: 0.95rem;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
-  cursor: pointer;
+  background-color: var(--adm-accent-solid);
+  border-radius: 50%;
   position: relative;
+  box-shadow: 0 0 0 0 rgba(255, 127, 0, 0.7);
+  animation: pulse-orange 2s infinite;
+}
+
+@keyframes pulse-orange {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 127, 0, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(255, 127, 0, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 127, 0, 0);
+  }
+}
+
+/* 📱 Mobile Adjustments for Banner */
+@media (max-width: 768px) {
+  .notifications-page .adm-header-inner {
+    grid-template-columns: 1fr auto !important;
+    grid-template-rows: auto auto !important;
+    grid-template-areas:
+      "right left"
+      "banner banner" !important;
+    padding-bottom: var(--sp-2);
+    gap: var(--sp-2);
+  }
+
+  .notifications-unread-banner {
+    width: 100%;
+    margin-top: 4px;
+  }
+}
+
+/* 🏔️ Action Button - Unified with Golden Standard but Accent Themed */
+.header-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(255, 127, 0, 0.05); /* Accent Solid BG check */
+  color: var(--adm-accent-solid);
+  border: 1px solid rgba(255, 127, 0, 0.1);
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-right: auto;
+}
+
+.header-action-btn:hover {
+  background: var(--adm-accent-solid);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 127, 0, 0.2);
+}
+
+.header-action-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.header-action-btn:hover svg {
+  transform: scale(1.1);
+}
+
+/* 🏔️ Action Button - Unified with Golden Standard but Accent Themed */
+.header-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(var(--adm-accent-rgb), 0.05);
+  color: var(--adm-accent-solid);
+  border: 1px solid rgba(var(--adm-accent-rgb), 0.1);
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-right: auto;
+}
+
+.header-action-btn:hover {
+  background: var(--adm-accent-solid);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 127, 0, 0.2);
+}
+
+.header-action-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.header-action-btn:hover svg {
+  transform: scale(1.1);
+}
+
+/* 🧪 Filters Layout - Unified with BuyerOrdersSection */
+.buyer-filter-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--sp-2) !important;
+  width: 100% !important;
+}
+
+.buyer-filter-row .filter-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--adm-text-main);
+  white-space: nowrap;
+}
+
+.buyer-filter-row .adm-form-select {
+  flex: 1;
+  max-width: 400px;
+}
+
+@media (max-width: 480px) {
+  .buyer-filter-row .adm-form-select {
+    max-width: none;
+  }
+}
+
+/* 📦 Grid Flow for Notifications */
+.notifications-grid-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+/* 🎨 Notification Card - 3 Column Layout (Simplified) */
+.notification-card {
+  display: grid !important;
+  grid-template-columns: 140px 1.8fr 1.2fr !important;
+  background: var(--adm-surface);
+  border-radius: 0;
   overflow: hidden;
-  transition:
-    background-color 0.15s ease,
-    box-shadow 0.18s ease,
-    transform 0.1s ease,
-    border-color 0.15s ease;
-}
-
-/* خط جانبي صغير ملوّن حسب حالة القراءة */
-
-.notification-card.is-unread::before {
-  content: "";
-  position: absolute;
-  inset-inline-start: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  border-radius: 0 999px 999px 0;
-  background: linear-gradient(180deg, #22c55e, #0ea5e9);
-}
-
-.notification-card.is-read::before {
-  content: "";
-  position: absolute;
-  inset-inline-start: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  border-radius: 0 999px 999px 0;
-  background: #e5e7eb;
-}
-
-.notification-card.is-unread {
-  background: #f8fafc;
-  border-color: #dbeafe;
+  box-shadow: none;
+  transition: var(--adm-transition-fast);
+  border-top: 1px solid var(--adm-border);
+  border-bottom: 1px solid var(--adm-border);
+  border-inline: none;
+  position: relative;
+  cursor: pointer;
+  min-height: 100px;
 }
 
 .notification-card:hover {
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: var(--shd-elevated) !important;
+  border-color: var(--adm-primary);
+  z-index: 5;
 }
 
-/* أيقونة الإشعار */
+.notification-card.is-unread {
+  background: #fcfdf9;
+  border-right: 4px solid var(--adm-primary);
+  /* RTL Logic Unread Indicator */
+}
 
-.notification-icon-wrapper {
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
+/* --- Column 1: Icon Box --- */
+.notification-col-icon {
+  position: relative;
+  width: 100%;
+  background: var(--adm-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+}
+
+.notification-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--rad-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  position: relative;
 }
 
 .notification-icon-orders {
-  background: #eff6ff;
-  color: #2563eb;
+  background: #f1f3ea;
+  color: var(--adm-primary);
 }
 
 .notification-icon-shipping {
   background: #ecfdf3;
-  color: #16a34a;
+  color: var(--adm-success);
 }
 
 .notification-icon-offers {
   background: #fff7ed;
-  color: #ea580c;
+  color: var(--adm-accent-deep);
 }
 
 .notification-icon-system {
@@ -291,85 +285,95 @@
   color: #7c3aed;
 }
 
-/* ✅ أيقونة فئة "الدعم الفني" */
 .notification-icon-support {
   background: #ecfeff;
   color: #0ea5e9;
 }
 
-.notification-icon-undefined {
-  background: #e5e7eb;
-  color: #0f172a;
+.unread-dot-fixed {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: var(--adm-accent-solid);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(255, 127, 0, 0.3);
+  animation: pulse-orange 2s infinite; /* ✅ Added Pulse Animation */
 }
 
-/* محتوى الإشعار */
-
-.notification-content {
-  flex: 1;
+/* --- Column 2: Content --- */
+.notification-col-content {
+  padding: var(--sp-2);
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-}
-
-.notification-row-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.4rem;
+  justify-content: center;
+  min-width: 0;
+  border-left: 1px solid var(--adm-border);
 }
 
 .notification-title {
-  margin: 0;
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.notification-time {
-  font-size: 0.7rem;
-  color: #9ca3af;
-  flex-shrink: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--adm-primary);
+  /* Olive Identity */
+  margin: 0 0 0.4rem;
+  line-height: 1.3;
 }
 
 .notification-message {
-  margin: 0.15rem 0 0.35rem;
-  font-size: 0.8rem;
-  color: #4b5563;
-  white-space: pre-line; /* ✅ حتى تظهر أسطر الرد بشكل منظم */
+  font-size: 0.88rem;
+  color: var(--adm-text-muted);
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-/* الصف السفلي */
-
-.notification-row-bottom {
+/* --- Column 3: Meta Info --- */
+.notification-col-meta {
+  padding: var(--sp-2);
+  border-left: 1px solid var(--adm-border);
   display: flex;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.6rem;
+  background: rgba(75, 80, 42, 0.04);
 }
 
-.notification-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
+.notification-time-display {
+  font-size: 0.75rem;
+  color: var(--adm-text-muted);
   font-weight: 600;
 }
 
+.notification-pill-display {
+  padding: 4px var(--sp-1);
+  border-radius: var(--rad-sm);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .notification-pill-orders {
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: #f1f3ea;
+  color: var(--adm-primary);
 }
 
 .notification-pill-shipping {
   background: #ecfdf3;
-  color: #15803d;
+  color: var(--adm-success);
 }
 
 .notification-pill-offers {
   background: #fff7ed;
-  color: #c2410c;
+  color: var(--adm-accent-deep);
 }
 
 .notification-pill-system {
@@ -377,82 +381,87 @@
   color: #6d28d9;
 }
 
-/* ✅ بادج فئة "الدعم الفني" */
 .notification-pill-support {
   background: #e0f2fe;
   color: #0369a1;
 }
 
-.notification-new-dot {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #16a34a;
-}
-
-/* ========= Empty State ========= */
-
-.notifications-empty {
-  margin-top: 0.5rem;
-  padding: 1.4rem 1rem;
-  border-radius: 1rem;
-  border: 1px dashed #e5e7eb;
-  background: #f9fafb;
-  text-align: center;
-}
-
-.notifications-empty-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  background: #eff6ff;
-  color: #2563eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 0.6rem;
-}
-
-.notifications-empty-title {
-  margin: 0;
-  font-size: 0.96rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.notifications-empty-text {
-  margin: 0.3rem 0 0;
-  font-size: 0.8rem;
-  color: #6b7280;
-}
-
-/* ========= Responsive ========= */
-
+/* 📱 MOBILE ARCHITECTURE: 2-Segment Grid Areas (Actions Removed) */
 @media (max-width: 768px) {
-  .notifications-hero {
-    flex-direction: column;
-    align-items: flex-start;
+  .notification-card {
+    grid-template-columns: 80px 1fr !important;
+    grid-template-rows: auto auto !important;
+    grid-template-areas:
+      "meta meta"
+      "icon content" !important;
+    min-height: auto;
   }
 
-  .notifications-hero-meta {
-    align-items: flex-start;
+  .notification-col-icon {
+    grid-area: icon;
+    padding: 0.75rem;
+    border-left: none;
+    background: transparent;
+  }
+
+  .notification-col-content {
+    grid-area: content;
+    padding: 1rem 0.5rem 1rem 1rem;
+    border-left: none;
+  }
+
+  .notification-col-meta {
+    grid-area: meta;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0.6rem var(--sp-2);
+    background: var(--adm-primary);
+    color: #fff;
+    border-left: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .notification-time-display {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .notification-pill-display {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .notification-title {
+    font-size: 0.95rem;
+  }
+
+  .notification-message {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  .notification-icon-wrapper {
+    width: 44px;
+    height: 44px;
   }
 }
 
-@media (max-width: 640px) {
-  .notifications-surface {
-    padding-inline: 0.8rem;
+/* 🏜️ Empty States - Golden Standard */
+.notifications-empty {
+  padding: var(--sp-5) var(--sp-3) !important;
+}
+
+/* 🏎️ Utilities */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
   }
 
-  .notifications-row {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .notification-row-top {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .notification-time {
-    margin-top: 0.1rem;
+  to {
+    transform: rotate(-360deg);
   }
 }

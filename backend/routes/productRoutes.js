@@ -12,8 +12,10 @@ import {
   updateProduct,
   deleteProduct,
   updateProductStatus,
+  trackCartAddition,
+  getProductRecommendations,
 } from "../controllers/productController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, optionalProtect } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
@@ -24,7 +26,10 @@ const router = express.Router();
 router.get("/", getProducts);
 
 // 🛍️ جلب منتج واحد بالتعرّف (للجميع)
-router.get("/:id", getProductById);
+router.get("/:id", optionalProtect, getProductById);
+
+// 🧠 محرك التوصيات المتقدم
+router.get("/:id/recommendations", getProductRecommendations);
 
 // ➕ إنشاء منتج جديد (فقط للبائع أو الأدمن)
 // يستخدمه SellerDashboard عبر productService / sellerService

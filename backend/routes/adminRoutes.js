@@ -1,3 +1,4 @@
+
 // ────────────────────────────────────────────────
 // 📁 backend/routes/adminRoutes.js
 // مسارات المشرف العام ولوحة الإدارة في نظام طلبية (Talabia)
@@ -12,6 +13,7 @@ import {
   // 🔹 جديد: تفاصيل المستخدم + حالة المستخدم
   getAdminUserDetails,
   updateUserStatus,
+  deleteUserByAdmin, // ⬅️ استيراد الدالة الجديدة
 
   // المشرفون (الموظفون)
   getAdminStaffList,
@@ -22,14 +24,17 @@ import {
 
   // البائعون
   getAdminSellers,
+  getAdminSellerById, // ✅ استيراد الدالة المفقودة
   updateSellerStatus,
   approveSeller,
   rejectSeller,
+  getAdminSellerStats, // ✅ جديد: إحصائيات البائع
 
   // المنتجات
   getAdminProducts,
   getAdminProductDetails, // ✅ جديد: تفاصيل منتج واحد مع إحصاءات
   updateProductStatus,
+  updateProductFeatureStatus, // ✅ جديد: تحديث حالة التميز (Imported)
   deleteProductAsAdmin,
 
   // الطلبات
@@ -39,6 +44,8 @@ import {
   // 🆕 تحديث / إلغاء منتج واحد داخل الطلب (Item-based)
   updateOrderItemStatusAsAdmin,
   cancelOrderItemAsAdmin,
+  // 🚨 حذف الطلب نهائياً (Super Admin فقط)
+  deleteOrderPermanently,
 
   // شركات الشحن
   getAdminShippingCompanies,
@@ -77,12 +84,21 @@ import { allowRoles, requireAdminPermission } from '../middleware/roleMiddleware
 
 // ✅ استخدام رافع الأقسام + معالج أخطاء multer
 import { uploadCategoryImage, handleMulterError } from '../middleware/uploadMiddleware.js';
+import { refundOrderWallet } from '../controllers/orderController.js';
 
 // 🔹 استيراد دوال الرد والحذف من كونترولر الدعم المتخصص
 import {
   replyToSupportTicket,
   deleteSupportTicket,
 } from '../controllers/admin/adminSupportController.js';
+
+// 💳 إدارة خيارات الدفع
+import {
+  adminGetPaymentSettings,
+  adminUpdatePaymentSettings,
+  adminGetBankTransfers,
+  adminUpdateBankTransferStatus,
+} from '../controllers/admin/adminPaymentController.js';
 
 const router = express.Router();
 
@@ -229,6 +245,8 @@ router.get('/users/:id', ...adminUsersView, getAdminUserDetails);
 router.put('/users/:id/role', ...adminUsersManageRole, updateUserRole);
 // 🔹 تحديث حالة المستخدم (نشط / غير نشط)
 router.put('/users/:id/status', ...adminUsersManageStatus, updateUserStatus);
+// 🔹 حذف المستخدم (حذف شامل → يتطلب full)
+router.delete('/users/:id', ...adminUsersManageRole, deleteUserByAdmin);
 
 // ────────────────────────────────────────────────
 // 👑 إدارة المشرفين (الموظفين الإداريين)
@@ -251,9 +269,12 @@ router.delete('/admins/:id', ...adminStaffManage, deleteAdminStaff);
 // 🏪 إدارة البائعين
 // ────────────────────────────────────────────────
 router.get('/sellers', ...adminSellersView, getAdminSellers);
+router.get('/sellers/:id', ...adminSellersView, getAdminSellerById);
 router.put('/sellers/:id/status', ...adminSellersManage, updateSellerStatus);
 router.put('/sellers/:id/approve', ...adminSellersManage, approveSeller);
 router.put('/sellers/:id/reject', ...adminSellersManage, rejectSeller);
+// ✅ جديد: مسار إحصائيات البائع (منتجات + طلبات)
+router.get('/sellers/:id/stats', ...adminSellersView, getAdminSellerStats);
 
 // ────────────────────────────────────────────────
 // 📦 إدارة المنتجات
@@ -278,12 +299,20 @@ router.delete(
   deleteProductAsAdmin
 );
 
+// ✅ جديد: مسار تحديث حالة التميز وترتيب المنتج
+router.put(
+  '/products/:id/feature-status',
+  ...adminProductsManageStatus, // نستخدم نفس صلاحية تحديث الحالة (Partial)
+  updateProductFeatureStatus
+);
+
 // ────────────────────────────────────────────────
 // 🧾 إدارة الطلبات
 // ────────────────────────────────────────────────
 router.get('/orders', ...adminOrdersView, getAdminOrders);
 router.put('/orders/:id/status', ...adminOrdersManage, updateOrderStatus);
 router.put('/orders/:id/cancel', ...adminOrdersManage, cancelOrderAsAdmin);
+router.post('/orders/:id/refund', ...adminOrdersManage, refundOrderWallet);
 
 // 🆕 تحديث حالة منتج واحد داخل الطلب / إلغاء منتج واحد من قبل الإدارة (Item-based)
 router.patch(
@@ -295,6 +324,16 @@ router.patch(
   '/orders/:orderId/items/:itemId/cancel-by-admin',
   ...adminOrdersManage,
   cancelOrderItemAsAdmin
+);
+
+// 🚨 حذف الطلب نهائياً (Super Admin فقط - isOwner = true)
+// ⚠️ تنبيه: لا يمكن التراجع عن هذه العملية
+router.delete(
+  '/orders/:id',
+  protect,
+  allowRoles('admin'),
+  // التحقق من isOwner يتم داخل الـ controller نفسه
+  deleteOrderPermanently
 );
 
 // ────────────────────────────────────────────────
@@ -426,5 +465,32 @@ router.delete(
   ...adminSupportDelete,
   deleteSupportTicket
 );
+
+// ────────────────────────────────────────────────
+// 💳 إدارة خيارات الدفع (Payment Settings)
+// ────────────────────────────────────────────────
+const adminPaymentView = [
+  ...adminOnly,
+  requireAdminPermission('payment', 'view'),
+];
+const adminPaymentManage = [
+  ...adminOnly,
+  requireAdminPermission('payment', 'full'),
+];
+
+// جلب إعدادات الدفع (للأدمن)
+router.get('/payment-settings', ...adminPaymentView, adminGetPaymentSettings);
+
+// تحديث إعدادات الدفع (ندعم PUT و POST لضمان التوافق)
+router.put('/payment-settings', ...adminPaymentManage, adminUpdatePaymentSettings);
+router.post('/payment-settings', ...adminPaymentManage, adminUpdatePaymentSettings);
+
+// جلب الطلبات المدفوعة بالحوالة البنكية
+router.get('/bank-transfers', ...adminPaymentView, adminGetBankTransfers);
+
+// ✅ تحديث حالة الحوالة البنكية (تأكيد / رفض)
+// تحديث حالة الحوالة البنكية (ندعم PATCH و POST للتوافق)
+router.patch('/bank-transfers/:id/status', ...adminPaymentManage, adminUpdateBankTransferStatus);
+router.post('/bank-transfers/:id/status', ...adminPaymentManage, adminUpdateBankTransferStatus);
 
 export default router;

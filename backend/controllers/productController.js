@@ -7,6 +7,10 @@
 import asyncHandler from "express-async-handler";
 import Product from "../models/Product.js";
 import Store from "../models/Store.js";
+import Category from "../models/Category.js";
+import SystemSettings from "../models/SystemSettings.js";
+import { getOrSetCache, invalidateCache } from "../utils/recommendationCache.js";
+import { sanitizeHTML, sanitizeText } from "../utils/sanitize.js";
 
 import fs from "fs";
 import path from "path";
@@ -105,86 +109,57 @@ function getUserIdFromReq(req) {
 //   - ?category=... لتصفية المنتجات حسب التصنيف
 //   - ?page=1&limit=20 اختيارياً (مع الاستمرار في إعادة Array فقط)
 // ────────────────────────────────────────────────
+// ────────────────────────────────────────────────
+// 📦 جلب جميع المنتجات (محدث بنظام البحث الجديد)
+// ────────────────────────────────────────────────
+import { searchProducts } from "../services/searchService.js";
+
 export const getProducts = asyncHandler(async (req, res) => {
   const role = req.user?.role || null;
-  const { category, page, limit } = req.query;
+  const { category, page, limit, search, sort } = req.query;
 
-  let filter;
-
+  // 1. إذا كان الأدمن، نستخدم المنطق القديم المباشر (لأن الأدمن يحتاج رؤية كل شيء، حتى غير النشط)
+  // أو يمكننا تحديث الـ Service ليدعم الأدمن، لكن للسرعة والأمان نفصلهم حالياً.
   if (role === "admin") {
-    // الأدمن يمكن أن يرى كل المنتجات
-    filter = {};
-  } else {
-    // الواجهة العامة (الصفحة الرئيسية / المشتري / الزائر):
-    // نعتبر المنتج نشطاً إذا:
-    //  - isActive === true
-    //  أو
-    //  - لا يوجد isActive لكن status ليست "inactive"
-    filter = {
-      $or: [
-        { isActive: true },
-        {
-          $and: [
-            {
-              $or: [{ isActive: { $exists: false } }, { isActive: null }],
-            },
-            {
-              $or: [
-                { status: { $exists: false } },
-                { status: { $ne: "inactive" } },
-              ],
-            },
-          ],
-        },
-      ],
-    };
+    // ... (سنبقي المنطق القديم للأدمن هنا أو نعيد كتابة جزء مبسط)
+    // للأسف، دالة replace_file_content تستبدل النص بالكامل.
+    // لذا سأعيد كتابة المنطق القديم للأدمن هنا باختصار، واستخدم السيرفس الجديد للعامة.
+
+    let matchQuery = {};
+    if (category && category !== "all") matchQuery.category = category;
+    if (search && search.trim().length > 0) {
+      const searchRegex = { $regex: search.trim(), $options: "i" };
+      matchQuery.$or = [{ name: searchRegex }, { description: searchRegex }];
+    }
+
+    const products = await Product.find(matchQuery)
+      .populate("store", "name status visibility")
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit) || 20);
+
+    return res.json(products);
   }
 
-  if (category) {
-    filter = { ...filter, category };
-  }
-
-  // ✅ لغير الأدمن: استثناء المنتجات المحجوبة من الإدارة
-  if (role !== "admin") {
-    filter = {
-      ...filter,
-      adminLocked: { $ne: true },
-    };
-  }
-
-  const pageNum = page ? Math.max(parseInt(page, 10) || 1, 1) : 1;
-  const limitNum = limit ? Math.max(parseInt(limit, 10) || 0, 0) : 0;
-
-  let query = Product.find(filter)
-    .populate("store", "name status visibility")
-    .sort({ createdAt: -1 });
-
-  if (limitNum > 0) {
-    query = query.skip((pageNum - 1) * limitNum).limit(limitNum);
-  }
-
-  const products = await query.exec();
-
-  // 🔍 فلترة إضافية على المتجر لغير الأدمن:
-  // - status يجب أن يكون approved (إن وُجد)
-  // - visibility لا تكون hidden (أو غير موجودة تُعتبر visible)
-  let finalProducts = products;
-
-  if (role !== "admin") {
-    finalProducts = products.filter((p) => {
-      const store = p.store;
-      if (!store) return false;
-
-      const statusOk = !store.status || store.status === "approved";
-      const visibilityOk = !store.visibility || store.visibility !== "hidden";
-
-      return statusOk && visibilityOk;
+  // 2. للعامة والمشترين والبائعين: نستخدم محرك البحث الذكي الجديد
+  try {
+    const products = await searchProducts({
+      query: search,
+      category,
+      sort,
+      limit: parseInt(limit) || 20,
+      skip: 0
     });
-  }
 
-  // نعيد Array كما تتوقع الواجهة الأمامية (Home.jsx)
-  res.json(finalProducts);
+    // إضافة لقطة إحصائية (اختياري)
+    // console.log(`Search: "${search}" -> Found ${products.length} items`);
+
+    res.json(products);
+  } catch (error) {
+    res.status(500);
+    throw new Error("حدث خطأ أثناء البحث.");
+  }
 });
+
 
 // ────────────────────────────────────────────────
 // 🛍️ جلب منتج واحد بالتعرّف
@@ -196,7 +171,8 @@ export const getProductById = asyncHandler(async (req, res) => {
   // نُرجع category ككائن (name/slug) بدل أن يرجع كنص ObjectId
   const product = await Product.findById(req.params.id)
     .populate("store", "name status visibility")
-    .populate("category", "name slug");
+    .populate("category", "name slug")
+    .populate("seller", "isActive");
 
   if (!product) {
     res.status(404);
@@ -206,28 +182,60 @@ export const getProductById = asyncHandler(async (req, res) => {
   const role = req.user?.role || null;
 
   // إذا لم يكن المستخدم أدمن:
-  // - لا نسمح بعرض منتج محجوب من الإدارة
-  // - ولا منتج غير نشط
+  // - نسمح لمالك المنتج (البائع) بمشاهدته دائماً للتعديل
+  // - أما لغير المالك (المشترين):
+  //    - لا نسمح بعرض منتج محجوب من الإدارة
+  //    - ولا منتج غير نشط
+  //    - ولا منتج تابع لبائع موقوف
   if (role !== "admin") {
-    const isActiveOk =
-      product.isActive === true ||
-      (!product.isActive &&
-        (!product.status || product.status !== "inactive"));
+    const userId = getUserIdFromReq(req);
+    const isOwner =
+      userId && product.seller && (product.seller._id || product.seller).toString() === userId;
 
-    const notLocked = !product.adminLocked;
+    if (!isOwner) {
+      const isActiveOk =
+        product.isActive === true ||
+        (!product.isActive &&
+          (!product.status || product.status !== "inactive"));
 
-    const store = product.store;
-    const storeStatusOk = !store?.status || store.status === "approved";
-    const storeVisibilityOk =
-      !store?.visibility || store.visibility !== "hidden";
+      const notLocked = !product.adminLocked;
 
-    if (!isActiveOk || !notLocked || !storeStatusOk || !storeVisibilityOk) {
-      res.status(404);
-      throw new Error("المنتج غير متاح للعرض.");
+      const store = product.store;
+      const storeStatusOk = !store?.status || store.status === "approved";
+      const storeVisibilityOk =
+        !store?.visibility || store.visibility !== "hidden";
+
+      // 🔐 التحقق من حالة البائع
+      const sellerActiveOk = product.seller?.isActive !== false;
+
+      if (!isActiveOk || !notLocked || !storeStatusOk || !storeVisibilityOk || !sellerActiveOk) {
+        res.status(404);
+        throw new Error("المنتج غير متاح للعرض.");
+      }
+
+      // ✅ زيادة عداد المشاهدات (للمشترين فقط وليس البائع أو الأدمن)
+      await Product.updateOne({ _id: req.params.id }, { $inc: { viewsCount: 1 } });
     }
   }
 
   res.json(product);
+});
+
+// ────────────────────────────────────────────────
+// 🛒 تتبع الإضافة للسلة (Track Cart Addition)
+// POST /api/products/:id/track-cart
+// ────────────────────────────────────────────────
+export const trackCartAddition = asyncHandler(async (req, res) => {
+  const product = await Product.findById(req.params.id);
+
+  if (!product) {
+    res.status(404);
+    throw new Error("المنتج غير موجود.");
+  }
+
+  await Product.updateOne({ _id: req.params.id }, { $inc: { addToCartCount: 1 } });
+
+  res.json({ message: "تم تسجيل الإضافة للسلة بنجاح." });
 });
 
 // ────────────────────────────────────────────────
@@ -247,7 +255,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     brand,
     variants,
     status,
-    returnPolicy,
+    returnPolicy, lowStockThreshold,
   } = req.body;
 
   const userId = getUserIdFromReq(req);
@@ -295,9 +303,14 @@ export const createProduct = asyncHandler(async (req, res) => {
     storeId = storeDoc._id;
   }
 
-  // 🔒 تطبيع حالة المنتج لضمان تطابق status مع isActive
+  // 🔒 تطبيق نظام الحماية: منع تفعيل المنتج إذا كان المخزون صفر
   const normalizedStatus = status === "inactive" ? "inactive" : "active";
   const isActive = normalizedStatus === "active";
+
+  if (isActive && (stock == null || Number(stock) <= 0)) {
+    res.status(400);
+    throw new Error("نفدت الكمية، تم التعطيل آلياً. لتنشيط المنتج مجدداً يرجى تحديث المخزون أولاً.");
+  }
 
   // تطبيع الصور لتوافق مخطط Product (images: [{ url, alt }])
   const normalizedImages = normalizeImages(images);
@@ -305,8 +318,8 @@ export const createProduct = asyncHandler(async (req, res) => {
   const product = new Product({
     store: storeId,
     seller: userId,
-    name,
-    description,
+    name: sanitizeText(name),
+    description: sanitizeHTML(description),
     price,
     stock,
     category: finalCategory,
@@ -315,8 +328,9 @@ export const createProduct = asyncHandler(async (req, res) => {
     brand,
     variants,
     status: normalizedStatus,
-    returnPolicy,
+    returnPolicy: sanitizeHTML(returnPolicy),
     isActive,
+    lowStockThreshold: Number(lowStockThreshold) || 2, // القيمة الافتراضية
     adminLocked: false, // عند الإنشاء لا يكون محجوباً من الإدارة
   });
 
@@ -362,7 +376,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
     brand,
     variants,
     status,
-    returnPolicy,
+    returnPolicy, lowStockThreshold,
   } = req.body;
 
   // ✅ منع البائع من تغيير حالة منتج محجوب من الإدارة
@@ -374,11 +388,11 @@ export const updateProduct = asyncHandler(async (req, res) => {
   }
 
   if (name !== undefined) {
-    product.name = name;
+    product.name = sanitizeText(name);
   }
 
   if (description !== undefined) {
-    product.description = description;
+    product.description = sanitizeHTML(description);
   }
 
   if (price !== undefined) {
@@ -395,6 +409,11 @@ export const updateProduct = asyncHandler(async (req, res) => {
       throw new Error("المخزون غير صالح.");
     }
     product.stock = stock;
+
+    // ✅ إعادة ضبط علم التنبيه إذا أصبح المخزون كافياً بعد التحديث
+    if (product.stock > product.lowStockThreshold) {
+      product.lowStockNotified = false;
+    }
   }
 
   const finalCategory = category || categoryId;
@@ -415,7 +434,11 @@ export const updateProduct = asyncHandler(async (req, res) => {
   }
 
   if (returnPolicy !== undefined) {
-    product.returnPolicy = returnPolicy;
+    product.returnPolicy = sanitizeHTML(returnPolicy);
+  }
+
+  if (lowStockThreshold !== undefined) {
+    product.lowStockThreshold = Number(lowStockThreshold);
   }
 
   // ✅ صور المنتج: احذف الصور التي تمت إزالتها فعلياً من المنتج
@@ -442,8 +465,23 @@ export const updateProduct = asyncHandler(async (req, res) => {
   // ✅ توحيد منطق status + isActive
   if (status !== undefined) {
     const normalizedStatus = status === "inactive" ? "inactive" : "active";
+    const newIsActive = normalizedStatus === "active";
+
+    // 🔒 حماية: منع التفعيل اليدوي إذا كان المخزون صفر
+    if (newIsActive && (product.stock <= 0 && (stock === undefined || Number(stock) <= 0))) {
+      res.status(400);
+      throw new Error("نفدت الكمية، تم التعطيل آلياً. لتنشيط المنتج مجدداً يرجى تحديث المخزون أولاً.");
+    }
+
     product.status = normalizedStatus;
-    product.isActive = normalizedStatus === "active";
+    product.isActive = newIsActive;
+    // ✅ أي تدخل يدوي في الحالة يُلغي علم "التعطيل التلقائي"
+    product.autoDeactivated = false;
+
+    // إذا أصبح المخزون كافيًا، يمكننا إعادة ضبط علم التنبيه أيضًا
+    if (product.isActive && product.stock > product.lowStockThreshold) {
+      product.lowStockNotified = false;
+    }
 
     // إذا كان من يغيّر هو الأدمن فقط، نحدّث adminLocked
     if (isAdmin) {
@@ -452,6 +490,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
   }
 
   const updated = await product.save();
+  invalidateCache(req.params.id);
   res.json(updated);
 });
 
@@ -491,6 +530,7 @@ export const deleteProduct = asyncHandler(async (req, res) => {
   }
 
   await product.deleteOne();
+  invalidateCache(req.params.id);
   res.json({ message: "تم حذف المنتج بنجاح." });
 });
 
@@ -539,8 +579,17 @@ export const updateProductStatus = asyncHandler(async (req, res) => {
   // نفس منطق التطبيع المستخدم في createProduct
   const normalizedStatus = status === "inactive" ? "inactive" : "active";
 
+  // 🔒 حماية: منع التفعيل اليدوي إذا كان المخزون صفر
+  if (normalizedStatus === "active" && product.stock <= 0) {
+    res.status(400);
+    throw new Error("نفدت الكمية، تم التعطيل آلياً. لتنشيط المنتج مجدداً يرجى تحديث المخزون أولاً.");
+  }
+
   product.status = normalizedStatus;
   product.isActive = normalizedStatus === "active";
+
+  // ✅ أي تدخل يدوي في الحالة يُلغي علم "التعطيل التلقائي" (Auto-Deactivation Reset)
+  product.autoDeactivated = false;
 
   // ✅ إذا كان من يغيّر هو الأدمن، نضبط adminLocked
   if (isAdmin) {
@@ -549,4 +598,66 @@ export const updateProductStatus = asyncHandler(async (req, res) => {
 
   const updated = await product.save();
   res.json(updated);
+});
+
+// ────────────────────────────────────────────────
+// 🧠 محرك التوصيات المتقدم (Enterprise Recommendation Engine)
+// GET /api/products/:id/recommendations
+// ────────────────────────────────────────────────
+export const getProductRecommendations = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const data = await getOrSetCache(id, async () => {
+      const targetProduct = await Product.findById(id).populate("category", "name slug");
+      if (!targetProduct) {
+        const fallback = await Product.find({ isActive: true, adminLocked: false, stock: { $gt: 0 } }).limit(10).populate("category", "name slug");
+        return { similar: fallback, seller: [], trending: [] };
+      }
+
+      const weightsConfig = await SystemSettings.findOne({ key: "recommendation_weights" });
+      const weights = weightsConfig?.value || {
+        matchQuality: 0.4,
+        salesPerformance: 0.3,
+        vendorRating: 0.2,
+        newness: 0.1,
+        priceSensitivity: 0.5,
+      };
+
+      let candidates = [];
+      let levelsTried = 0;
+
+      const getQueryForLevel = (level) => {
+        const baseMatch = { _id: { $ne: targetProduct._id }, isActive: true, adminLocked: false, stock: { $gt: 0 } };
+        switch (level) {
+          case 0: return { ...baseMatch, category: String(targetProduct.category?._id || targetProduct.category), price: { $gte: targetProduct.price * 0.8, $lte: targetProduct.price * 1.2 }, rating: { $gte: 3.5 } };
+          case 1: return { ...baseMatch, category: String(targetProduct.category?._id || targetProduct.category), price: { $gte: targetProduct.price * 0.5, $lte: targetProduct.price * 2.0 } };
+          default: return baseMatch;
+        }
+      };
+
+      while (candidates.length < 12 && levelsTried < 3) {
+        candidates = await Product.find(getQueryForLevel(levelsTried)).limit(30).populate("category", "name slug").populate("store", "name status");
+        levelsTried++;
+      }
+
+      const scoredProducts = candidates.map((p) => {
+        const priceDiff = Math.abs(p.price - targetProduct.price);
+        const priceScore = Math.max(0, 1 - priceDiff / (targetProduct.price || 1));
+        const nameMatch = p.name.split(" ").some((w) => targetProduct.name.includes(w)) ? 1 : 0;
+        const finalScore = priceScore * weights.priceSensitivity + nameMatch * weights.matchQuality + (p.rating / 5) * weights.vendorRating + Math.min(1, (p.salesCount || 0) / 100) * weights.salesPerformance;
+        return { ...p._doc, _recScore: finalScore };
+      });
+
+      const sorted = scoredProducts.sort((a, b) => b._recScore - a._recScore);
+      const sellerProducts = await Product.find({ store: targetProduct.store, _id: { $ne: targetProduct._id }, isActive: true, adminLocked: false, stock: { $gt: 0 } }).limit(12).populate("category", "name slug");
+      const trending = await Product.find({ category: String(targetProduct.category?._id || targetProduct.category), _id: { $ne: targetProduct._id }, isActive: true, adminLocked: false, stock: { $gt: 0 } }).sort({ salesCount: -1 }).limit(12).populate("category", "name slug");
+
+      return { similar: sorted.slice(0, 12), seller: sellerProducts, trending, meta: { levelsUsed: levelsTried, weightsUsed: weights } };
+    });
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "خطأ في محرك التوصيات" });
+  }
 });

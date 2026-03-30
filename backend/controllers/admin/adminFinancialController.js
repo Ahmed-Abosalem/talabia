@@ -9,6 +9,8 @@ import Transaction from '../../models/Transaction.js';
 import Order from '../../models/Order.js';
 import Store from '../../models/Store.js';
 import ShippingCompany from '../../models/ShippingCompany.js';
+import Notification from '../../models/Notification.js';
+import { CANCELLED_CODES } from '../../utils/cancellationCodes.js';
 
 // 🧩 دالة مساعدة لبناء فلتر التاريخ من query (from, to)
 function buildDateFilter(query) {
@@ -52,9 +54,15 @@ const EARNING_TYPES = [
 // ────────────────────────────────────────────────
 export const getAdminFinancialSummary = asyncHandler(async (req, res) => {
   const matchDate = buildDateFilter(req.query);
+  const { paymentMethod, role } = req.query;
 
-  // ✅ نستبعد المعاملات الملغاة من التجميعات (حتى لا تُشوّه الأرقام)
-  const matchTx = { ...matchDate, status: { $ne: 'CANCELLED' } };
+  const matchTx = { ...matchDate, status: { $nin: CANCELLED_CODES } };
+
+  const pmN = normalizeAll(paymentMethod);
+  if (pmN) matchTx.paymentMethod = pmN;
+
+  const roleN = normalizeAll(role);
+  if (roleN) matchTx.role = roleN;
 
   // 🧮 نجمع المعاملات المالية حسب (type, role, paymentMethod)
   const [txAgg, totalOrders] = await Promise.all([
@@ -295,14 +303,20 @@ export const getAdminTransactions = asyncHandler(async (req, res) => {
 // - مع صف افتراضي لإجمالي المبيعات (SALES) لمبالغ COD
 // ────────────────────────────────────────────────
 export const getFinancialAccounts = asyncHandler(async (req, res) => {
-  const { role } = req.query;
+  const { role, paymentMethod } = req.query;
   const dateFilter = buildDateFilter(req.query);
 
   // ✅ استبعاد المعاملات الملغاة من جدول الحسابات
   const baseMatch = {
     ...dateFilter,
-    status: { $ne: 'CANCELLED' },
+    status: { $nin: CANCELLED_CODES },
   };
+
+  // ✅ فلتر طريقة الدفع
+  const pmN = normalizeAll(paymentMethod);
+  if (pmN) {
+    baseMatch.paymentMethod = pmN;
+  }
 
   // الأدوار "الحقيقية" التي لها طرف معيّن
   const REAL_ROLES = ['SELLER', 'SHIPPING', 'PLATFORM'];
@@ -314,8 +328,15 @@ export const getFinancialAccounts = asyncHandler(async (req, res) => {
     isSpecificRole && role !== 'SALES'
       ? [role]
       : !isSpecificRole
-      ? REAL_ROLES
-      : [];
+        ? REAL_ROLES
+        : [];
+
+  const { storeId, shippingCompanyId } = req.query;
+  const storeFilter = normalizeAll(storeId);
+  const shipFilter = normalizeAll(shippingCompanyId);
+
+  if (storeFilter) baseMatch.store = storeFilter;
+  if (shipFilter) baseMatch.shippingCompany = shipFilter;
 
   if (rolesToInclude.length) {
     baseMatch.role = { $in: rolesToInclude };
@@ -324,45 +345,45 @@ export const getFinancialAccounts = asyncHandler(async (req, res) => {
   // 🧮 تجميع حسابات SELLER / SHIPPING / PLATFORM
   const agg = rolesToInclude.length
     ? await Transaction.aggregate([
-        { $match: baseMatch },
-        {
-          $group: {
-            _id: {
-              role: '$role',
-              // للبائع: نجمع حسب store فقط
-              store: {
-                $cond: [{ $eq: ['$role', 'SELLER'] }, '$store', null],
-              },
-              // لشركة الشحن: نجمع حسب shippingCompany فقط
-              shippingCompany: {
-                $cond: [{ $eq: ['$role', 'SHIPPING'] }, '$shippingCompany', null],
-              },
+      { $match: baseMatch },
+      {
+        $group: {
+          _id: {
+            role: '$role',
+            // للبائع: نجمع حسب store فقط
+            store: {
+              $cond: [{ $eq: ['$role', 'SELLER'] }, '$store', null],
             },
-            store: { $first: '$store' },
-            shippingCompany: { $first: '$shippingCompany' },
-            totalDue: {
-              $sum: {
-                $cond: [{ $in: ['$type', EARNING_TYPES] }, '$amount', 0],
-              },
+            // لشركة الشحن: نجمع حسب shippingCompany فقط
+            shippingCompany: {
+              $cond: [{ $eq: ['$role', 'SHIPPING'] }, '$shippingCompany', null],
             },
-            totalPayout: {
-              $sum: {
-                $cond: [{ $eq: ['$type', 'PAYOUT'] }, '$amount', 0],
-              },
+          },
+          store: { $first: '$store' },
+          shippingCompany: { $first: '$shippingCompany' },
+          totalDue: {
+            $sum: {
+              $cond: [{ $in: ['$type', EARNING_TYPES] }, '$amount', 0],
             },
-            totalRefund: {
-              $sum: {
-                $cond: [{ $eq: ['$type', 'REFUND'] }, '$amount', 0],
-              },
+          },
+          totalPayout: {
+            $sum: {
+              $cond: [{ $eq: ['$type', 'PAYOUT'] }, '$amount', 0],
             },
-            totalSupply: {
-              $sum: {
-                $cond: [{ $eq: ['$type', 'SUPPLY'] }, '$amount', 0],
-              },
+          },
+          totalRefund: {
+            $sum: {
+              $cond: [{ $eq: ['$type', 'REFUND'] }, '$amount', 0],
+            },
+          },
+          totalSupply: {
+            $sum: {
+              $cond: [{ $eq: ['$type', 'SUPPLY'] }, '$amount', 0],
             },
           },
         },
-      ])
+      },
+    ])
     : [];
 
   const storeIds = [];
@@ -381,13 +402,13 @@ export const getFinancialAccounts = asyncHandler(async (req, res) => {
   const [stores, shippingCompanies] = await Promise.all([
     storeIds.length
       ? Store.find({ _id: { $in: storeIds } }).select(
-          'name email phone contactEmail contactPhone'
-        )
+        'name email phone contactEmail contactPhone'
+      )
       : [],
     shippingCompanyIds.length
       ? ShippingCompany.find({ _id: { $in: shippingCompanyIds } }).select(
-          'name email phone contactEmail contactPhone'
-        )
+        'name email phone contactEmail contactPhone'
+      )
       : [],
   ]);
 
@@ -461,18 +482,21 @@ export const getFinancialAccounts = asyncHandler(async (req, res) => {
     };
   });
 
-  // 🟨 حساب افتراضي لإجمالي المبيعات – COD (SALES)
+  // 🟨 حساب افتراضي لإجمالي المبيعات (SALES)
   const shouldIncludeSales =
     !role || role === 'ALL' || role === 'SALES';
 
   if (shouldIncludeSales) {
-    // 1) إجمالي المبيعات = مستحقات البائع + عمولة المنصة من طلبات COD
+    // 1) إجمالي المبيعات = مستحقات البائع + عمولة المنصة من **جميع الطلبات** (قبل خصم أي عمولات)
     const salesMatch = {
       ...dateFilter,
-      status: { $ne: 'CANCELLED' }, // ✅
-      paymentMethod: 'COD',
+      status: { $nin: CANCELLED_CODES }, // ✅ استبعاد الطلبات الملغاة
       type: { $in: ['ORDER_EARNING_SELLER', 'ORDER_EARNING_PLATFORM'] },
     };
+    // ✅ تطبيق فلتر طريقة الدفع إن وُجد
+    if (pmN) {
+      salesMatch.paymentMethod = pmN;
+    }
 
     const [salesAgg] = await Transaction.aggregate([
       { $match: salesMatch },
@@ -489,7 +513,7 @@ export const getFinancialAccounts = asyncHandler(async (req, res) => {
     // 2) إجمالي التوريد من مبالغ COD = SUPPLY من شركات الشحن بالدفع عند الاستلام
     const supplyMatch = {
       ...dateFilter,
-      status: { $ne: 'CANCELLED' }, // ✅
+      status: { $nin: CANCELLED_CODES }, // ✅
       paymentMethod: 'COD',
       role: 'SHIPPING',
       type: 'SUPPLY',
@@ -510,18 +534,18 @@ export const getFinancialAccounts = asyncHandler(async (req, res) => {
     const salesAccount = {
       role: 'SALES',
       partyId: null,
-      name: 'إجمالي المبيعات – COD',
+      name: 'إجمالي المبيعات',
       email: '-',
       phone: '-',
-      // إجمالي المستحقات = إجمالي قيمة المنتجات (بدون الشحن)
+      // إجمالي المستحقات = إجمالي قيمة المنتجات (بدون الشحن) من جميع الطلبات
       totalDue: salesTotalDue,
       // لا نستخدم PAYOUT / REFUND لحساب SALES
       totalSent: 0,
       totalRefund: 0,
-      // إجمالي ما تم توريده من مبالغ المبيعات
+      // إجمالي ما تم توريده من مبالغ المبيعات (COD)
       totalSupply: salesTotalSupply,
-      // الرصيد الحالي = مبيعات لم تُورد بعد
-      currentBalance: salesTotalDue - salesTotalSupply,
+      // الرصيد الحالي = مبيعات COD لم تُورد بعد
+      currentBalance: 0, // ✅ لا معنى للرصيد الحالي في إجمالي المبيعات
     };
 
     if (role === 'SALES') {
@@ -570,26 +594,65 @@ export const createFinancialSettlement = asyncHandler(async (req, res) => {
     throw new Error('نوع العملية في التسوية غير صالح.');
   }
 
-  // ✅ تحقق وجود الطرف لمنع معاملات يتيمة
+  // ✅ تحقق وجود الطرف وحالته لمنع معاملات يتيمة أو لأطراف موقوفة
   if (role === 'SELLER') {
-    const exists = await Store.exists({ _id: partyId });
-    if (!exists) {
+    const store = await Store.findById(partyId);
+    if (!store) {
       res.status(404);
       throw new Error('المتجر (Store) غير موجود.');
+    }
+    // منع التسوية للمتجر غير المفعل أو الموقوف (فقط لعمليات الصرف PAYOUT)
+    if (operationType === 'PAYOUT' && (store.status !== 'approved' || !store.isActive)) {
+      res.status(400);
+      throw new Error('لا يمكن إجراء تسوية (صرف) لمتجر غير مفعل أو موقوف.');
     }
   }
 
   if (role === 'SHIPPING') {
-    const exists = await ShippingCompany.exists({ _id: partyId });
-    if (!exists) {
+    const company = await ShippingCompany.findById(partyId);
+    if (!company) {
       res.status(404);
       throw new Error('شركة الشحن غير موجودة.');
+    }
+    // منع التسوية لشركة الشحن غير المفعلة (فقط لعمليات الصرف PAYOUT)
+    if (operationType === 'PAYOUT' && !company.isActive) {
+      res.status(400);
+      throw new Error('لا يمكن إجراء تسوية (صرف) لشركة شحن غير مفعلة.');
+    }
+  }
+
+  // ✅ تحقق من توفر الرصيد الكافي لعمليات الصرف (PAYOUT)
+  if (operationType === 'PAYOUT') {
+    const balanceMatch = {
+      status: { $nin: CANCELLED_CODES },
+      role
+    };
+    if (role === 'SELLER') balanceMatch.store = partyId;
+    if (role === 'SHIPPING') balanceMatch.shippingCompany = partyId;
+
+    const [balanceAgg] = await Transaction.aggregate([
+      { $match: balanceMatch },
+      {
+        $group: {
+          _id: null,
+          totalDue: { $sum: { $cond: [{ $in: ['$type', EARNING_TYPES] }, '$amount', 0] } },
+          totalPayout: { $sum: { $cond: [{ $eq: ['$type', 'PAYOUT'] }, '$amount', 0] } },
+          totalRefund: { $sum: { $cond: [{ $eq: ['$type', 'REFUND'] }, '$amount', 0] } },
+        }
+      }
+    ]);
+
+    const currentBalance = (balanceAgg?.totalDue || 0) - (balanceAgg?.totalPayout || 0) - (balanceAgg?.totalRefund || 0);
+    
+    if (currentBalance < numericAmount) {
+      res.status(400);
+      throw new Error(`الرصيد غير كافٍ. الرصيد الحالي: ${currentBalance.toFixed(2)} ريال.`);
     }
   }
 
   // ✅ تطبيع paymentMethod
   const pm = paymentMethod || 'OTHER';
-  const allowedPM = ['COD', 'ONLINE', 'OTHER'];
+  const allowedPM = ['COD', 'ONLINE', 'WALLET', 'BANK_TRANSFER', 'OTHER'];
   const finalPM = allowedPM.includes(pm) ? pm : 'OTHER';
 
   const txData = {
@@ -614,6 +677,47 @@ export const createFinancialSettlement = asyncHandler(async (req, res) => {
   // ✅ لو الدور PLATFORM لا نربطه بـ store أو shippingCompany
 
   const transaction = await Transaction.create(txData);
+
+  // 🔔 إرسال إشعار للطرف المعني (بائع / شركة شحن)
+  try {
+    let targetUser = null;
+    let title = '';
+    let message = '';
+    let link = '';
+
+    if (role === 'SELLER') {
+      const store = await Store.findById(partyId).populate('owner');
+      targetUser = store?.owner?._id;
+      link = '/seller/financial';
+    } else if (role === 'SHIPPING') {
+      const sci = await ShippingCompany.findById(partyId);
+      targetUser = sci?.user;
+      link = '/shipping/financial';
+    }
+
+    if (targetUser) {
+      if (operationType === 'PAYOUT') {
+        title = 'تم تحويل مستحقات مالية 💸';
+        message = `تم تحويل مبلغ ${numericAmount} ريال إلى حسابك كمسوية مالية. تفاصيل: ${note || 'لا يوجد'}`;
+      } else if (operationType === 'REFUND') {
+        title = 'إشعار استرجاع مالي ⚠️';
+        message = `تم تسجيل عملية استرجاع (Refund) بقيمة ${numericAmount} ريال من حسابكم. السبب: ${note || 'لا يوجد'}`;
+      } else if (operationType === 'SUPPLY') {
+        title = 'تم تسجيل توريد مالي ✅';
+        message = `نشكركم على توريد مبلغ ${numericAmount} ريال للمنصة. تم توثيق العملية في سجلاتكم المالية.`;
+      }
+
+      await Notification.create({
+        user: targetUser,
+        title,
+        message,
+        type: 'system',
+        link
+      });
+    }
+  } catch (notifyErr) {
+    console.error('Error sending settlement notification:', notifyErr);
+  }
 
   res.status(201).json({
     message: 'تم إنشاء عملية التسوية بنجاح.',

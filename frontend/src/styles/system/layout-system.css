@@ -1,0 +1,56 @@
+/* 
+ * Responsive Core System - Layout & Grid
+ * Fluid layouts using auto-fit and minmax
+ */
+
+/* Universal Fluid Grid */
+.grid-fluid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--col-min, 280px)), 1fr));
+    gap: var(--grid-gap);
+    width: 100%;
+}
+
+/* Preset Column Widths */
+.grid-sm {
+    --col-min: 150px;
+}
+
+.grid-md {
+    --col-min: 280px;
+}
+
+.grid-lg {
+    --col-min: 350px;
+}
+
+/* Flex Layout Utilities */
+.flex-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--grid-gap);
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Stack on Mobile */
+.stack-on-mobile {
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 768px) {
+    .stack-on-mobile {
+        flex-direction: row;
+    }
+}

@@ -1,0 +1,390 @@
+/* ────────────────────────────────────────────────
+   📁 frontend/src/pages/Admin/sections/AdminWalletSection.css
+   إدارة المحافظ الإلكترونية - النظام الموحد (Unified Layout)
+   Golden Standard Architecture: adm-* (High-Contrast Matte)
+   Enforcement: Tight-System (8px Radius Mustattil)
+   ──────────────────────────────────────────────── */
+
+@import "../adm-shared.css";
+
+.admin-wallet-section {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    animation: adm-fade-in 0.4s ease-out;
+}
+
+/* 🏔️ Section Layout Enforcement */
+.adm-section-panel.admin-wallet-section {
+    width: 100%;
+    min-width: 100%;
+    margin: 0;
+    padding: 0;
+    background: var(--adm-surface);
+}
+
+/* 🏔️ Internal Breather adjustment (Matte Premium) */
+.admin-wallet-section .adm-section-inner-header {
+    padding-top: var(--sp-2, 16px);
+    padding-right: var(--sp-2, 16px);
+    padding-left: var(--sp-2, 16px);
+}
+
+/* 💎 Tabs Header Optimization (Tight Spacing) */
+.adm-tabs-nav {
+    display: flex;
+    background: #f1f5f9;
+    padding: var(--sp-1);
+    gap: 4px;
+    border-bottom: 1px solid var(--adm-border);
+}
+
+.adm-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px var(--sp-2);
+    border: none;
+    background: transparent;
+    color: var(--adm-text-muted);
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: var(--rad-md);
+}
+
+.adm-tab-btn.active {
+    background: var(--adm-surface);
+    color: var(--adm-primary);
+    box-shadow: var(--shd-standard);
+    font-weight: 800;
+}
+
+/* 🛠️ Standardized Toolbar (Tight-System) */
+.adm-toolbar {
+    display: flex;
+    align-items: center;
+    padding: var(--sp-1) var(--sp-2);
+    background: #ffffff;
+    border-bottom: 1px solid var(--adm-border);
+    gap: var(--sp-2);
+    position: relative;
+}
+
+.adm-toolbar::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #4b502a;
+    z-index: 10;
+}
+
+.adm-search-input {
+    border-radius: var(--rad-md);
+    background: #f8fafc;
+    border: 1px solid var(--adm-border);
+    padding-right: 40px;
+    height: 40px;
+}
+
+/* 📊 Stat Mini (Summary Pills) */
+.adm-stat-mini {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    background: #f8fafc;
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-md);
+    min-width: 140px;
+}
+
+.adm-stat-mini-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: var(--adm-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.adm-stat-mini.orange-pill {
+    border-color: #ffebd3;
+    background: #fff9f2;
+}
+
+.adm-stat-mini.orange-pill .adm-stat-mini-icon {
+    background: #ff7f00 !important;
+    color: white !important;
+}
+
+.adm-stat-mini-label {
+    font-size: 0.7rem;
+    color: var(--adm-text-muted);
+    font-weight: 700;
+}
+
+.adm-stat-mini-value {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--adm-text-main);
+}
+
+.adm-stat-mini.orange-pill .adm-stat-mini-value {
+    color: #ff7f00;
+}
+
+/* 💊 Status Pills (Strict Mustattil 8px) */
+.adm-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: var(--rad-md);
+    /* 8px Rectangle */
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.adm-status-pill.active {
+    background: var(--adm-success-bg);
+    color: var(--adm-success);
+    border: 1px solid var(--adm-success-border);
+}
+
+.adm-status-pill.pending {
+    background: var(--adm-warning-bg);
+    color: var(--adm-warning);
+    border: 1px solid var(--adm-warning-border);
+}
+
+.adm-status-pill.locked,
+.adm-status-pill.rejected {
+    background: var(--adm-danger-bg);
+    color: var(--adm-danger);
+    border: 1px solid var(--adm-danger-border);
+}
+
+.adm-status-pill.suspended {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+/* 🔘 Action Buttons (Geometry Enforcement) */
+.adm-icon-btn {
+    border-radius: var(--rad-md) !important;
+    /* Forces 8px Rectangle */
+    width: var(--sp-4);
+    height: var(--sp-4);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.adm-icon-btn.primary {
+    background: var(--adm-primary);
+}
+
+.adm-icon-btn.success {
+    background: var(--adm-success);
+}
+
+.adm-icon-btn.warning {
+    background: var(--adm-warning);
+}
+
+.adm-icon-btn.accent {
+    background: var(--adm-accent-solid);
+}
+
+.adm-icon-btn.danger {
+    background: var(--adm-danger);
+}
+
+/* 🏹 Actions Layout Flow (Horizontal Enforcement) */
+.adm-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+/* 📊 Table Layout (Tight) */
+.adm-table th {
+    padding: var(--sp-2);
+}
+
+.adm-table td {
+    padding: var(--sp-1) var(--sp-2);
+}
+
+/* 🏔️ Standard Modal Refactor (Strict Alignment) */
+.adm-modal-backdrop {
+    z-index: 2000;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.adm-modal {
+    border-radius: var(--rad-lg);
+    box-shadow: var(--shd-elevated);
+    border-top: 4px solid var(--adm-primary);
+    overflow: hidden;
+}
+
+.adm-modal-header {
+    background: #f1f2ef;
+    padding: var(--sp-2) var(--sp-3);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-1);
+}
+
+.adm-modal-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--rad-md);
+    background: white;
+    border: 1px solid var(--adm-border);
+    color: var(--adm-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.adm-modal-icon-wrapper.danger {
+    color: var(--adm-danger);
+    background: var(--adm-danger-bg);
+    border-color: var(--adm-danger-border);
+}
+
+.adm-modal-icon-wrapper.warning {
+    color: var(--adm-warning);
+    background: var(--adm-warning-bg);
+    border-color: var(--adm-warning-border);
+}
+
+/* ⚙️ Integrated Settings (Imtila' Standard - Screen Filling) */
+.adm-settings-container {
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.adm-settings-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #4b502a;
+    z-index: 10;
+}
+
+.adm-integrated-body {
+    padding: var(--sp-4) var(--sp-3);
+    background: var(--adm-surface);
+}
+
+.adm-card-header.integrated {
+    border-radius: 0;
+    background: #f1f2ef;
+    border-bottom: 1px solid var(--adm-border);
+    padding: var(--sp-2) var(--sp-3);
+}
+
+.adm-modal-body {
+    padding: var(--sp-3);
+    background: white;
+}
+
+.adm-modal-footer {
+    padding: var(--sp-2) var(--sp-3);
+    background: #f8fafc;
+    border-top: 1px solid var(--adm-border);
+    display: flex;
+    gap: var(--sp-2);
+}
+
+.adm-modal-btn {
+    border-radius: var(--rad-md) !important;
+    height: 48px;
+    font-size: 0.9rem;
+}
+
+/* 📊 Table Container (Integrated Standard) */
+.adm-table-wrapper {
+    background: var(--adm-surface);
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-lg);
+    box-shadow: var(--shd-standard);
+    overflow-x: auto;
+    position: relative;
+}
+
+/* 📱 Mobile Safety (Tight System) */
+@media (max-width: 899px) {
+    .adm-section-inner-header {
+        padding: var(--sp-2) !important;
+    }
+
+    .adm-toolbar {
+        padding: var(--sp-1);
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .adm-search-wrapper {
+        min-width: 100%;
+        flex: none;
+        order: 1;
+    }
+
+    .adm-stat-mini {
+        flex: 1;
+        min-width: 150px;
+        order: 2;
+    }
+
+    .adm-modal {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .adm-modal-footer {
+        flex-direction: column;
+    }
+
+    .adm-modal-btn {
+        width: 100%;
+    }
+
+    /* 🛡️ Golden Standard: Mobile Imtila (Fullness) Lockdown */
+    .adm-section-panel.admin-wallet-section {
+        padding: 0 !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: var(--adm-surface);
+    }
+
+    .adm-table-wrapper,
+    .adm-settings-container {
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+        box-shadow: none !important;
+        overflow-x: auto !important;
+    }
+
+    .adm-integrated-body {
+        padding: var(--sp-2) !important;
+    }
+}

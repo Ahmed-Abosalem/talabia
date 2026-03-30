@@ -1,0 +1,88 @@
+/* ============================================================
+   AdminUserNotifyPage.css
+   الهوية البصرية: موحدة مع المرجعية (AdminUserDetails 10/10)
+   CSS خارجي: adm-shared.css (يحتوي على كل المتغيرات والكروت)
+   ⚠️ هذا الملف يحتوي فقط على أنماط خاصة بهذه الصفحة
+   ============================================================ */
+
+@import "./adm-shared.css";
+
+/* ─────────────────────────────────────────────────────────
+   جذر الصفحة
+   ───────────────────────────────────────────────────────── */
+.admin-user-notify-page {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--adm-bg);
+    color: var(--adm-text-main);
+    padding-bottom: var(--sp-5);
+    direction: rtl;
+    text-align: right;
+    overflow-x: hidden;
+}
+
+/* ─────────────────────────────────────────────────────────
+   التخطيط الخاص بهذه الصفحة (4 + 8 columns)
+   ───────────────────────────────────────────────────────── */
+/* الكرت الأول: بيانات المستخدم المستهدف (4 أعمدة) */
+.adm-notify-target-card {
+    grid-column: span 4;
+}
+
+/* الكرت الثاني: محتوى التنبيه (8 أعمدة) */
+.adm-notify-form-card {
+    grid-column: span 8;
+}
+
+/* ─────────────────────────────────────────────────────────
+   صندوق التنبيه الخاص (ذهبي)
+   ───────────────────────────────────────────────────────── */
+.adm-notify-info-box {
+    margin-top: var(--sp-3);
+    padding: var(--sp-2);
+    background: #fdfaf3;
+    border-right: 3px solid #eab308;
+    color: #854d0e;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: var(--rad-md);
+    line-height: 1.6;
+}
+
+/* ─────────────────────────────────────────────────────────
+   📱 استجابة خاصة بهذه الصفحة
+   ───────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+
+    .adm-notify-target-card,
+    .adm-notify-form-card {
+        grid-column: span 6;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .adm-notify-target-card,
+    .adm-notify-form-card {
+        grid-column: span 12 !important;
+    }
+
+    /* 🛡️ ZERO-GAP ARCHITECTURE: Absolute Flush */
+    .admin-user-notify-page .adm-header-inner {
+        padding-inline: var(--sp-2) !important;
+    }
+
+    .admin-user-notify-page .adm-details-grid {
+        gap: 0 !important;
+        background: transparent !important;
+        padding: 0 !important;
+    }
+
+    .admin-user-notify-page .adm-card {
+        border-radius: 0 !important;
+        border-right: none !important;
+        border-left: none !important;
+        border-bottom: 1px solid var(--adm-border) !important;
+        box-shadow: none !important;
+    }
+}

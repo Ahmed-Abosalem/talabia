@@ -1,159 +1,228 @@
 /* frontend/src/components/Footer/Footer.css */
 
+/* =========================================
+   PRO COMPACT FOOTER - STRICTLY ONE COMPONENT
+   ========================================= */
+
 .footer-root {
-  margin-top: 2rem; /* نفس القيمة السابقة للحجم */
-  background: #0f172a; /* خلفية داكنة أنيقة */
-  color: #e5e7eb;
-  border-top: 1px solid rgba(148, 163, 184, 0.35);
-  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.5);
-  font-family: "Tajawal", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  background: #4b502a;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 32px 20px 20px;
+  /* Reduced vertical padding */
+  margin-top: auto;
+  direction: rtl;
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* نحافظ على نفس الـ padding تقريبًا ونفس فكرة الحجم العام */
 .footer-inner {
-  max-width: 1200px;
-  margin-inline: auto;
-  padding: 1.25rem 1rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  /* Tighter gap */
+  width: 100%;
+  max-width: 2400px;
+  /* FLUID UPDATE: Match global container cap */
+  margin: 0 auto;
 }
 
+/* Tablet & Desktop Layout */
+@media (min-width: 768px) {
+  .footer-inner {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    /* Prevent wrapping if possible */
+    gap: 20px;
+  }
+}
+
+/* Common Column Styles */
 .footer-col {
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* Tighter item gap */
+  min-width: 180px;
 }
 
-/* القسم الأول – الهوية */
-
+/* ========== Phase 4: Branding Zone (Compacted) ========== */
 .footer-brand {
-  font-weight: 800;
-  font-size: 1.05rem; /* قريب جدًا من 1.1rem القديم */
-  margin-bottom: 0.4rem;
-  letter-spacing: 0.04em;
+  max-width: 280px;
+  gap: 12px;
+}
+
+.footer-logo {
+  max-width: 100px;
+  /* Smaller Logo */
+  height: auto;
+  display: block;
+  opacity: 0.95;
 }
 
 .footer-brand-desc {
-  font-size: 0.8rem;
-  max-width: 260px;
+  font-size: 0.82rem;
+  /* Compact font */
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
   margin: 0;
-  line-height: 1.7;
-  color: #cbd5e1;
 }
 
-/* العناوين الجانبية */
-
+/* ========== Phase 6: Quick Links Zone (Refined) ========== */
 .footer-column-title {
   font-size: 0.9rem;
+  /* Smaller title */
   font-weight: 700;
-  margin-bottom: 0.5rem;
-  color: #e5e7eb;
+  color: #fff;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* الروابط العامة */
+.footer-links-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
 .footer-link {
-  font-size: 0.8rem;
-  color: #cbd5f5;
-  margin-bottom: 0.25rem;
-  cursor: pointer;
-  display: inline-block;
-  text-align: start;
-  border: none;
   background: transparent;
+  border: none;
   padding: 0;
-  transition:
-    color 0.18s ease,
-    transform 0.18s ease,
-    text-shadow 0.18s ease;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.82rem;
+  text-decoration: none;
+  cursor: pointer;
+  text-align: right;
+  width: fit-content;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .footer-link:hover {
-  color: #818cf8;
-  transform: translateY(-1px);
-  text-shadow: 0 0 6px rgba(129, 140, 248, 0.55);
+  color: #ffffff;
+  transform: translateX(-3px);
 }
 
-/* الروابط السريعة – شبكة 2×2 كما في التصور */
-
-.footer-quick-links-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.25rem 0.75rem;
+/* ========== Phase 7: Social + Privacy Zone (Cleaned) ========== */
+.footer-social-wrapper {
+  gap: 12px;
 }
 
-/* القسم الرابع – السوشيال */
+.social-icons-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+}
 
-.footer-social-icons {
+/* Social Icons - Official Brand Identity */
+.social-icon-btn {
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-}
-
-.footer-social-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
   justify-content: center;
-  border: 1px solid #475569;
-  color: #9ca3af; /* رمادي افتراضي */
+  color: #fff;
   text-decoration: none;
-  transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease,
-    transform 0.18s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  overflow: hidden;
+  /* Ensure gradient/bg stays within radius */
 }
 
-.footer-social-icon svg {
+/* Facebook: Blue Circle */
+.social-icon-btn.facebook {
+  background-color: #1877F2;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  /* Subtle rim */
+}
+
+/* Instagram: Gradient Squircle (Rounded Square) */
+.social-icon-btn.instagram {
+  background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+  border-radius: 9px;
+  /* Authentic App Icon Shape */
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.social-icon-btn svg {
   width: 18px;
+  /* Default for Facebook/Lucide */
   height: 18px;
+  fill: white;
+  stroke: white;
 }
 
-/* عند التمرير يتحول للون الأساسي */
-
-.footer-social-icon:hover {
-  background-color: #667eea;
-  border-color: #7c93e6;
-  color: #f9fafb;
-  transform: translateY(1px);
+/* Custom Override for the new Instagram SVG */
+.social-icon-btn.instagram svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  /* Instagram is an outline icon typically */
+  stroke: white;
+  /* Ensure stroke is white */
+  stroke-width: 2px;
 }
 
-/* قسم الحقوق في الأسفل */
+/* Interactive State */
+.social-icon-btn:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  filter: brightness(1.08);
+  /* Slight shine */
+  color: #fff;
+  /* Ensure text/icon stays white */
+}
 
+/* ========== Phase 8: Privacy (Integrated) ========== */
+/* ========== Phase 8: Privacy (Highlighted) ========== */
+.footer-privacy-btn {
+  margin-top: 8px;
+  display: inline-block;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  width: fit-content;
+  font-size: 0.85rem;
+  color: #fff;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  transition: all 0.25s ease;
+}
+
+.footer-privacy-btn:hover {
+  background: #ffffff;
+  color: #4b502a;
+  border-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Specific Social Icons Fixes */
+.social-icon-btn.instagram:hover {
+  background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+  color: white;
+  border: none;
+}
+
+.social-icon-btn.facebook:hover {
+  background: #1877F2;
+  color: white;
+}
+
+/* Bottom Copyright Bar */
 .footer-bottom {
-  max-width: 1200px;
-  margin-inline: auto;
-  padding: 0.5rem 1rem 0.9rem; /* نفس أبعاد القديم تقريبًا */
-}
-
-.footer-bottom-divider {
-  height: 1px;
-  background: rgba(148, 163, 184, 0.4);
-  margin-bottom: 0.5rem;
+  margin-top: 24px;
+  /* Reduced margin */
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  text-align: center;
 }
 
 .footer-bottom-text {
-  margin: 0;
-  text-align: center;
   font-size: 0.75rem;
-  color: #94a3b8; /* أصغر وأهدأ قليلاً كما طلبت */
-}
-
-/* تجاوب بسيط للجوال */
-
-@media (max-width: 640px) {
-  .footer-inner {
-    text-align: center;
-  }
-
-  .footer-link {
-    text-align: center;
-  }
-
-  .footer-social-icons {
-    justify-content: center;
-  }
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
 }

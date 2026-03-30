@@ -3,14 +3,20 @@
 // مع نافذة منبثقة لتفاصيل الطلب، وفصل التنسيقات في ملف CSS مستقل
 
 import { useEffect, useState } from "react";
-import { ClipboardList, RefreshCw, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ClipboardList, RefreshCw, X, Trash2, Settings2 } from "lucide-react";
 import {
   getAdminOrders,
   updateOrderItemStatus,
   cancelOrderItemAsAdmin,
+  deleteOrderPermanently,
+  getMinOrderSettings,
+  updateMinOrderSettings,
 } from "@/services/adminService";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import { listCategories } from "@/services/categoryService";
+import { formatCurrency, formatDate, formatNumber } from "@/utils/formatters";
 
 // ✅ المعجم الموحّد لحالات الطلب
 import {
@@ -127,9 +133,11 @@ function formatPaymentMethod(method) {
     case "ONLINE":
     case "CARD":
     case "CREDIT_CARD":
-      return "دفع إلكتروني";
+      return "الدفع بالبطاقة"; // Default for online card
     case "BANK_TRANSFER":
-      return "تحويل بنكي";
+      return "الحوالة البنكية";
+    case "WALLET":
+      return "الدفع بالمحفظة";
     default:
       // في حال كانت قيمة أخرى، نرجعها كما هي
       return method;
@@ -191,13 +199,15 @@ function normalizeAdminOrdersFromApi(rawOrders) {
     const paymentSubMethod = paymentSubMethodRaw ? String(paymentSubMethodRaw).toUpperCase() : "";
     const bankTransferSenderName = order.bankTransferSenderName || order.bank_transfer_sender_name || "";
     const bankTransferReferenceNumber = order.bankTransferReferenceNumber || order.bank_transfer_reference_number || "";
+    const bankTransferStatus = order.bankTransferStatus || "pending";
+    const isPaid = order.isPaid || false;
 
     const paymentMethodUi =
       paymentSubMethod === "BANK_TRANSFER"
-        ? "تحويل بنكي"
+        ? "الحوالة البنكية"
         : paymentSubMethod === "CARD"
-        ? "دفع إلكتروني"
-        : paymentMethod;
+          ? "الدفع بالبطاقة"
+          : paymentMethod;
 
 
     const baseStatusCode =
@@ -273,8 +283,8 @@ function normalizeAdminOrdersFromApi(rawOrders) {
         orderNumber && orderNumber !== ""
           ? `${orderNumber}-${index + 1}`
           : orderId
-          ? `${orderId}-${index + 1}`
-          : `${index + 1}`;
+            ? `${orderId}-${index + 1}`
+            : `${index + 1}`;
 
       items.push({
         id: itemId,
@@ -312,6 +322,8 @@ function normalizeAdminOrdersFromApi(rawOrders) {
         sellerAmount,
         platformCommission,
         statusCode,
+        isPaid,
+        bankTransferStatus,
       });
     });
   });
@@ -327,7 +339,9 @@ function normalizeAdminOrdersFromApi(rawOrders) {
 }
 
 export default function AdminOrdersSection() {
+  const navigate = useNavigate();
   const { showToast } = useApp() || {};
+  const { user } = useAuth() || {}; // ✅ قراءة المستخدم الحالي للتحقق من هوية المدير الأعلى (isOwner)
 
   const [items, setItems] = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -337,12 +351,23 @@ export default function AdminOrdersSection() {
   const [errorMessage, setErrorMessage] = useState("");
   const [categories, setCategories] = useState([]);
 
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  // 🚨 حالة نافذة حذف الطلب نهائياً
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // حالة نافذة إدارة الطلب
+  const [manageModalItem, setManageModalItem] = useState(null);
+
+  // حالة الحد الأدنى للطلب
+  const [minOrder, setMinOrder] = useState({ active: false, value: 0 });
+  const [isSavingMinOrder, setIsSavingMinOrder] = useState(false);
 
   useEffect(() => {
     loadOrders();
     loadCategories();
+    loadMinOrderSettings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -354,8 +379,8 @@ export default function AdminOrdersSection() {
       const rawOrders = Array.isArray(data?.orders)
         ? data.orders
         : Array.isArray(data)
-        ? data
-        : [];
+          ? data
+          : [];
 
       const normalizedItems = normalizeAdminOrdersFromApi(rawOrders);
       setItems(normalizedItems);
@@ -369,6 +394,32 @@ export default function AdminOrdersSection() {
     }
   }
 
+  async function loadMinOrderSettings() {
+    try {
+      const data = await getMinOrderSettings();
+      setMinOrder({ active: !!data.active, value: Number(data.value) || 0 });
+    } catch (err) {
+      console.error("فشل جلب إعدادات الحد الأدنى للطلب", err);
+    }
+  }
+
+  async function handleSaveMinOrder() {
+    try {
+      setIsSavingMinOrder(true);
+      const res = await updateMinOrderSettings({
+        active: minOrder.active,
+        value: Number(minOrder.value) || 0,
+      });
+      showToast?.(res.message || "تم حفظ الإعدادات بنجاح", "success");
+      setMinOrder({ active: res.active, value: res.value });
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "تعذر حفظ إعدادات الحد الأدنى للطلب";
+      showToast?.(msg, "error");
+    } finally {
+      setIsSavingMinOrder(false);
+    }
+  }
+
   // تحميل الأقسام لتحويل الـ ID إلى اسم القسم
   async function loadCategories() {
     try {
@@ -376,8 +427,8 @@ export default function AdminOrdersSection() {
       const rawCategories = Array.isArray(data?.categories)
         ? data.categories
         : Array.isArray(data)
-        ? data
-        : [];
+          ? data
+          : [];
 
       setCategories(Array.isArray(rawCategories) ? rawCategories : []);
     } catch (err) {
@@ -503,36 +554,83 @@ export default function AdminOrdersSection() {
   }
 
   function openDetails(item) {
-    setSelectedItem(item);
-    setIsDetailsOpen(true);
+    if (item.orderId && item.id) {
+      navigate(`/admin/orders/${item.orderId}/items/${item.id}`);
+    }
   }
 
-  function closeDetails() {
-    setIsDetailsOpen(false);
-    setSelectedItem(null);
+  // ────────────────────────────────────────────────
+  // 🚨 دوال حذف الطلب نهائياً
+  // ────────────────────────────────────────────────
+  function openDeleteDialog(item) {
+    setOrderToDelete(item);
+    setDeleteConfirmation("");
+    setDeleteDialogOpen(true);
+  }
+
+  function closeDeleteDialog() {
+    setDeleteDialogOpen(false);
+    setOrderToDelete(null);
+    setDeleteConfirmation("");
+    setIsDeleting(false);
+  }
+
+  async function handleDeleteOrder() {
+    if (!orderToDelete) return;
+
+    const orderNumber =
+      orderToDelete.orderNumber ||
+      (orderToDelete.orderId ? String(orderToDelete.orderId).slice(-6) : "");
+
+    // ✅ التحقق من إدخال التأكيد الصحيح (رقم الطلب أو "حذف نهائي")
+    const isValid =
+      deleteConfirmation.trim() === orderNumber ||
+      deleteConfirmation.trim() === "حذف نهائي";
+
+    if (!isValid) {
+      showToast?.(
+        "يرجى إدخال رقم الطلب أو كتابة 'حذف نهائي' للتأكيد",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      await deleteOrderPermanently(orderToDelete.orderId);
+      showToast?.("تم حذف الطلب نهائياً من النظام", "success");
+      closeDeleteDialog();
+      await loadOrders(); // إعادة تحميل الطلبات
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "تعذر حذف الطلب. تأكد من صلاحياتك.";
+      showToast?.(msg, "error");
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   const list = filteredItems();
 
   return (
-    <section className="admin-orders-section">
-      <div className="admin-orders-header">
-        <div className="admin-orders-header-main">
-          <div className="admin-orders-icon">
-            <ClipboardList size={18} />
-          </div>
-          <div>
-            <div className="admin-orders-title">إدارة الطلبات</div>
-            <div className="admin-orders-subtitle">
-              عرض وإدارة الطلبات على مستوى كل منتج داخل الطلب، مع التحكم في الحالة
-              الموحّدة وعرض شركة الشحن المسؤولة، ونافذة تفاصيل لكل عنصر.
-            </div>
+    <section className="adm-section-panel">
+      <div className="adm-section-inner-header">
+        <div className="adm-section-icon">
+          <ClipboardList size={18} />
+        </div>
+        <div className="adm-section-title-group">
+          <div className="adm-section-title">إدارة الطلبات</div>
+          <div className="adm-section-subtitle">
+            عرض وإدارة الطلبات على مستوى كل منتج داخل الطلب، مع التحكم في الحالة
+            الموحّدة وعرض شركة الشحن المسؤولة، ونافذة تفاصيل لكل عنصر.
           </div>
         </div>
-        <div className="admin-orders-actions">
+        <div className="adm-section-actions">
           <button
             type="button"
-            className="admin-orders-btn admin-orders-btn-ghost"
+            className="adm-btn outline"
             onClick={loadOrders}
             disabled={loading}
           >
@@ -542,16 +640,68 @@ export default function AdminOrdersSection() {
         </div>
       </div>
 
-      <div className="admin-orders-toolbar">
-        <input
-          className="admin-orders-search"
-          placeholder="بحث برقم الطلب أو المشتري أو المتجر أو المنتج..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      {/* لوحة تحكم إعدادات الحد الأدنى للطلب */}
+      <div className="adm-toolbar" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'flex-start', backgroundColor: '#fff', border: '1px solid var(--admin-border-light, #e2e8f0)', padding: '1.25rem', borderRadius: 'var(--admin-radius-lg)', marginBottom: '1.5rem', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%' }}>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--admin-text-dark)', margin: '0 0 0.25rem 0' }}>إعدادات الحد الأدنى للطلب</h3>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--admin-text-light)' }}>منع إتمام الطلبات التي تقل قيمتها الإجمالية عن الحد المحدد هنا.</p>
+          </div>
+
+          <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', gap: '0.75rem' }}>
+            <span style={{ fontSize: '0.9rem', fontWeight: '500', color: minOrder.active ? 'var(--admin-green, #10b981)' : 'var(--admin-text-light, #64748b)' }}>
+              {minOrder.active ? "النظام مفعّل" : "النظام معطّل"}
+            </span>
+            <div style={{ position: 'relative', width: '44px', height: '24px', borderRadius: '24px', backgroundColor: minOrder.active ? 'var(--admin-green, #10b981)' : '#cbd5e1', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: minOrder.active ? '0 0 0 2px rgba(16, 185, 129, 0.2)' : 'none' }}>
+              <input
+                type="checkbox"
+                checked={minOrder.active}
+                onChange={(e) => setMinOrder({ ...minOrder, active: e.target.checked })}
+                style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
+              />
+              <span style={{ position: 'absolute', top: '2px', left: minOrder.active ? '22px' : '2px', width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#fff', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} />
+            </div>
+          </label>
+        </div>
+
+        {minOrder.active && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', marginTop: '0.75rem', flexWrap: 'wrap', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: 'var(--admin-radius-md)', border: '1px dashed #ced4da' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <label style={{ fontSize: '0.95rem', fontWeight: '500', color: "var(--admin-text-dark)" }}>قيمة الحد الأدنى (ر.ي):</label>
+              <input
+                type="number"
+                min="0"
+                className="adm-form-input"
+                style={{ width: '150px', paddingRight: '10px', fontWeight: '600' }}
+                value={minOrder.value}
+                onChange={(e) => setMinOrder({ ...minOrder, value: e.target.value })}
+              />
+            </div>
+            <button
+              type="button"
+              className="adm-btn primary"
+              onClick={handleSaveMinOrder}
+              disabled={isSavingMinOrder}
+              style={{ fontWeight: "600", padding: "0.5rem 1.5rem" }}
+            >
+              {isSavingMinOrder ? "جاري الحفظ..." : "حفظ الحد الأدنى"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="adm-toolbar">
+        <div className="adm-search-wrapper">
+          <input
+            className="adm-search-input"
+            placeholder="بحث برقم الطلب أو المشتري أو المتجر أو المنتج..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
         <select
-          className="admin-orders-filter"
+          className="adm-filter-select"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
@@ -564,343 +714,286 @@ export default function AdminOrdersSection() {
         </select>
       </div>
 
-      {errorMessage && <div className="admin-orders-error">{errorMessage}</div>}
+      {errorMessage && <div className="adm-error-box">{errorMessage}</div>}
 
-      <div className="admin-orders-table-wrapper">
+      <div className="adm-orders-list">
         {loading ? (
-          <div className="admin-orders-empty-state">جاري تحميل الطلبات...</div>
+          <div className="adm-empty-state">
+            <p>جاري تحميل الطلبات...</p>
+          </div>
         ) : list.length === 0 ? (
-          <div className="admin-orders-empty-state">
-            لا توجد عناصر طلب مطابقة لخيارات البحث / التصفية.
+          <div className="adm-empty-state">
+            <p>لا توجد عناصر طلب مطابقة لخيارات البحث / التصفية.</p>
           </div>
         ) : (
-          <table className="admin-orders-table">
-            <thead>
-              <tr>
-                <th>رقم الطلب / العنصر</th>
-                <th>المشتري</th>
-                <th>المتجر</th>
-                <th>المنتج</th>
-                <th>الكمية</th>
-                <th>شركة الشحن</th>
-                <th>حالة الطلب</th>
-                <th>إجمالي هذا المنتج</th>
-                <th>تاريخ الإنشاء</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((item) => {
-                const statusValue =
-                  item.statusCode || ORDER_STATUS_CODES.AT_SELLER_NEW;
+          list.map((item) => {
+            const statusValue =
+              item.statusCode || ORDER_STATUS_CODES.AT_SELLER_NEW;
+            const statusLabel = getOrderStatusLabel(statusValue);
+            const isBusy = busyOrderId === item.orderId;
 
-                const isBusy = busyOrderId === item.orderId;
+            const orderNumberText =
+              item.orderNumber ||
+              (item.orderId ? String(item.orderId).slice(-6) : "—");
+            const itemIndexText =
+              typeof item.itemIndex === "number" ? item.itemIndex : null;
 
-                return (
-                  <tr
-                    key={item.id}
-                    onClick={() => openDetails(item)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <td>
-                      <div className="admin-orders-order-id">
-                        <span className="admin-orders-order-code">
-                          #
-                          {item.orderNumber ||
-                            (item.orderId
-                              ? String(item.orderId).slice(-6)
-                              : "—")}
-                        </span>
-                        {typeof item.itemIndex === "number" && (
-                          <>
-                            <span className="shipping-order-id-separator" />
-                            <span className="admin-orders-order-item-index">
-                              {item.itemIndex}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </td>
+            // Payment status badge
+            const paymentRaw = (item.paymentMethodRaw || "").toUpperCase();
+            let paymentStatusLabel = "بانتظار";
+            let paymentBadgeClass = "payment-pending";
 
-                    <td>
-                      <div className="admin-orders-cell-main">
-                        <div className="admin-orders-cell-title">
-                          {item.buyerName || "—"}
-                        </div>
-                        {(item.buyerPhone || item.buyerEmail) && (
-                          <div className="admin-orders-cell-sub">
-                            {item.buyerPhone && <span>📞 {item.buyerPhone}</span>}
-                            {item.buyerPhone && item.buyerEmail && " · "}
-                            {item.buyerEmail && <span>✉️ {item.buyerEmail}</span>}
-                          </div>
-                        )}
-                      </div>
-                    </td>
+            if (paymentRaw === "WALLET") {
+              paymentStatusLabel = "مدفوع";
+              paymentBadgeClass = "payment-paid";
+            } else if (item.paymentSubMethod === "CARD") {
+              paymentStatusLabel = item.isPaid ? "مدفوع" : "بانتظار الدفع";
+              paymentBadgeClass = item.isPaid ? "payment-paid" : "payment-pending";
+            } else if (item.paymentSubMethod === "BANK_TRANSFER" || paymentRaw === "BANK_TRANSFER") {
+              if (item.bankTransferStatus === "confirmed") {
+                paymentStatusLabel = "مدفوع";
+                paymentBadgeClass = "payment-paid";
+              } else if (item.bankTransferStatus === "rejected") {
+                paymentStatusLabel = "مرفوض";
+                paymentBadgeClass = "payment-rejected";
+              } else {
+                paymentStatusLabel = "بانتظار المراجعة";
+                paymentBadgeClass = "payment-pending";
+              }
+            } else if (paymentRaw === "COD" || paymentRaw === "CASH_ON_DELIVERY") {
+              paymentStatusLabel = "عند الاستلام";
+              paymentBadgeClass = "payment-cod";
+            }
 
-                    <td>
-                      <div className="admin-orders-cell-main">
-                        <div className="admin-orders-cell-title">
-                          {item.storeName || "—"}
-                        </div>
-                        {(item.storePhone || item.storeEmail) && (
-                          <div className="admin-orders-cell-sub">
-                            {item.storePhone && <span>📞 {item.storePhone}</span>}
-                            {item.storePhone && item.storeEmail && " · "}
-                            {item.storeEmail && <span>✉️ {item.storeEmail}</span>}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-
-                    <td>
-                      <div className="admin-orders-product-cell">
-                        {item.productImage && (
-                          <img
-                            src={resolveProductImageSrc(item.productImage)}
-                            alt={item.productName}
-                            className="admin-orders-product-thumb"
-                            onError={(e) => {
-                              // ✅ يمنع تكرار أخطاء التحميل ويُخفي الصورة إذا كانت قيمة قديمة خاطئة
-                              e.currentTarget.style.display = "none";
-                            }}
-                          />
-                        )}
-                        <div>
-                          <div className="admin-orders-cell-title">
-                            {item.productName || "—"}
-                          </div>
-                          <div className="admin-orders-cell-sub">
-                            {getCategoryLabel(item)}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td>{item.qty ?? 1}</td>
-
-                    <td>
+            return (
+              <article className="adm-order-card" key={item.id}>
+                {/* ──── Column 1: Image ──── */}
+                <div
+                  className="adm-order-col-image"
+                  onClick={() => openDetails(item)}
+                >
+                  <div className="adm-order-image-wrapper">
+                    {item.productImage ? (
+                      <img
+                        src={resolveProductImageSrc(item.productImage)}
+                        alt={item.productName}
+                        loading="lazy"
+                        className="adm-order-card-img"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : (
                       <div
                         style={{
-                          display: "inline-flex",
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
                           alignItems: "center",
-                          padding: "0.22rem 0.7rem",
-                          borderRadius: "0.6rem",
-                          border: "1px solid #e2e8f0",
-                          backgroundColor: "#f8fafc",
-                          fontSize: "0.8rem",
-                          color: "#0f172a",
-                          minWidth: "130px",
                           justifyContent: "center",
-                          whiteSpace: "nowrap",
+                          color: "#cbd5e1",
+                          fontSize: "2rem",
                         }}
                       >
-                        {item.shippingCompanyName || "لم تُعيَّن شركة شحن بعد"}
+                        📦
                       </div>
-                    </td>
-
-                    <td
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
+                    )}
+                    <div className="adm-order-status-badge">
+                      {statusLabel}
+                    </div>
+                    <div
+                      className={`adm-order-payment-badge ${paymentBadgeClass}`}
                     >
-                      <select
-                        className="admin-orders-select"
-                        value={statusValue}
-                        onChange={(e) => handleStatusChange(item, e.target.value)}
-                        disabled={isBusy}
-                      >
-                        {Object.values(ORDER_STATUS_CODES).map((code) => (
-                          <option key={code} value={code}>
-                            {getOrderStatusLabel(code)}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
+                      {paymentStatusLabel}
+                    </div>
+                  </div>
+                </div>
 
-                    <td>
-                      {item.lineTotal != null ? `${item.lineTotal} ر.ي` : "—"}
-                    </td>
+                {/* ──── Column 2: Product Info ──── */}
+                <div className="adm-order-col-product">
+                  <h3 className="adm-order-product-name">
+                    {item.productName || "—"}
+                  </h3>
+                  <div className="adm-order-product-meta">
+                    <p className="adm-order-product-detail">
+                      <span className="label">التصنيف:</span>{" "}
+                      {getCategoryLabel(item)}
+                    </p>
+                    <p className="adm-order-product-detail">
+                      <span className="label">الكمية:</span>{" "}
+                      <span className="adm-order-num-accent">
+                        {formatNumber(item.qty ?? 1)}
+                      </span>
+                    </p>
+                    <p className="adm-order-product-detail adm-order-price-highlight">
+                      <span className="label">السعر:</span>{" "}
+                      <span className="adm-order-num-accent">
+                        {item.lineTotal != null
+                          ? formatCurrency(item.lineTotal)
+                          : "—"}
+                      </span>
+                    </p>
+                    {/* Shipping company — visible on mobile only */}
+                    <p className="adm-order-product-detail adm-order-mobile-shipping">
+                      <span className="label">الشحن:</span>{" "}
+                      {item.shippingCompanyName || "لم تُعيَّن بعد"}
+                    </p>
+                  </div>
 
-                    <td>
-                      {item.createdAt
-                        ? new Date(item.createdAt).toLocaleDateString("ar-SA")
-                        : "—"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  {/* Financial Row — Admin Only */}
+                  {(item.sellerAmount != null ||
+                    item.platformCommission != null) && (
+                      <div className="adm-order-financial-row">
+                        {item.sellerAmount != null && (
+                          <span className="adm-order-financial-tag seller-amount">
+                            المتجر: {formatCurrency(item.sellerAmount)}
+                          </span>
+                        )}
+                        {item.platformCommission != null && (
+                          <span className="adm-order-financial-tag platform-commission">
+                            العمولة: {formatCurrency(item.platformCommission)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                  {/* Manage Order Button */}
+                  <button
+                    type="button"
+                    className="adm-order-manage-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setManageModalItem(item);
+                    }}
+                  >
+                    <Settings2 size={14} />
+                    <span>إدارة الطلب</span>
+                  </button>
+                </div>
+
+                {/* ──── Column 3: Order Metadata ──── */}
+                <div className="adm-order-col-order">
+                  <div className="adm-order-id-display">
+                    <span className="adm-order-hash">#</span>
+                    <span className="adm-order-num adm-order-num-accent">
+                      {orderNumberText}
+                    </span>
+                    <span className="adm-order-divider">|</span>
+                    <span className="adm-order-index adm-order-num-accent">
+                      {itemIndexText || "01"}
+                    </span>
+                  </div>
+
+                  <div className="adm-order-date-display">
+                    {item.createdAt
+                      ? formatDate(item.createdAt, {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                      })
+                      : "—"}
+                  </div>
+
+                  <div className="adm-order-shipping-company">
+                    {item.shippingCompanyName || "لم تُعَيّن شركة شحن"}
+                  </div>
+
+                  <div className="adm-order-payment-display adm-order-num-accent">
+                    {item.paymentMethod || "—"}
+                  </div>
+                </div>
+
+                {/* ──── Column 4: Seller ──── */}
+                <div className="adm-order-col-seller">
+                  <h4 className="adm-order-section-title">
+                    البائع: {item.storeName || "—"}
+                  </h4>
+                  <p className="adm-order-address-text">
+                    {item.storeAddress || "—"}
+                  </p>
+                  <div className="adm-order-contact-row">
+                    <span className="adm-order-contact-text">
+                      {item.storeEmail || "—"}
+                    </span>
+                    <span className="adm-order-contact-divider">|</span>
+                    <span className="adm-order-contact-phone adm-order-num-accent">
+                      {item.storePhone || "—"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* ──── Column 5: Buyer ──── */}
+                <div className="adm-order-col-buyer">
+                  <h4 className="adm-order-section-title">
+                    المشتري: {item.buyerName || "—"}
+                  </h4>
+                  <p className="adm-order-address-text">
+                    {item.buyerAddress || "—"}
+                  </p>
+                  <div className="adm-order-contact-row">
+                    <span className="adm-order-contact-text">
+                      {item.buyerEmail || "—"}
+                    </span>
+                    <span className="adm-order-contact-divider">|</span>
+                    <span className="adm-order-contact-phone adm-order-num-accent">
+                      {item.buyerPhone || "—"}
+                    </span>
+                  </div>
+                </div>
+              </article>
+            );
+          })
         )}
       </div>
 
-      {isDetailsOpen && selectedItem && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(15,23,42,0.45)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 9999,
-          }}
-          onClick={closeDetails}
-        >
-          <div
-            style={{
-              width: "min(950px, 96vw)",
-              maxHeight: "90vh",
-              backgroundColor: "#ffffff",
-              borderRadius: "1rem",
-              padding: "1.4rem 1.6rem",
-              overflowY: "auto",
-              boxShadow:
-                "0 18px 45px rgba(15,23,42,0.18), 0 0 0 1px rgba(148,163,184,0.35)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                gap: "1rem",
-                marginBottom: "1rem",
-              }}
-            >
-              <div>
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "0.45rem",
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      padding: "0.15rem 0.6rem",
-                      borderRadius: "0.7rem",
-                      background: "#eff6ff",
-                      color: "#1d4ed8",
-                      fontSize: "0.8rem",
-                      fontWeight: 600,
-                      gap: "0.35rem",
-                    }}
-                  >
-                    <span>
-                      #
-                      {selectedItem.orderNumber ||
-                        (selectedItem.orderId
-                          ? String(selectedItem.orderId).slice(-6)
-                          : "—")}
-                    </span>
-                    {typeof selectedItem.itemIndex === "number" && (
-                      <>
-                        <span
-                          style={{
-                            width: "1px",
-                            height: "0.9rem",
-                            backgroundColor: "rgba(148,163,184,0.9)",
-                          }}
-                        />
-                        <span>{selectedItem.itemIndex}</span>
-                      </>
-                    )}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "#64748b",
-                    }}
-                  >
-                    {selectedItem.createdAt
-                      ? new Date(selectedItem.createdAt).toLocaleString("ar-SA")
-                      : "—"}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    fontSize: "1.02rem",
-                    fontWeight: 700,
-                    color: "#0f172a",
-                    marginBottom: "0.15rem",
-                  }}
-                >
-                  تفاصيل العنصر في الطلب
-                </div>
-                <div
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "#64748b",
-                  }}
-                >
-                  مراجعة تفاصيل المشتري والمتجر والمنتج والبيانات المالية، مع إمكانية
-                  ضبط حالة الطلب الموحدة.
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={closeDetails}
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  cursor: "pointer",
-                  borderRadius: "999px",
-                  padding: "0.25rem",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#64748b",
-                }}
-              >
-                <X size={18} />
-              </button>
-            </div>
+      {/* ──────────────────────────────────────────────── */}
+      {/* 🛠️ نافذة إدارة الطلب (Manage Order Modal)     */}
+      {/* ──────────────────────────────────────────────── */}
+      {manageModalItem && (() => {
+        const mItem = manageModalItem;
+        const mStatusValue = mItem.statusCode || ORDER_STATUS_CODES.AT_SELLER_NEW;
+        const mOrderNum = mItem.orderNumber || (mItem.orderId ? String(mItem.orderId).slice(-6) : "—");
+        const mIsBusy = busyOrderId === mItem.orderId;
 
-            {/* حالة الطلب + شركة الشحن + طريقة الدفع */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(0, 1.3fr) minmax(0, 1.1fr)",
-                gap: "0.9rem",
-                marginBottom: "1rem",
-              }}
-            >
-              <div
-                style={{
-                  borderRadius: "0.9rem",
-                  border: "1px solid #e2e8f0",
-                  padding: "0.75rem 0.9rem",
-                  background: "#f8fafc",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    color: "#475569",
-                    marginBottom: "0.45rem",
-                  }}
-                >
-                  حالة الطلب (الموحّدة)
+        return (
+          <div className="adm-modal-backdrop" onClick={() => setManageModalItem(null)}>
+            <div className="adm-manage-modal" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="adm-manage-modal-header">
+                <div className="adm-manage-modal-title">
+                  <Settings2 size={18} />
+                  <span>إدارة الطلب #{mOrderNum}</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                <button
+                  type="button"
+                  className="adm-manage-modal-close"
+                  onClick={() => setManageModalItem(null)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Product Info */}
+              <div className="adm-manage-modal-product">
+                <span className="adm-manage-modal-product-name">{mItem.productName || "—"}</span>
+                <span className="adm-manage-modal-product-price">
+                  {mItem.lineTotal != null ? formatCurrency(mItem.lineTotal) : "—"}
+                </span>
+              </div>
+
+              {/* Body */}
+              <div className="adm-manage-modal-body">
+                {/* Status Change Section */}
+                <div className="adm-manage-section">
+                  <label className="adm-manage-section-label">تغيير حالة الطلب</label>
                   <select
-                    style={{
-                      minWidth: "210px",
-                      padding: "0.35rem 0.7rem",
-                      borderRadius: "999px",
-                      border: "1px solid #e2e8f0",
-                      fontSize: "0.84rem",
-                      background: "#ffffff",
-                      color: "#0f172a",
+                    className="adm-manage-status-select"
+                    defaultValue={mStatusValue}
+                    onChange={(e) => {
+                      handleStatusChange(mItem, e.target.value);
+                      setManageModalItem(null);
                     }}
-                    value={selectedItem.statusCode || ORDER_STATUS_CODES.AT_SELLER_NEW}
-                    onChange={(e) => handleStatusChange(selectedItem, e.target.value)}
-                    disabled={busyOrderId === selectedItem.orderId}
+                    disabled={mIsBusy}
                   >
                     {Object.values(ORDER_STATUS_CODES).map((code) => (
                       <option key={code} value={code}>
@@ -908,306 +1001,78 @@ export default function AdminOrdersSection() {
                       </option>
                     ))}
                   </select>
-                  <div style={{ fontSize: "0.78rem", color: "#64748b" }}>
-                    عند اختيار{" "}
-                    <strong>{getOrderStatusLabel(ORDER_STATUS_CODES.CANCELLED_BY_ADMIN)}</strong>{" "}
-                    سيتم طلب سبب إلغاء هذا المنتج فقط داخل الطلب.
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  borderRadius: "0.9rem",
-                  border: "1px solid #e2e8f0",
-                  padding: "0.75rem 0.9rem",
-                  background: "#f8fafc",
-                  display: "grid",
-                  gridTemplateColumns: "minmax(0, 1fr)",
-                  gap: "0.5rem",
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: "0.8rem",
-                      fontWeight: 600,
-                      color: "#475569",
-                      marginBottom: "0.35rem",
-                    }}
-                  >
-                    شركة الشحن
-                  </div>
-                  <div
-                    style={{
-                      padding: "0.35rem 0.7rem",
-                      borderRadius: "0.6rem",
-                      border: "1px solid #e2e8f0",
-                      backgroundColor: "#f8fafc",
-                      fontSize: "0.84rem",
-                      color: "#0f172a",
-                      display: "inline-flex",
-                      minWidth: "210px",
-                    }}
-                  >
-                    {selectedItem.shippingCompanyName || "لم تُعيَّن شركة شحن بعد"}
-                  </div>
                 </div>
 
-                <div>
-                  <div
-                    style={{
-                      fontSize: "0.8rem",
-                      fontWeight: 600,
-                      color: "#475569",
-                      marginBottom: "0.25rem",
-                    }}
-                  >
-                    طريقة الدفع
+                {/* Delete Section — Owner Only */}
+                {user?.isOwner === true && (
+                  <div className="adm-manage-section adm-manage-danger-zone">
+                    <label className="adm-manage-section-label danger">منطقة الخطر</label>
+                    <button
+                      type="button"
+                      className="adm-manage-delete-btn"
+                      onClick={() => {
+                        setManageModalItem(null);
+                        openDeleteDialog(mItem);
+                      }}
+                    >
+                      <Trash2 size={15} />
+                      <span>حذف الطلب نهائياً</span>
+                    </button>
                   </div>
-                  <div style={{ fontSize: "0.84rem", color: "#0f172a" }}>
-                    {selectedItem.paymentMethod || "—"}
-                    {selectedItem.paymentSubMethod === "BANK_TRANSFER" && (
-                      <div style={{ marginTop: "0.35rem", fontSize: "0.82rem", color: "#334155", lineHeight: 1.6 }}>
-                        <div>اسم المرسل: <strong>{selectedItem.bankTransferSenderName || "—"}</strong></div>
-                        <div>رقم الحوالة: <strong>{selectedItem.bankTransferReferenceNumber || "—"}</strong></div>
-                      </div>
-                    )}
-
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* المشتري والمتجر */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 1.1fr)",
-                gap: "0.9rem",
-                marginBottom: "1rem",
-              }}
-            >
-              <div
-                style={{
-                  borderRadius: "0.9rem",
-                  border: "1px solid #e2e8f0",
-                  padding: "0.75rem 0.9rem",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    color: "#475569",
-                    marginBottom: "0.45rem",
-                  }}
-                >
-                  بيانات المشتري
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.25rem",
-                    fontSize: "0.85rem",
-                    color: "#0f172a",
-                  }}
-                >
-                  <div>
-                    <strong>الاسم:</strong> {selectedItem.buyerName || "—"}
-                  </div>
-                  <div>
-                    <strong>الجوال:</strong> {selectedItem.buyerPhone || "—"}
-                  </div>
-                  <div>
-                    <strong>الإيميل:</strong> {selectedItem.buyerEmail || "—"}
-                  </div>
-                  <div>
-                    <strong>العنوان:</strong> {selectedItem.buyerAddress || "—"}
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  borderRadius: "0.9rem",
-                  border: "1px solid #e2e8f0",
-                  padding: "0.75rem 0.9rem",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    color: "#475569",
-                    marginBottom: "0.45rem",
-                  }}
-                >
-                  بيانات المتجر (البائع)
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.25rem",
-                    fontSize: "0.85rem",
-                    color: "#0f172a",
-                  }}
-                >
-                  <div>
-                    <strong>اسم المتجر:</strong> {selectedItem.storeName || "—"}
-                  </div>
-                  <div>
-                    <strong>الجوال:</strong> {selectedItem.storePhone || "—"}
-                  </div>
-                  <div>
-                    <strong>الإيميل:</strong> {selectedItem.storeEmail || "—"}
-                  </div>
-                  <div>
-                    <strong>العنوان:</strong> {selectedItem.storeAddress || "—"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* بيانات المنتج */}
-            <div
-              style={{
-                borderRadius: "0.9rem",
-                border: "1px solid #e2e8f0",
-                padding: "0.85rem 0.9rem",
-                marginBottom: "1rem",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.8rem",
-                  fontWeight: 600,
-                  color: "#475569",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                بيانات المنتج داخل الطلب
-              </div>
-              <div style={{ display: "flex", gap: "0.9rem", alignItems: "flex-start" }}>
-                {selectedItem.productImage && (
-                  <img
-                    src={resolveProductImageSrc(selectedItem.productImage)}
-                    alt={selectedItem.productName}
-                    style={{
-                      width: "78px",
-                      height: "78px",
-                      borderRadius: "0.9rem",
-                      objectFit: "cover",
-                      background: "#f8fafc",
-                      border: "1px solid #e2e8f0",
-                      flexShrink: 0,
-                    }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
                 )}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.35rem",
-                    fontSize: "0.85rem",
-                    color: "#0f172a",
-                  }}
-                >
-                  <div>
-                    <strong>اسم المنتج:</strong> {selectedItem.productName || "—"}
-                  </div>
-                  <div>
-                    <strong>التصنيف:</strong> {getCategoryLabel(selectedItem)}
-                  </div>
-                  <div>
-                    <strong>الكمية:</strong> {selectedItem.qty ?? 1}
-                  </div>
-                  <div>
-                    <strong>الوصف:</strong> {selectedItem.productDescription || "—"}
-                  </div>
-                </div>
               </div>
             </div>
+          </div>
+        );
+      })()}
 
-            {/* التفاصيل المالية */}
-            <div
-              style={{
-                borderRadius: "0.9rem",
-                border: "1px solid #e2e8f0",
-                padding: "0.85rem 0.9rem",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.8rem",
-                  fontWeight: 600,
-                  color: "#475569",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                التفاصيل المالية لهذا المنتج داخل الطلب
-              </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-                  gap: "0.6rem",
-                  fontSize: "0.84rem",
-                  color: "#0f172a",
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: "0.78rem", color: "#64748b", marginBottom: "0.18rem" }}>
-                    سعر الوحدة
-                  </div>
-                  <div>
-                    {selectedItem.unitPrice != null ? `${selectedItem.unitPrice} ر.ي` : "—"}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: "0.78rem", color: "#64748b", marginBottom: "0.18rem" }}>
-                    إجمالي هذا المنتج
-                  </div>
-                  <div>
-                    {selectedItem.lineTotal != null ? `${selectedItem.lineTotal} ر.ي` : "—"}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: "0.78rem", color: "#64748b", marginBottom: "0.18rem" }}>
-                    مبلغ البائع
-                  </div>
-                  <div>
-                    {selectedItem.sellerAmount != null ? `${selectedItem.sellerAmount} ر.ي` : "—"}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: "0.78rem", color: "#64748b", marginBottom: "0.18rem" }}>
-                    عمولة المنصة
-                  </div>
-                  <div>
-                    {selectedItem.platformCommission != null
-                      ? `${selectedItem.platformCommission} ر.ي`
-                      : "—"}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: "0.78rem", color: "#64748b", marginBottom: "0.18rem" }}>
-                    رسوم الشحن (على مستوى الطلب)
-                  </div>
-                  <div>
-                    {selectedItem.shippingPrice != null ? `${selectedItem.shippingPrice} ر.ي` : "—"}
-                  </div>
+      {/* ──────────────────────────────────────────────── */}
+      {/* 🚨 نافذة تحذير الحذف النهائي (Modal) */}
+      {/* ──────────────────────────────────────────────── */}
+      {deleteDialogOpen && orderToDelete && (
+        <div className="adm-modal-backdrop" onClick={closeDeleteDialog}>
+          <div className="adm-modal" style={{ maxWidth: '480px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="adm-modal-header">
+              <h2 className="adm-modal-title danger">
+                <Trash2 size={20} />
+                <span>تحذير خطير: حذف الطلب نهائياً</span>
+              </h2>
+            </div>
+            <div className="adm-modal-body">
+              <div className="adm-notice-box danger" style={{ marginBottom: 'var(--sp-3)' }}>
+                <div className="adm-notice-content">
+                  أنت على وشك حذف الطلب رقم: <strong>{orderToDelete.orderNumber || String(orderToDelete.orderId).slice(-6)}</strong>.
+                  هذا الإجراء سيؤدي لحذف كافة البيانات المرتبطة نهائياً ولا يمكن التراجع عنه.
                 </div>
               </div>
+
+              <div className="adm-form-group">
+                <label className="adm-form-label">للتأكيد، يرجى كتابة رقم الطلب أو عبارة "حذف نهائي":</label>
+                <input
+                  className="adm-form-input"
+                  type="text"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  placeholder={`اكتب ${orderToDelete.orderNumber || String(orderToDelete.orderId).slice(-6)} أو حذف نهائي`}
+                />
+              </div>
+            </div>
+            <div className="adm-modal-footer">
+              <button type="button" className="adm-btn ghost" onClick={closeDeleteDialog} disabled={isDeleting}>
+                إلغاء
+              </button>
+              <button
+                type="button"
+                className="adm-btn danger"
+                onClick={handleDeleteOrder}
+                disabled={
+                  isDeleting ||
+                  (deleteConfirmation.trim() !== (orderToDelete.orderNumber || String(orderToDelete.orderId).slice(-6)) &&
+                    deleteConfirmation.trim() !== "حذف نهائي")
+                }
+              >
+                {isDeleting ? "جاري الحذف..." : "تأكيد الحذف النهائي"}
+              </button>
             </div>
           </div>
         </div>

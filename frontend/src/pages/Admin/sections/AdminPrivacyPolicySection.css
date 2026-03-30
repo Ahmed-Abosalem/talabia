@@ -1,0 +1,106 @@
+/* AdminPrivacyPolicySection.css — Refined for adm-* Design System */
+@import "../adm-shared.css";
+
+/* ── Privacy Policy Specifics ────────────────────── */
+.privacy-editor-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+}
+
+.privacy-textarea {
+    width: 100%;
+    min-height: 400px;
+    padding: var(--sp-3);
+    font-size: 1rem;
+    line-height: 1.8;
+    background: var(--adm-card-bg);
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-lg);
+    resize: vertical;
+    transition: var(--transition-base);
+    font-family: inherit;
+}
+
+.privacy-textarea:focus {
+    border-color: var(--adm-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--adm-primary-alpha);
+}
+
+/* ── Notification Panel ──────────────────────────── */
+.adm-notification-panel {
+    background: var(--adm-bg-soft);
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-lg);
+    padding: var(--sp-4);
+    margin-top: var(--sp-4);
+}
+
+.adm-notification-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: var(--sp-3);
+}
+
+.adm-notification-title {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--adm-text);
+}
+
+/* ── Audience Grid ──────────────────────────────── */
+.adm-audience-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: var(--sp-4);
+}
+
+.adm-audience-btn {
+    padding: 12px;
+    background: var(--adm-card-bg);
+    border: 2px solid var(--adm-border);
+    border-radius: var(--rad-md);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--adm-text-soft);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    text-align: center;
+}
+
+.adm-audience-btn:hover {
+    border-color: var(--adm-primary);
+    color: var(--adm-primary);
+}
+
+.adm-audience-btn.active {
+    background: var(--adm-primary-alpha);
+    border-color: var(--adm-primary);
+    color: var(--adm-primary);
+}
+
+/* ── Responsive Overrides ────────────────────────── */
+@media (max-width: 768px) {
+    .adm-audience-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* 🛡️ Edge-to-Edge Safety Check Override */
+    .adm-section-panel {
+        padding: 0 !important;
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+    }
+
+    .adm-section-inner-header {
+        padding: var(--sp-2) !important;
+    }
+
+    .adm-toolbar {
+        padding: var(--sp-2) !important;
+    }
+}

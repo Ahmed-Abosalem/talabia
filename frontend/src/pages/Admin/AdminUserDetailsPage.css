@@ -1,0 +1,649 @@
+/* 🏔️ Admin User Details Header Overrides */
+
+.admin-user-details-page {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--adm-bg);
+    color: var(--adm-text-main);
+    padding-bottom: var(--sp-5);
+    direction: rtl;
+    text-align: right;
+    overflow-x: hidden;
+    user-select: none !important;
+    /* يمنع التظليل التلقائي العشوائي عند فتح الصفحة */
+    -webkit-user-select: none !important;
+}
+
+/* إعادة تفعيل النسخ للنصوص المهمة */
+.adm-info-point .value,
+.adm-id-value,
+.adm-page-title,
+.addr-content {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+/* 🛡️ Technical Guard: Prevent all overflow & wrap long values */
+.user-name-title,
+.info-point .value,
+.address-content,
+.id-value,
+.monospace {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-all !important;
+    /* Force break IDs and Emails */
+}
+
+/* Root already defined above - Cleaned up duplication */
+
+/* 🏔️ OFFICIAL COMPACT HEADER (10/10 Standard) */
+.adm-header {
+    background: #ffffff;
+    border-bottom: 1px solid var(--adm-border);
+    /* 🏔️ top: var(--navbar-height) inherited from adm-shared.css */
+    z-index: 900;
+    width: 100%;
+}
+
+.adm-header::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: #ff7f00;
+}
+
+.adm-header-inner {
+    max-width: 100%;
+    /* 💎 Fluid Header inner width */
+    margin: 0 auto;
+    padding: var(--sp-2);
+    /* 💎 Professional edge padding */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--sp-3);
+}
+
+.adm-header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    /* Increased gap */
+    flex: 1;
+    min-width: 0;
+}
+
+.adm-btn-back {
+    width: 42px;
+    /* Slightly larger targets */
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ff7f00;
+    border: none;
+    border-radius: var(--rad-md);
+    color: white;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    margin-right: -10px;
+    /* Slight offset to drift away from the Overview tab area */
+}
+
+.adm-btn-back:hover {
+    background: #e67300;
+    transform: scale(1.05);
+}
+
+
+.adm-header-titles {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.adm-page-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--adm-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.adm-header-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+.adm-role-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--adm-primary);
+    background: #f1f2ef;
+    /* Solid Matte Olive Tint */
+    padding: 2px 8px;
+    border-radius: var(--rad-sm);
+}
+
+/* 💊 STATUS CHIPS (Absolute Matte) */
+.adm-status-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: var(--rad-md);
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.adm-status-chip.active {
+    background: #f0fdf4;
+    /* Pure Solid Green BG */
+    color: #166534;
+    border-color: #dcfce7;
+}
+
+.adm-status-chip.inactive {
+    background: #fef2f2;
+    /* Pure Solid Red BG */
+    color: #991b1b;
+    border-color: #fee2e2;
+}
+
+.adm-status-dot {
+    width: 6px;
+    height: 6px;
+    background: currentColor;
+    border-radius: 50%;
+}
+
+.adm-id-copy {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    font-size: 0.65rem;
+    color: #ff7f00;
+    /* 💎 Icon Sync */
+    transition: var(--transition-fast);
+}
+
+.adm-id-copy:hover {
+    color: var(--adm-accent-deep);
+}
+
+/* ⚡ MANAGEMENT ACTIONS */
+.adm-actions-group {
+    display: flex;
+    flex-wrap: wrap;
+    /* 🛡️ Allow wrapping on narrow screens */
+    gap: var(--sp-2);
+    margin-top: var(--sp-3);
+    padding-top: var(--sp-3);
+    border-top: 2px dashed #cbd5e1;
+    /* 💎 Solid Matte Divider */
+}
+
+/* 💎 THE THREE PRIMARY ACTIONS (Matte Standard) */
+.adm-btn-mgmt {
+    padding: 12px 28px;
+    border-radius: var(--rad-md);
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    white-space: nowrap;
+    min-width: 180px;
+    /* 💎 Firm, Professional Presence */
+    flex-shrink: 0;
+    color: white !important;
+    opacity: 1 !important;
+}
+
+.adm-btn-mgmt.primary {
+    background: #4b502a !important;
+    /* 💎 Solid Matte Olive */
+}
+
+.adm-btn-mgmt.primary:hover {
+    background: #5a6132 !important;
+    transform: translateY(-2px);
+}
+
+.adm-btn-mgmt.danger {
+    background: #a30000 !important;
+    /* 💎 Solid Matte Deep Red */
+}
+
+.adm-btn-mgmt.danger:hover {
+    background: #c00000 !important;
+    transform: translateY(-2px);
+}
+
+/* 🔔 Notify Button (The User's Gold Standard) */
+.adm-btn-mgmt.outline {
+    background: #4b502a !important;
+    border: none;
+}
+
+.adm-btn-mgmt.outline:hover {
+    background: #ea580c !important;
+    /* 💎 Professional Solid Orange */
+    transform: translateY(-2px);
+}
+
+.adm-btn-mgmt:active {
+    transform: translateY(2px);
+}
+
+.adm-btn-mgmt:disabled {
+    opacity: 0.7 !important;
+    background: #cbd5e1 !important;
+    color: #475569 !important;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.adm-btn-mgmt.full-width {
+    width: 100%;
+}
+
+.adm-id-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+}
+
+/* Standardized status chips are now in adm-shared.css */
+
+/* 📐 GRID LAYOUT (8px System) */
+
+.adm-details-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--sp-3);
+    width: 100%;
+}
+
+/* 💎 CARD ARCHITECTURE */
+.adm-card {
+    background: var(--adm-surface);
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-lg);
+    box-shadow: var(--shd-standard);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: var(--transition-fast);
+    position: relative;
+}
+
+.adm-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #4b502a;
+    /* Pure Solid Leader Line */
+    z-index: 10;
+}
+
+.adm-card:hover {
+    box-shadow: var(--shd-elevated);
+    border-color: var(--adm-border-hover);
+}
+
+.adm-card-header {
+    padding: var(--sp-2) var(--sp-3);
+    border-bottom: 1px solid var(--adm-border);
+    background: #f1f2ef !important;
+    /* 💎 Solid Opaque header tint (Professional Matte) */
+    /* 💎 Muted Olive Field */
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    /* 💎 Centered Titles */
+    gap: 12px;
+    color: #ff7f00;
+    /* 💎 Global Icon Color Sync */
+    width: 100% !important;
+    /* 🛡️ Absolute full span */
+    box-sizing: border-box;
+}
+
+.adm-card-header h2 {
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--adm-text-main);
+}
+
+.adm-card-body {
+    padding: var(--sp-3);
+    flex: 1;
+}
+
+/* 📊 INFO GRID & POINTS */
+.adm-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--sp-3);
+}
+
+.adm-info-point {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.adm-info-point.span-2 {
+    grid-column: span 2;
+}
+
+.adm-info-point .label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--adm-text-muted);
+    text-transform: uppercase;
+}
+
+.adm-info-point .value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--adm-text-main);
+}
+
+.price {
+    color: var(--adm-primary);
+    font-weight: 800;
+}
+
+.monospace {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+}
+
+/* 💹 STATS & ENTITIES */
+.adm-stats-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.adm-stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: var(--sp-1);
+    border-bottom: 1px dashed var(--adm-border);
+}
+
+.adm-stat-item:last-child {
+    border-bottom: none;
+}
+
+.adm-entities-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.adm-entity {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-2);
+    background: var(--adm-bg);
+    border-radius: var(--rad-md);
+    border: 1px solid var(--adm-border);
+    color: var(--adm-accent-solid);
+}
+
+.entity-txt {
+    flex: 1;
+    min-width: 0;
+}
+
+.entity-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.entity-txt h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.entity-txt .type {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--adm-text-muted);
+}
+
+.entity-txt .description {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--adm-text-main);
+    line-height: 1.5;
+    background: #f8fafc;
+    /* Solid background instead of rgba */
+    padding: 8px;
+    border-radius: var(--rad-sm);
+    border-right: 2px solid var(--adm-primary-light);
+}
+
+.adm-status-chip.mini {
+    padding: 2px 8px;
+    font-size: 0.65rem;
+    border-radius: 4px;
+}
+
+.adm-status-chip.warning {
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.adm-status-chip.neutral {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+/* 🚚 Linked Shippers List */
+.adm-linked-shippers {
+    margin-top: 12px;
+    padding: 12px;
+    background: white;
+    border-radius: var(--rad-md);
+    border: 1px dashed var(--adm-border);
+}
+
+.linked-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--adm-text-muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.linked-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.linked-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--adm-bg);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: var(--adm-primary);
+    border: 1px solid var(--adm-border);
+}
+
+/* 📍 ADDRESSES */
+.adm-address-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--sp-3);
+}
+
+.adm-address-item {
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-md);
+    padding: var(--sp-2);
+    background: var(--adm-surface);
+}
+
+.adm-address-item.default {
+    border-color: var(--adm-primary);
+    background: #f1f2ef;
+    /* Pure solid Matte */
+}
+
+.addr-tag {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+}
+
+.pill {
+    background: var(--adm-primary);
+    color: white;
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* 📱 RESPONSIVE PHYSICS (10/10 Fluidity) */
+.span-8 {
+    grid-column: span 8;
+}
+
+.span-6 {
+    grid-column: span 6;
+}
+
+.span-4 {
+    grid-column: span 4;
+}
+
+.span-12 {
+    grid-column: span 12;
+}
+
+@media (max-width: 1024px) {
+
+    .span-8,
+    .span-4,
+    .span-6 {
+        grid-column: span 6;
+    }
+}
+
+@media (max-width: 768px) {
+    .adm-header-inner {
+        padding-inline: var(--sp-2) !important;
+    }
+
+    .adm-status-text {
+        display: none;
+        /* Hide text on small mobile, keep dot */
+    }
+
+    .adm-details-grid {
+        gap: 0 !important;
+        /* Absolute Flush */
+        background: transparent !important;
+        padding: 0 !important;
+    }
+
+    .adm-card {
+        grid-column: span 12 !important;
+        border-radius: 0 !important;
+        border-right: none !important;
+        border-left: none !important;
+        border-bottom: 1px solid var(--adm-border) !important;
+        box-shadow: none !important;
+    }
+
+    .adm-card-header,
+    .adm-card-body {
+        padding-inline: var(--sp-2) !important;
+    }
+
+    .adm-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .adm-info-point.span-2 {
+        grid-column: span 1;
+    }
+}
+
+/* 🛡️ Edge-to-Edge Safety & Chrome/Safari Sync */
+@media (max-width: 480px) {
+    .adm-header-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+}
+
+.adm-empty-note,
+.adm-empty-msg,
+.adm-empty-center {
+    color: var(--adm-text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    padding: var(--sp-4) var(--sp-2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100px;
+    background: #f8fafc;
+    border: 1px dashed var(--adm-border);
+    border-radius: var(--rad-md);
+    margin: var(--sp-2) 0;
+}
+
+.adm-btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--adm-primary);
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: var(--transition-fast);
+}
+
+.adm-btn-action:hover {
+    color: var(--adm-accent-deep);
+}

@@ -1,0 +1,35 @@
+/* frontend/src/pages/Buyer/BuyerLayout.css */
+
+.buyer-layout {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: radial-gradient(circle at top left, #ffffff, #f5f7fb);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    min-height: 80vh;
+}
+
+/* Specific inner content padding for fluid mode */
+.buyer-layout-content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding-inline: 0;
+}
+
+@media (min-width: 1024px) {
+    .buyer-layout-content {
+        /* Padding removed here to allow edge-to-edge sub-page headers (e.g. Wallet) */
+        /* Individual sections will now manage their own internal horizontal padding */
+        padding-inline: 0;
+    }
+}
+
+@media (max-width: 1024px) {
+    .buyer-layout-content {
+        padding-bottom: 90px;
+    }
+}

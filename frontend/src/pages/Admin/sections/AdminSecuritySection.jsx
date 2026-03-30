@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   ShieldCheck,
@@ -17,6 +18,8 @@ import {
   ListChecks,
   Eye,
   XCircle,
+  RefreshCw,
+  ChevronLeft,
 } from "lucide-react";
 import {
   getAdmins,
@@ -26,6 +29,7 @@ import {
   deleteAdmin,
   sendAdminStaffNotification,
 } from "@/services/adminService";
+import { formatDate, formatNumber } from "@/utils/formatters";
 import "./AdminSecuritySection.css";
 
 // مجموعات الصلاحيات المسموح بها في إدارة الموظفين (بدون إدارة الموظفين نفسها)
@@ -35,6 +39,7 @@ const PERMISSION_GROUPS = [
   { id: "products", label: "إدارة المنتجات" },
   { id: "orders", label: "إدارة الطلبات" },
   { id: "shipping", label: "إدارة شركات الشحن" },
+  { id: "payment", label: "إدارة خيارات الدفع" }, // ✅ NEW
   { id: "ads", label: "إدارة الإعلانات" },
   { id: "categories", label: "إدارة الأقسام" },
   { id: "financial", label: "الإدارة المالية" },
@@ -54,12 +59,7 @@ function createEmptyPermissions() {
   return Object.fromEntries(PERMISSION_GROUPS.map((g) => [g.id, "none"]));
 }
 
-function formatDateTime(value) {
-  if (!value) return "غير متوفر حاليًا";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "غير متوفر حاليًا";
-  return d.toLocaleString("ar-SA");
-}
+
 
 function isAdminOnline(admin) {
   if (!admin?.lastLoginAt) return false;
@@ -103,6 +103,7 @@ function countTasks(permissions) {
 }
 
 export default function AdminSecuritySection() {
+  const navigate = useNavigate();
   const { user, role } = useAuth();
 
   // المالك الحقيقي للمنصة فقط
@@ -116,22 +117,6 @@ export default function AdminSecuritySection() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
-
-  // مودال الإضافة / التعديل (نفس النافذة)
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [addSaving, setAddSaving] = useState(false);
-  const [addStep, setAddStep] = useState("personal"); // personal | permissions
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editingAdminId, setEditingAdminId] = useState(null);
-  const [newAdmin, setNewAdmin] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    staffCode: "",
-    password: "",
-    title: "",
-    permissions: createEmptyPermissions(),
-  });
 
   // مودال عرض المهام (تلخيص الصلاحيات)
   const [tasksModalAdmin, setTasksModalAdmin] = useState(null);
@@ -170,211 +155,13 @@ export default function AdminSecuritySection() {
     loadAdmins();
   }, [canView]);
 
-  const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
-
-  const handleNewAdminChange = (field, value) => {
-    setNewAdmin((prev) => ({ ...prev, [field]: value }));
-  };
-
-  // تبديل صلاحية إدارة معينة (عرض / تحرير / لا شيء) في خطوة الإضافة/التعديل
-  const toggleNewAdminPermission = (groupId, targetLevel) => {
-    setNewAdmin((prev) => {
-      const current = prev.permissions?.[groupId] || "none";
-      let next = targetLevel;
-      // الضغط مرة ثانية على نفس المستوى يلغي الصلاحية
-      if (current === targetLevel) {
-        next = "none";
-      }
-      return {
-        ...prev,
-        permissions: {
-          ...prev.permissions,
-          [groupId]: next,
-        },
-      };
-    });
-  };
-
-  const clearNewPermissions = () => {
-    setNewAdmin((prev) => ({
-      ...prev,
-      permissions: createEmptyPermissions(),
-    }));
-  };
-
-  const setAllNewPermissions = (level) => {
-    setNewAdmin((prev) => ({
-      ...prev,
-      permissions: Object.fromEntries(
-        PERMISSION_GROUPS.map((g) => [g.id, level])
-      ),
-    }));
-  };
-
-  // إنشاء موظف جديد
-  const handleCreateAdmin = async () => {
-    setErrorMessage("");
-    setSuccessMessage("");
-
-    if (!canEdit) {
-      setErrorMessage("لا تملك صلاحية إضافة موظفين إداريين.");
-      return;
-    }
-
-    if (!newAdmin.name.trim() || !newAdmin.email.trim() || !newAdmin.password) {
-      setErrorMessage("الاسم، البريد، وكلمة المرور حقول إلزامية.");
-      setAddStep("personal");
-      return;
-    }
-
-    if (!validateEmail(newAdmin.email.trim())) {
-      setErrorMessage("صيغة البريد الإلكتروني غير صحيحة.");
-      setAddStep("personal");
-      return;
-    }
-
-    if (newAdmin.password.length < 6) {
-      setErrorMessage("كلمة المرور يجب ألا تقل عن 6 رموز.");
-      setAddStep("personal");
-      return;
-    }
-
-    try {
-      setAddSaving(true);
-      const payload = {
-        name: newAdmin.name.trim(),
-        email: newAdmin.email.trim(),
-        phone: newAdmin.phone.trim(),
-        staffCode: newAdmin.staffCode.trim(),
-        password: newAdmin.password,
-        title: newAdmin.title.trim(),
-        permissions: newAdmin.permissions,
-      };
-
-      const res = await createAdmin(payload);
-      const created = res?.admin || res;
-
-      setAdmins((prev) => [...prev, created]);
-      setShowAddModal(false);
-      setIsEditMode(false);
-      setEditingAdminId(null);
-      setNewAdmin({
-        name: "",
-        email: "",
-        phone: "",
-        staffCode: "",
-        password: "",
-        title: "",
-        permissions: createEmptyPermissions(),
-      });
-      setAddStep("personal");
-      setSuccessMessage("تم إنشاء الموظف الإداري بنجاح.");
-    } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        "تعذر إنشاء الموظف الإداري الجديد. تأكد من تفعيل مسار /api/admin/admins.";
-      setErrorMessage(msg);
-    } finally {
-      setAddSaving(false);
-    }
-  };
-
-  // حفظ في وضع التعديل أو الإضافة
-  const handleSaveAdmin = async () => {
-    setErrorMessage("");
-    setSuccessMessage("");
-
-    // وضع التعديل: نحدّث بيانات الموظف + صلاحياته
-    if (isEditMode) {
-      if (!canEdit) {
-        setErrorMessage("لا تملك صلاحية تعديل صلاحيات وبيانات الموظفين.");
-        return;
-      }
-      if (!editingAdminId) return;
-
-      // تحقق بسيط من الاسم والبريد
-      if (!newAdmin.name.trim() || !newAdmin.email.trim()) {
-        setErrorMessage("الاسم والبريد الإلكتروني حقول إلزامية.");
-        setAddStep("personal");
-        return;
-      }
-
-      if (!validateEmail(newAdmin.email.trim())) {
-        setErrorMessage("صيغة البريد الإلكتروني غير صحيحة.");
-        setAddStep("personal");
-        return;
-      }
-
-      try {
-        setAddSaving(true);
-
-        const payload = {
-          name: newAdmin.name.trim(),
-          email: newAdmin.email.trim(),
-          phone: newAdmin.phone.trim(),
-          staffCode: newAdmin.staffCode.trim(),
-          title: newAdmin.title.trim(),
-          permissions: newAdmin.permissions,
-        };
-
-        const res = await updateAdminPermissions(editingAdminId, payload);
-        const updated = res?.admin || res;
-
-        setAdmins((prev) =>
-          prev.map((a) => (a._id === updated._id ? updated : a))
-        );
-        setShowAddModal(false);
-        setIsEditMode(false);
-        setEditingAdminId(null);
-        setNewAdmin({
-          name: "",
-          email: "",
-          phone: "",
-          staffCode: "",
-          password: "",
-          title: "",
-          permissions: createEmptyPermissions(),
-        });
-        setAddStep("personal");
-        setSuccessMessage("تم تحديث بيانات وصلاحيات الموظف الإداري بنجاح.");
-      } catch (err) {
-        const msg =
-          err?.response?.data?.message ||
-          err?.message ||
-          "تعذر حفظ بيانات الموظف الإداري. تأكد من مسار /api/admin/admins/:id/permissions.";
-        setErrorMessage(msg);
-      } finally {
-        setAddSaving(false);
-      }
-      return;
-    }
-
-    // وضع الإضافة
-    await handleCreateAdmin();
-  };
-
   // فتح نافذة إضافة موظف جديد
   const openCreateModal = () => {
     if (!canEdit) {
       setErrorMessage("لا تملك صلاحية إضافة موظفين إداريين.");
       return;
     }
-    setIsEditMode(false);
-    setEditingAdminId(null);
-    setNewAdmin({
-      name: "",
-      email: "",
-      phone: "",
-      staffCode: "",
-      password: "",
-      title: "",
-      permissions: createEmptyPermissions(),
-    });
-    setErrorMessage("");
-    setSuccessMessage("");
-    setAddStep("personal");
-    setShowAddModal(true);
+    navigate("/admin/security/add-staff");
   };
 
   // فتح نافذة التعديل لنفس نافذة الإضافة، مع تعبئة البيانات
@@ -384,32 +171,7 @@ export default function AdminSecuritySection() {
       return;
     }
     if (!admin) return;
-    const base = createEmptyPermissions();
-    const perms = admin.permissions || {};
-    const normalized = {};
-
-    PERMISSION_GROUPS.forEach((g) => {
-      let val = perms[g.id] || "none";
-      if (val === "partial") val = "view";
-      if (!["none", "view", "full"].includes(val)) val = "none";
-      normalized[g.id] = val;
-    });
-
-    setIsEditMode(true);
-    setEditingAdminId(admin._id);
-    setNewAdmin({
-      name: admin.name || "",
-      email: admin.email || "",
-      phone: admin.phone || "",
-      staffCode: admin.staffCode || "",
-      password: "",
-      title: admin.title || "",
-      permissions: { ...base, ...normalized },
-    });
-    setErrorMessage("");
-    setSuccessMessage("");
-    setAddStep("personal");
-    setShowAddModal(true);
+    navigate("/admin/security/add-staff", { state: { admin } });
   };
 
   const handleToggleStatus = async (adminId) => {
@@ -564,186 +326,141 @@ export default function AdminSecuritySection() {
     );
   });
 
-  // خطوة البيانات الشخصية في المودال
   const renderAddPersonalStep = () => (
-    <div className="admin-add-step-wrapper">
-      <div className="admin-modal-title-block">
-        <div className="admin-modal-title">
-          {isEditMode ? "تعديل بيانات الموظف الإداري" : "إضافة موظف جديد"}
-        </div>
-        <div className="admin-modal-subtitle">
+    <div className="adm-form">
+      <div className="adm-notice-box info" style={{ marginBottom: 'var(--sp-3)' }}>
+        <div className="adm-notice-content">
           {isEditMode
-            ? "يمكنك تعديل بيانات الموظف الإداري وصلاحياته من خلال هذه النافذة، باستثناء كلمة المرور التي سيتم تخصيص مسار مستقل لها لاحقًا."
-            : "يرجى تعبئة بيانات الموظف الذي سيعمل عن بُعد، ثم الانتقال لتحديد الصلاحيات على إدارات لوحة التحكم."}
+            ? "تعديل البيانات الأساسية للموظف. ملاحظة: الرمز السري يتطلب مساراً مستقلاً حالياً."
+            : "يرجى تعبئة بيانات الموظف الأساسية قبل الانتقال لتحديد الصلاحيات."}
         </div>
       </div>
 
-      <div className="admin-add-personal-grid">
-        <div className="admin-field">
-          <label>الاسم الكامل *</label>
+      <div className="adm-form-row">
+        <div className="adm-form-group">
+          <label className="adm-form-label">الاسم الكامل *</label>
           <input
+            className="adm-form-input"
             type="text"
             value={newAdmin.name}
             onChange={(e) => handleNewAdminChange("name", e.target.value)}
             placeholder="مثال: هلال محمد عبدالله"
           />
         </div>
-
-        <div className="admin-field">
-          <label>المسمى الوظيفي *</label>
+        <div className="adm-form-group">
+          <label className="adm-form-label">المسمى الوظيفي *</label>
           <input
+            className="adm-form-input"
             type="text"
             value={newAdmin.title}
             onChange={(e) => handleNewAdminChange("title", e.target.value)}
             placeholder="مثال: مدير عمليات، موظف مالي..."
           />
         </div>
+      </div>
 
-        <div className="admin-field">
-          <label>البريد الإلكتروني *</label>
+      <div className="adm-form-row">
+        <div className="adm-form-group">
+          <label className="adm-form-label">البريد الإلكتروني *</label>
           <input
+            className="adm-form-input"
             type="email"
             value={newAdmin.email}
             onChange={(e) => handleNewAdminChange("email", e.target.value)}
             placeholder="email@company.com"
           />
         </div>
-
-        <div className="admin-field">
-          <label>رقم الهاتف *</label>
+        <div className="adm-form-group">
+          <label className="adm-form-label">رقم الهاتف *</label>
           <input
+            className="adm-form-input"
             type="text"
             value={newAdmin.phone}
             onChange={(e) => handleNewAdminChange("phone", e.target.value)}
             placeholder="+9665XXXXXXXX"
           />
         </div>
+      </div>
 
-        <div className="admin-field">
-          <label>الرمز السري {isEditMode ? "(غير قابل للتعديل هنا)" : "*"}</label>
+      <div className="adm-form-row">
+        <div className="adm-form-group">
+          <label className="adm-form-label">الرمز السري {isEditMode ? "(محمي)" : "*"}</label>
           <input
+            className="adm-form-input"
             type="password"
             value={newAdmin.password}
             onChange={(e) => handleNewAdminChange("password", e.target.value)}
-            placeholder={
-              isEditMode
-                ? "لا يمكن تعديل كلمة المرور من هذه النافذة حالياً"
-                : "••••••••"
-            }
+            placeholder={isEditMode ? "••••••••" : "••••••••"}
             disabled={isEditMode}
           />
         </div>
-
-        <div className="admin-field">
-          <label>رقم الصلاحية (System ID)</label>
+        <div className="adm-form-group">
+          <label className="adm-form-label">رقم الصلاحية (System ID)</label>
           <input
+            className="adm-form-input"
             type="text"
             value={newAdmin.staffCode}
-            onChange={(e) =>
-              handleNewAdminChange("staffCode", e.target.value)
-            }
-            placeholder="A83921 أو رقم داخلي آخر"
+            onChange={(e) => handleNewAdminChange("staffCode", e.target.value)}
+            placeholder="A83921 أو رقم داخلي"
           />
         </div>
-      </div>
-
-      <div className="admin-modal-note">
-        {isEditMode
-          ? "ملاحظة: تعديل بيانات الموظف (الاسم، البريد، الهاتف، المسمّى، رقم الصلاحية) يتم حفظه مع الصلاحيات من خلال هذه النافذة. كلمة المرور ستظل كما هي حتى يتم إنشاء مسار مخصص لتعديلها."
-          : "ملاحظة: الرمز السري يتم حفظه بشكل مشفر في قاعدة البيانات، ولن يظهر بعد حفظ الموظف."}
       </div>
     </div>
   );
 
-  // خطوة جدول الصلاحيات في المودال
   const renderAddPermissionsStep = () => (
-    <div className="admin-add-step-wrapper">
-      <div className="admin-modal-title-block">
-        <div className="admin-modal-title">قائمة الصلاحيات</div>
-        <div className="admin-modal-subtitle">
-          جدول الصلاحيات التالي يحدد دور الموظف في كل إدارة من إدارات لوحة
-          التحكم. يمكنك اختيار "عرض" أو "تحرير" لكل إدارة، والضغط مرة ثانية
-          على نفس الخيار يلغي الصلاحية.
+    <div className="adm-form">
+      <div className="adm-notice-box info" style={{ marginBottom: 'var(--sp-2)' }}>
+        <div className="adm-notice-content">
+          حدد مستوى الصلاحية لكل قسم. "عرض" تتيح المطالعة فقط، و"تحرير" تتيح القيام بالإجراءات.
         </div>
       </div>
 
-      <div className="admin-permissions-matrix">
-        <div className="admin-permissions-matrix-header">
-          <span>يمكنك التحكم في الصلاحيات لكل إدارة من الإدارات التالية.</span>
-          <div className="admin-permissions-matrix-header-icons">
-            <button
-              type="button"
-              className="admin-icon-button"
-              title="تعيين الكل على العرض"
-              onClick={() => setAllNewPermissions("view")}
-            >
-              <Eye size={16} />
-            </button>
-            <button
-              type="button"
-              className="admin-icon-button"
-              title="تعيين الكل على التحرير"
-              onClick={() => setAllNewPermissions("full")}
-            >
-              <Edit3 size={16} />
-            </button>
-            <button
-              type="button"
-              className="admin-icon-button"
-              title="إلغاء تحديد الكل"
-              onClick={clearNewPermissions}
-            >
-              <XCircle size={16} />
-            </button>
-          </div>
-        </div>
+      <div className="adm-table-wrapper" style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid var(--adm-border)', borderRadius: 'var(--rad-md)' }}>
+        <table className="adm-table mini">
+          <thead>
+            <tr>
+              <th>الإدارة</th>
+              <th style={{ width: '80px', textAlign: 'center' }}>عرض</th>
+              <th style={{ width: '80px', textAlign: 'center' }}>تحرير</th>
+              <th style={{ width: '40px', textAlign: 'center' }}>
+                <button type="button" className="adm-icon-btn danger" onClick={clearNewPermissions} title="إلغاء الكل">
+                  <XCircle size={14} />
+                </button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {PERMISSION_GROUPS.map((group) => {
+              const level = newAdmin.permissions[group.id] || "none";
+              const isView = level === "view";
+              const isFull = level === "full";
 
-        <div className="admin-permissions-matrix-table-wrapper">
-          <table className="admin-permissions-matrix-table">
-            <thead>
-              <tr>
-                <th style={{ width: "40%" }}>الإدارة</th>
-                <th>عرض</th>
-                <th>تحرير</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PERMISSION_GROUPS.map((group) => {
-                const level = newAdmin.permissions[group.id] || "none";
-                const isView = level === "view";
-                const isFull = level === "full";
-
-                return (
-                  <tr key={group.id}>
-                    <td className="admin-permission-group-cell">
-                      <span className="admin-permission-group-title">
-                        {group.label}
-                      </span>
-                    </td>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={isView}
-                        onChange={() =>
-                          toggleNewAdminPermission(group.id, "view")
-                        }
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={isFull}
-                        onChange={() =>
-                          toggleNewAdminPermission(group.id, "full")
-                        }
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+              return (
+                <tr key={group.id}>
+                  <td style={{ fontWeight: 600 }}>{group.label}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      className="adm-form-checkbox"
+                      checked={isView}
+                      onChange={() => toggleNewAdminPermission(group.id, "view")}
+                    />
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      className="adm-form-checkbox"
+                      checked={isFull}
+                      onChange={() => toggleNewAdminPermission(group.id, "full")}
+                    />
+                  </td>
+                  <td></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -752,145 +469,99 @@ export default function AdminSecuritySection() {
   // الواجهة
   // ─────────────────────────────
   return (
-    <section className="admin-section-card">
-      {/* رأس القسم */}
-      <div className="admin-section-header">
-        <div className="admin-section-header-main">
-          <div className="admin-section-icon">
-            <ShieldCheck size={18} />
-          </div>
-          <div>
-            <div className="admin-section-title">إدارة الموظفين</div>
-            <div className="admin-section-subtitle">
-              عرض موظفي لوحة التحكم، متابعة حالة الاتصال، وتحديد الصلاحيات
-              لكل موظف بدقة. هذه الإدارة متاحة لمالك المنصة فقط.
-            </div>
+    <section className="adm-section-panel">
+      <div className="adm-section-inner-header">
+        <div className="adm-section-icon">
+          <ShieldCheck size={18} />
+        </div>
+        <div className="adm-section-title-group">
+          <div className="adm-section-title">إدارة الموظفين</div>
+          <div className="adm-section-subtitle">
+            عرض موظفي لوحة التحكم، متابعة حالة الاتصال، وتحديد الصلاحيات لكل موظف بدقة. متاحة لمالك المنصة فقط.
           </div>
         </div>
+        {canView && canEdit && (
+          <div className="adm-section-actions">
+            <button type="button" className="adm-btn primary" onClick={openCreateModal}>
+              <Plus size={14} />
+              <span>إضافة موظف جديد</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* لو لم يكن المستخدِم مالك المنصة */}
       {!canView && (
-        <div className="admin-empty-state admin-empty-state--spaced">
-          لا تملك صلاحية الوصول إلى إدارة الموظفين. هذه الإدارة مخصّصة لمالك
-          المنصة فقط.
+        <div className="adm-notice-box danger">
+          <div className="adm-notice-content">
+            لا تملك صلاحية الوصول إلى إدارة الموظفين. هذه الإدارة مخصّصة لمالك المنصة فقط.
+          </div>
         </div>
       )}
 
       {canView && (
         <>
-          {/* كروت الإحصائيات */}
-          <div className="admin-staff-overview-cards">
-            <div className="admin-staff-stat-card">
-              <div className="admin-staff-stat-inner">
-                <div className="admin-staff-stat-icon users">
-                  <Users size={18} />
-                </div>
-                <div>
-                  <div className="admin-staff-stat-value">{totalAdmins}</div>
-                  <div className="admin-staff-stat-label">إجمالي الموظفين</div>
-                </div>
-              </div>
+          <div className="adm-stats-grid">
+            <div className="adm-stat-card">
+              <div className="adm-stat-icon"><Users size={18} /></div>
+              <div className="adm-stat-label">إجمالي الموظفين</div>
+              <div className="adm-stat-value">{formatNumber(totalAdmins)}</div>
             </div>
-            <div className="admin-staff-stat-card">
-              <div className="admin-staff-stat-inner">
-                <div className="admin-staff-stat-icon online">
-                  <Wifi size={18} />
-                </div>
-                <div>
-                  <div className="admin-staff-stat-value">{onlineAdmins}</div>
-                  <div className="admin-staff-stat-label">متصل الآن</div>
-                </div>
-              </div>
+            <div className="adm-stat-card">
+              <div className="adm-stat-icon"><Wifi size={18} /></div>
+              <div className="adm-stat-label">متصل الآن</div>
+              <div className="adm-stat-value">{formatNumber(onlineAdmins)}</div>
             </div>
-            <div className="admin-staff-stat-card">
-              <div className="admin-staff-stat-inner">
-                <div className="admin-staff-stat-icon active">
-                  <Shield size={18} />
-                </div>
-                <div>
-                  <div className="admin-staff-stat-value">{activeAdmins}</div>
-                  <div className="admin-staff-stat-label">حسابات نشطة</div>
-                </div>
-              </div>
+            <div className="adm-stat-card">
+              <div className="adm-stat-icon"><Shield size={18} /></div>
+              <div className="adm-stat-label">حسابات نشطة</div>
+              <div className="adm-stat-value">{activeAdmins}</div>
             </div>
-            <div className="admin-staff-stat-card">
-              <div className="admin-staff-stat-inner">
-                <div className="admin-staff-stat-icon suspended">
-                  <Ban size={18} />
-                </div>
-                <div>
-                  <div className="admin-staff-stat-value">
-                    {suspendedAdmins}
-                  </div>
-                  <div className="admin-staff-stat-label">حسابات موقوفة</div>
-                </div>
-              </div>
+            <div className="adm-stat-card">
+              <div className="adm-stat-icon"><Ban size={18} /></div>
+              <div className="adm-stat-label">حسابات موقوفة</div>
+              <div className="adm-stat-value">{suspendedAdmins}</div>
             </div>
           </div>
 
-          {/* شريط البحث وأزرار الأدوات */}
-          <div className="admin-staff-toolbar">
-            <div className="admin-staff-search">
+          <div className="adm-toolbar">
+            <div className="adm-search-wrapper">
               <input
+                className="adm-search-input"
                 type="text"
                 placeholder="بحث بالاسم، البريد، الهاتف، أو رقم الصلاحية..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="admin-staff-toolbar-actions">
-              <button
-                type="button"
-                className="admin-button admin-button-rect admin-button-outline"
-                onClick={() => {
-                  // مساحة لتصفية متقدمة لاحقًا
-                }}
-              >
-                تصفية
-              </button>
-              {canEdit && (
-                <button
-                  type="button"
-                  className="admin-button admin-button-primary-rect admin-button-rect"
-                  onClick={openCreateModal}
-                >
-                  <Plus size={14} />
-                  <span>إضافة موظف جديد</span>
-                </button>
-              )}
-            </div>
           </div>
 
-          {errorMessage && (
-            <div className="admin-error admin-error--spaced">
-              {errorMessage}
-            </div>
-          )}
-          {successMessage && (
-            <div className="admin-success admin-success--spaced">
-              {successMessage}
+          {(errorMessage || successMessage) && (
+            <div style={{ marginBottom: 'var(--sp-3)' }}>
+              {errorMessage && <div className="adm-error-box">{errorMessage}</div>}
+              {successMessage && <div className="adm-notice-box success">{successMessage}</div>}
             </div>
           )}
 
-          {/* جدول الموظفين */}
-          {loading ? (
-            <div className="admin-empty-state admin-empty-state--spaced">
-              جاري تحميل بيانات الموظفين الإداريين...
-            </div>
-          ) : filteredAdmins.length === 0 ? (
-            <div className="admin-empty-state admin-empty-state--spaced">
-              لا يوجد موظفون إداريون يطابقون نتائج البحث الحالية.
-            </div>
-          ) : (
-            <div className="admin-staff-table-wrapper">
-              <table className="admin-staff-table">
+          <div className="adm-table-wrapper">
+            {loading ? (
+              <div className="adm-empty-state">
+                <RefreshCw size={24} className="spin" />
+                <p>جاري تحميل بيانات الموظفين...</p>
+              </div>
+            ) : filteredAdmins.length === 0 ? (
+              <div className="adm-empty-state">
+                <Users size={24} />
+                <h3>لا توجد نتائج</h3>
+                <p>لا يوجد موظفون إداريون يطابقون نتائج البحث الحالية.</p>
+              </div>
+            ) : (
+              <table className="adm-table">
                 <thead>
                   <tr>
                     <th>الموظف والوظيفة</th>
-                    <th>بيانات الاتصال والصلاحية</th>
+                    <th>بيانات الاتصال</th>
                     <th>الحالة والنشاط</th>
-                    <th>لوحة التحكم والإجراءات</th>
+                    <th style={{ textAlign: 'center' }}>إجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -901,344 +572,164 @@ export default function AdminSecuritySection() {
 
                     return (
                       <tr key={admin._id}>
-                        {/* الموظف والوظيفة */}
                         <td>
-                          <div className="admin-staff-name-row">
-                            <span className="admin-avatar-circle">
+                          <div className="adm-user-cell">
+                            <div className="adm-avatar-circle small">
                               {admin.name?.trim()?.charAt(0) || "م"}
-                            </span>
+                            </div>
                             <div>
-                              <div className="admin-staff-name">
-                                {admin.name}
-                              </div>
-                              <div className="admin-staff-title">
-                                {admin.title || "لم يتم تحديد مسمّى وظيفي."}
-                              </div>
-
+                              <div className="adm-user-name">{admin.name}</div>
+                              <div className="adm-user-email">{admin.title || "بدون مسمّى وظيفي"}</div>
                               <button
                                 type="button"
-                                className="admin-staff-tasks-chip"
+                                className="adm-status-chip info"
+                                style={{ marginTop: '4px', cursor: 'pointer', border: 'none' }}
                                 onClick={() => openTasksModal(admin)}
                               >
-                                <ListChecks size={13} />
-                                <span>
-                                  {tasksCount > 0
-                                    ? `${tasksCount} مهام موكلة`
-                                    : "لا توجد مهام"}
-                                </span>
+                                <ListChecks size={12} />
+                                <span>{tasksCount} مهام</span>
                               </button>
                             </div>
                           </div>
                         </td>
 
-                        {/* بيانات الاتصال والصلاحية */}
                         <td>
-                          <div className="admin-staff-contact-item">
-                            <Phone size={13} />
-                            <span>
-                              {admin.phone || "لا يوجد رقم هاتف مسجّل"}
-                            </span>
-                          </div>
-                          <div className="admin-staff-contact-item">
-                            <Mail size={13} />
-                            <span>{admin.email}</span>
-                          </div>
-                          <div className="admin-staff-contact-item">
-                            <IdCard size={13} />
-                            <span className="admin-staff-code-badge">
-                              {admin.staffCode || "غير محدّد"}
-                            </span>
+                          <div className="adm-info-list mini">
+                            <div className="adm-info-unit">
+                              <Phone size={12} />
+                              <span>{admin.phone || "-"}</span>
+                            </div>
+                            <div className="adm-info-unit">
+                              <Mail size={12} />
+                              <span>{admin.email}</span>
+                            </div>
+                            {admin.staffCode && (
+                              <div className="adm-info-unit">
+                                <IdCard size={12} />
+                                <span className="adm-code">{admin.staffCode}</span>
+                              </div>
+                            )}
                           </div>
                         </td>
 
-                        {/* الحالة والنشاط */}
                         <td>
-                          <div className="admin-status-badges">
-                            <span
-                              className={
-                                "admin-status-badge " +
-                                (isActive
-                                  ? "admin-status-badge-active"
-                                  : "admin-status-badge-inactive")
-                              }
-                            >
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span className={`adm-status-chip ${isActive ? 'active' : 'danger'}`}>
                               {isActive ? "نشط" : "موقوف"}
                             </span>
-
-                            <span
-                              className={
-                                "admin-status-badge admin-status-badge-activity " +
-                                (online
-                                  ? "admin-status-badge-online"
-                                  : "admin-status-badge-offline")
-                              }
-                            >
-                              {online
-                                ? "متصل الآن"
-                                : admin.lastLoginAt
-                                ? `آخر ظهور: ${formatDateTime(
-                                    admin.lastLoginAt
-                                  )}`
-                                : "لا يوجد نشاط مسجّل"}
+                            <span className={`adm-status-chip ${online ? 'success' : 'muted'}`}>
+                              {online ? "متصل الآن" : admin.lastLoginAt ? `نشط: ${formatDate(admin.lastLoginAt)}` : "لا يوجد نشاط"}
                             </span>
                           </div>
                         </td>
 
-                        {/* لوحة التحكم والإجراءات */}
                         <td>
-                          {canEdit ? (
-                            <div className="admin-staff-actions-list">
-                              <button
-                                type="button"
-                                className="admin-staff-action-link"
-                                onClick={() => openEditAdminModal(admin)}
-                              >
-                                <Edit3 size={13} />
-                                <span>تعديل</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                className="admin-staff-action-link"
-                                onClick={() => openNotificationModal(admin)}
-                              >
-                                <Bell size={13} />
-                                <span>تنبيه</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                className="admin-staff-action-link admin-staff-action-warning"
-                                onClick={() => handleToggleStatus(admin._id)}
-                              >
-                                <Power size={13} />
-                                <span>{isActive ? "إيقاف" : "تفعيل"}</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                className="admin-staff-action-link admin-staff-action-danger"
-                                onClick={() => handleDeleteAdmin(admin._id)}
-                              >
-                                <Trash2 size={13} />
-                                <span>حذف</span>
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="admin-table-note">
-                              عرض فقط (لا صلاحيات تعديل)
-                            </span>
-                          )}
+                          <div className="adm-actions-row center">
+                            {canEdit && (
+                              <>
+                                <button type="button" className="adm-icon-btn" onClick={() => openEditAdminModal(admin)} title="تعديل">
+                                  <Edit3 size={14} />
+                                </button>
+                                <button type="button" className="adm-icon-btn accent" onClick={() => openNotificationModal(admin)} title="تنبيه">
+                                  <Bell size={14} />
+                                </button>
+                                <button type="button" className={`adm-icon-btn ${isActive ? 'warning' : 'success'}`} onClick={() => handleToggleStatus(admin._id)} title={isActive ? "إيقاف" : "تفعيل"}>
+                                  <Power size={14} />
+                                </button>
+                                <button type="button" className="adm-icon-btn danger" onClick={() => handleDeleteAdmin(admin._id)} title="حذف">
+                                  <Trash2 size={14} />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
-            </div>
-          )}
-
-          {/* مودال إضافة / تعديل موظف */}
-          {showAddModal && (
-            <div className="admin-modal-backdrop">
-              <div className="admin-modal">
-                <div className="admin-add-main admin-add-main--wizard">
-                  {/* شريط الخطوات أعلى النافذة */}
-                  <div className="admin-add-stepper">
-                    <button
-                      type="button"
-                      className={
-                        "admin-add-step-pill " +
-                        (addStep === "personal" ? "active" : "done")
-                      }
-                      onClick={() => setAddStep("personal")}
-                    >
-                      <span className="admin-add-step-number">1</span>
-                      <span>البيانات الشخصية</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={
-                        "admin-add-step-pill " +
-                        (addStep === "permissions" ? "active" : "")
-                      }
-                      onClick={() => setAddStep("permissions")}
-                    >
-                      <span className="admin-add-step-number">2</span>
-                      <span>جدول الصلاحيات</span>
-                    </button>
-                  </div>
-
-                  {/* جسم النافذة */}
-                  <div className="admin-modal-body">
-                    {addStep === "personal"
-                      ? renderAddPersonalStep()
-                      : renderAddPermissionsStep()}
-
-                    {errorMessage && (
-                      <div className="admin-error admin-error--top">
-                        {errorMessage}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* أزرار أسفل المودال */}
-                <div className="admin-modal-actions">
-                  <button
-                    type="button"
-                    className="admin-button admin-button-ghost"
-                    onClick={() => {
-                      setShowAddModal(false);
-                      setIsEditMode(false);
-                      setEditingAdminId(null);
-                      setAddStep("personal");
-                    }}
-                    disabled={addSaving}
-                  >
-                    إلغاء
-                  </button>
-
-                  {addStep === "permissions" && (
-                    <button
-                      type="button"
-                      className="admin-button admin-button-outline"
-                      onClick={() => setAddStep("personal")}
-                      disabled={addSaving}
-                    >
-                      السابق
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    className="admin-button admin-button-primary-rect"
-                    onClick={
-                      addStep === "personal"
-                        ? () => setAddStep("permissions")
-                        : handleSaveAdmin
-                    }
-                    disabled={addSaving}
-                  >
-                    {addSaving
-                      ? "جارٍ الحفظ..."
-                      : addStep === "personal"
-                      ? "التالي"
-                      : isEditMode
-                      ? "حفظ التغييرات"
-                      : "حفظ الموظف"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* مودال عرض المهام الموكلة */}
+            )}
+          </div>
           {tasksModalAdmin && (
-            <div className="admin-modal-backdrop">
-              <div className="admin-modal">
-                <div className="admin-modal-header">
-                  <div>
-                    <div className="admin-modal-title">
-                      المهام الموكلة للموظف: {tasksModalAdmin.name}
-                    </div>
-                    <div className="admin-modal-subtitle">
-                      هذه قائمة مختصرة بالصلاحيات والمهام المرتبطة بهذا الموظف
-                      الإداري.
+            <div className="adm-modal-backdrop" onClick={closeTasksModal}>
+              <div className="adm-modal" style={{ maxWidth: '480px' }} onClick={(e) => e.stopPropagation()}>
+                <div className="adm-modal-header">
+                  <h2 className="adm-modal-title">
+                    <ListChecks size={20} />
+                    <span>المهام الموكلة: {tasksModalAdmin.name}</span>
+                  </h2>
+                </div>
+                <div className="adm-modal-body">
+                  <div className="adm-notice-box info" style={{ marginBottom: 'var(--sp-3)' }}>
+                    <div className="adm-notice-content">
+                      هذه قائمة مختصرة بالصلاحيات والمهام المرتبطة بهذا الموظف الإداري.
                     </div>
                   </div>
-                </div>
-                <div className="admin-modal-body">
-                  <ul className="admin-staff-tasks-list">
-                    {summarizeTasks(tasksModalAdmin.permissions).map(
-                      (line, idx) => (
-                        <li key={idx}>{line}</li>
-                      )
-                    )}
+                  <ul className="adm-list">
+                    {summarizeTasks(tasksModalAdmin.permissions).map((line, idx) => (
+                      <li key={idx} className="adm-list-item">{line}</li>
+                    ))}
                   </ul>
                 </div>
-                <div className="admin-modal-actions">
-                  <button
-                    type="button"
-                    className="admin-button admin-button-ghost"
-                    onClick={closeTasksModal}
-                  >
-                    إغلاق
-                  </button>
+                <div className="adm-modal-footer">
+                  <button type="button" className="adm-btn ghost" onClick={closeTasksModal}>إغلاق</button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* مودال إرسال تنبيه لموظف معيّن */}
           {showNotificationModal && notificationTargetAdmin && (
-            <div className="admin-modal-backdrop">
-              <div className="admin-modal">
-                <div className="admin-modal-header">
-                  <div>
-                    <div className="admin-modal-title">
-                      إرسال تنبيه للموظف: {notificationTargetAdmin.name}
-                    </div>
-                    <div className="admin-modal-subtitle">
-                      يمكنك من خلال هذه النافذة إرسال تنبيه فوري لهذا الموظف،
-                      سيظهر في مركز التنبيهات الخاص به.
-                    </div>
-                  </div>
+            <div className="adm-modal-backdrop" onClick={closeNotificationModal}>
+              <div className="adm-modal" style={{ maxWidth: '540px' }} onClick={(e) => e.stopPropagation()}>
+                <div className="adm-modal-header">
+                  <h2 className="adm-modal-title">
+                    <Bell size={20} />
+                    <span>تنبيه موظف: {notificationTargetAdmin.name}</span>
+                  </h2>
                 </div>
+                <div className="adm-modal-body">
+                  <div className="adm-form">
+                    <div className="adm-form-group">
+                      <label className="adm-form-label">عنوان التنبيه *</label>
+                      <input
+                        className="adm-form-input"
+                        type="text"
+                        value={notificationTitle}
+                        onChange={(e) => setNotificationTitle(e.target.value)}
+                        placeholder="مثال: تنبيه بخصوص متابعة التذاكر"
+                      />
+                    </div>
 
-                <div className="admin-modal-body">
-                  <div className="admin-field">
-                    <label>عنوان التنبيه *</label>
-                    <input
-                      type="text"
-                      value={notificationTitle}
-                      onChange={(e) =>
-                        setNotificationTitle(e.target.value)
-                      }
-                      placeholder="مثال: تنبيه بخصوص متابعة التذاكر"
-                    />
-                  </div>
-
-                  <div className="admin-field">
-                    <label>نص الرسالة *</label>
-                    <textarea
-                      rows={4}
-                      value={notificationMessage}
-                      onChange={(e) =>
-                        setNotificationMessage(e.target.value)
-                      }
-                      placeholder="اكتب نص التنبيه الذي سيصل للموظف..."
-                    />
+                    <div className="adm-form-group">
+                      <label className="adm-form-label">نص الرسالة *</label>
+                      <textarea
+                        className="adm-form-textarea"
+                        rows={4}
+                        value={notificationMessage}
+                        onChange={(e) => setNotificationMessage(e.target.value)}
+                        placeholder="اكتب نص التنبيه الذي سيصل للموظف..."
+                      />
+                    </div>
                   </div>
 
                   {notificationError && (
-                    <div className="admin-error admin-error--top">
-                      {notificationError}
+                    <div className="adm-error-box" style={{ marginTop: 'var(--sp-2)' }}>
+                      <RefreshCw size={14} />
+                      <span>{notificationError}</span>
                     </div>
                   )}
                   {notificationSuccess && (
-                    <div className="admin-success admin-success--top">
-                      {notificationSuccess}
+                    <div className="adm-notice-box success" style={{ marginTop: 'var(--sp-2)' }}>
+                      <div className="adm-notice-content">{notificationSuccess}</div>
                     </div>
                   )}
                 </div>
 
-                <div className="admin-modal-actions">
-                  <button
-                    type="button"
-                    className="admin-button admin-button-ghost"
-                    onClick={closeNotificationModal}
-                    disabled={notificationSending}
-                  >
-                    إلغاء
-                  </button>
-                  <button
-                    type="button"
-                    className="admin-button admin-button-primary-rect"
-                    onClick={handleSendNotification}
-                    disabled={notificationSending}
-                  >
-                    {notificationSending ? "جارٍ الإرسال..." : "إرسال التنبيه"}
+                <div className="adm-modal-footer">
+                  <button type="button" className="adm-btn ghost" onClick={closeNotificationModal} disabled={notificationSending}>إلغاء</button>
+                  <button type="button" className="adm-btn primary" onClick={handleSendNotification} disabled={notificationSending}>
+                    {notificationSending ? <RefreshCw size={14} className="spin" /> : <Bell size={14} />}
+                    <span>{notificationSending ? "جارٍ الإرسال..." : "إرسال التنبيه"}</span>
                   </button>
                 </div>
               </div>

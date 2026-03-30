@@ -1,10 +1,10 @@
 // frontend/src/pages/Seller/SellerDashboard.jsx
-// لوحة البائع (الملف الرئيسي بعد التقسيم إلى أقسام مستقلة)
+// لوحة البائع
 
 import "./SellerDashboard.css";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Store, BarChart3, ShoppingBag, Info } from "lucide-react";
+import { Store, BarChart3, ShoppingBag, Info, Wallet } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 import { useApp } from "@/context/AppContext";
@@ -15,86 +15,15 @@ import {
   updateSellerStore,
 } from "@/services/sellerService";
 
-import SellerOverviewSection from "./SellerOverviewSection";
-import SellerProductsSection from "./SellerProductsSection";
-import SellerOrdersSection from "./SellerOrdersSection";
-import SellerStoreSettingsSection from "./SellerStoreSettingsSection";
+import {
+  getDateRangeFromFilter,
+  buildEmptyAddress,
+  normalizeAddressFromApi,
+} from "@/utils/dashboardUtils";
 
-const allowedTabs = ["overview", "products", "orders", "settings"];
 
-// دالة مساعدة لبناء مجال التاريخ حسب الفلتر الزمني
-function getDateRangeFromFilter(filter, customFrom, customTo) {
-  if (filter === "all") return {};
 
-  const now = new Date();
-  const end = new Date(now);
-  end.setHours(23, 59, 59, 999);
-
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-
-  switch (filter) {
-    case "today": {
-      return { from: start, to: end };
-    }
-    case "7d": {
-      const s = new Date(start);
-      s.setDate(s.getDate() - 6); // آخر 7 أيام
-      return { from: s, to: end };
-    }
-    case "30d": {
-      const s = new Date(start);
-      s.setDate(s.getDate() - 29); // آخر 30 يوم
-      return { from: s, to: end };
-    }
-    case "year": {
-      const s = new Date(start.getFullYear(), 0, 1);
-      s.setHours(0, 0, 0, 0);
-      return { from: s, to: end };
-    }
-    case "custom": {
-      const range = {};
-      if (customFrom) {
-        const f = new Date(customFrom);
-        if (!isNaN(f)) {
-          f.setHours(0, 0, 0, 0);
-          range.from = f;
-        }
-      }
-      if (customTo) {
-        const t = new Date(customTo);
-        if (!isNaN(t)) {
-          t.setHours(23, 59, 59, 999);
-          range.to = t;
-        }
-      }
-      return range;
-    }
-    default:
-      return {};
-  }
-}
-
-function buildEmptyAddress() {
-  return { country: "", city: "", area: "", street: "", details: "" };
-}
-
-function normalizeAddressFromApi(address) {
-  if (!address) return buildEmptyAddress();
-  if (typeof address === "string") {
-    return { ...buildEmptyAddress(), details: address };
-  }
-  if (typeof address === "object") {
-    return {
-      country: address.country || "",
-      city: address.city || "",
-      area: address.area || "",
-      street: address.street || "",
-      details: address.details || "",
-    };
-  }
-  return buildEmptyAddress();
-}
+const allowedTabs = ["overview", "products", "orders", "settings", "wallet"];
 
 export default function SellerDashboard() {
   const location = useLocation();
@@ -102,13 +31,24 @@ export default function SellerDashboard() {
   const { user } = useAuth() || {};
   const { showToast } = useApp() || {};
 
-  // قراءة التبويب من رابط ?tab=...
-  const searchParams = new URLSearchParams(location.search);
-  const tabFromUrl = searchParams.get("tab") || "overview";
+  // تحديد التبويب من المسار (Pathname)
+  const getTabFromPath = (pathname) => {
+    const parts = pathname.split("/").filter(Boolean);
+    // parts = ['seller'] أو ['seller', 'products']
+    if (parts.length <= 1) return "overview";
+    const tabName = parts[1];
+    return allowedTabs.includes(tabName) ? tabName : "overview";
+  };
 
-  const [activeTab, setActiveTab] = useState(
-    allowedTabs.includes(tabFromUrl) ? tabFromUrl : "overview"
-  );
+  const [activeTab, setActiveTab] = useState(() => getTabFromPath(location.pathname));
+
+  // مزامنة التبويب النشط عند تغيير الرابط
+  useEffect(() => {
+    const tab = getTabFromPath(location.pathname);
+    if (tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [location.pathname, activeTab]);
 
   // 🔹 فلتر زمني لنظرة عامة
   const [dateFilter, setDateFilter] = useState("all"); // all, today, 7d, 30d, year, custom
@@ -124,6 +64,8 @@ export default function SellerDashboard() {
     pendingOrders: 0,
     completedOrders: 0,
     totalRevenue: 0,
+    receivedBalance: 0,
+    lifetimeRevenue: 0,
   });
   const [isOverviewLoading, setIsOverviewLoading] = useState(false);
 
@@ -166,6 +108,10 @@ export default function SellerDashboard() {
             typeof data.completedOrders === "number" ? data.completedOrders : 0,
           totalRevenue:
             typeof data.totalRevenue === "number" ? data.totalRevenue : 0,
+          receivedBalance:
+            typeof data.receivedBalance === "number" ? data.receivedBalance : 0,
+          lifetimeRevenue:
+            typeof data.lifetimeRevenue === "number" ? data.lifetimeRevenue : 0,
         });
       } catch (error) {
         if (showToast) {
@@ -213,9 +159,11 @@ export default function SellerDashboard() {
     totalProducts: dashboard.totalProducts ?? 0,
     totalOrders: dashboard.totalOrders ?? 0,
     pendingOrders: dashboard.pendingOrders ?? 0,
-    deliveredOrders: dashboard.completedOrders ?? 0,
+    completedOrders: dashboard.completedOrders ?? 0,
     totalRevenue:
       typeof dashboard.totalRevenue === "number" ? dashboard.totalRevenue : 0,
+    receivedBalance: dashboard.receivedBalance ?? 0,
+    lifetimeRevenue: dashboard.lifetimeRevenue ?? 0,
     storeStatus: dashboard.storeStatus || null,
     storeName: dashboard.storeName || storeSettings.name || null,
   };
@@ -224,15 +172,8 @@ export default function SellerDashboard() {
     if (!allowedTabs.includes(tab)) return;
     setActiveTab(tab);
 
-    const params = new URLSearchParams(location.search);
-    params.set("tab", tab);
-    navigate(
-      {
-        pathname: "/seller",
-        search: params.toString(),
-      },
-      { replace: true }
-    );
+    const path = tab === "overview" ? "/seller" : `/seller/${tab}`;
+    navigate(path);
   };
 
   // ✅ دعم تعديل الحقول العادية + حقول العنوان بنمط address.city ...إلخ
@@ -306,50 +247,51 @@ export default function SellerDashboard() {
     summary.storeStatus === "approved"
       ? "مفعل"
       : summary.storeStatus === "pending"
-      ? "في انتظار موافقة الإدارة"
-      : summary.storeStatus === "suspended"
-      ? "موقوف مؤقتًا"
-      : summary.storeStatus === "rejected"
-      ? "مرفوض"
-      : "غير محدد";
+        ? "في انتظار موافقة الإدارة"
+        : summary.storeStatus === "suspended"
+          ? "موقوف مؤقتًا"
+          : summary.storeStatus === "rejected"
+            ? "مرفوض"
+            : "غير محدد";
 
   const storeNameLabel = summary.storeName || "لم يتم تسمية المتجر بعد";
 
   return (
     <div className="seller-page">
-      {/* ===== البلوك العلوي: اسم المتجر + حالة + التبويبات ===== */}
-      <section className="seller-top">
-        <div className="seller-store-row">
-          <div className="seller-store-id">
+      {/* ===== الهيدر العلوي: معلومات المتجر والمالك (ثابت) ===== */}
+      <section className="seller-top-header">
+        <div className="seller-header-main">
+          <div className="seller-store-info">
             <div className="seller-store-avatar">
-              <Store size={16} />
+              <Store size={20} />
             </div>
-            {/* 🔸 نفس السطر: الأيقونة + اسم المتجر + مفعل */}
-            <div className="seller-store-name">{storeNameLabel}</div>
-            <div className="seller-store-status-chip">
-              <span className="seller-store-status-dot" />
-              <span>{storeStatusLabel}</span>
+            <div className="seller-name-status">
+              <h1 className="seller-store-display-name">{storeNameLabel}</h1>
+              <div className="seller-status-badge">
+                <span className="seller-status-dot" />
+                <span>{storeStatusLabel}</span>
+              </div>
             </div>
           </div>
 
-          <div className="seller-store-extra">
+          <div className="seller-owner-info">
             {sellerName && (
-              <span className="seller-store-user">
-                {sellerName}
-                {sellerEmail ? ` • ${sellerEmail}` : ""}
-              </span>
+              <div className="seller-owner-details">
+                <span className="seller-owner-name">{sellerName}</span>
+                {sellerEmail && <span className="seller-owner-email">{sellerEmail}</span>}
+              </div>
             )}
           </div>
         </div>
 
-        {/* تبويبات لوحة البائع */}
-        <nav className="seller-tabs" aria-label="أقسام لوحة البائع">
+        {/* تبويبات لوحة البائع - تظهر في الكمبيوتر فقط */}
+        <nav className="seller-nav-tabs" aria-label="أقسام لوحة البائع">
           <button
             type="button"
             className={
               activeTab === "overview"
-                ? "seller-tab seller-tab-active"
-                : "seller-tab"
+                ? "seller-tab-btn is-active"
+                : "seller-tab-btn"
             }
             onClick={() => handleTabChange("overview")}
           >
@@ -361,8 +303,8 @@ export default function SellerDashboard() {
             type="button"
             className={
               activeTab === "products"
-                ? "seller-tab seller-tab-active"
-                : "seller-tab"
+                ? "seller-tab-btn is-active"
+                : "seller-tab-btn"
             }
             onClick={() => handleTabChange("products")}
           >
@@ -374,8 +316,8 @@ export default function SellerDashboard() {
             type="button"
             className={
               activeTab === "orders"
-                ? "seller-tab seller-tab-active"
-                : "seller-tab"
+                ? "seller-tab-btn is-active"
+                : "seller-tab-btn"
             }
             onClick={() => handleTabChange("orders")}
           >
@@ -387,49 +329,50 @@ export default function SellerDashboard() {
             type="button"
             className={
               activeTab === "settings"
-                ? "seller-tab seller-tab-active"
-                : "seller-tab"
+                ? "seller-tab-btn is-active"
+                : "seller-tab-btn"
             }
             onClick={() => handleTabChange("settings")}
           >
             <Info size={16} />
             <span>إعدادات المتجر</span>
           </button>
+
+          <button
+            type="button"
+            className={
+              activeTab === "wallet"
+                ? "seller-tab-btn is-active"
+                : "seller-tab-btn"
+            }
+            onClick={() => handleTabChange("wallet")}
+          >
+            <Wallet size={16} />
+            <span>محفظتي</span>
+          </button>
         </nav>
       </section>
 
-      {/* ===== تبويب: نظرة عامة ===== */}
-      {activeTab === "overview" && (
-        <SellerOverviewSection
-          summary={summary}
-          isLoading={isOverviewLoading}
-          onGoToTab={handleTabChange}
-          dateFilter={dateFilter}
-          customFrom={customFrom}
-          customTo={customTo}
-          onQuickFilterChange={handleQuickDateFilterChange}
-          onCustomRangeChange={(from, to) => {
+      {/* ===== المحتوى المتغير (التبويبات أو الصفحات المستقلة) ===== */}
+      <Outlet
+        context={{
+          summary,
+          isLoading: isOverviewLoading,
+          onGoToTab: handleTabChange,
+          dateFilter,
+          customFrom,
+          customTo,
+          onQuickFilterChange: handleQuickDateFilterChange,
+          onCustomRangeChange: (from, to) => {
             setCustomFrom(from);
             setCustomTo(to);
-          }}
-        />
-      )}
-
-      {/* ===== تبويب: المنتجات ===== */}
-      {activeTab === "products" && <SellerProductsSection />}
-
-      {/* ===== تبويب: الطلبات ===== */}
-      {activeTab === "orders" && <SellerOrdersSection />}
-
-      {/* ===== تبويب: إعدادات المتجر ===== */}
-      {activeTab === "settings" && (
-        <SellerStoreSettingsSection
-          storeSettings={storeSettings}
-          onChange={handleStoreFieldChange}
-          onSubmit={handleStoreSettingsSubmit}
-          isSaving={isSettingsSaving}
-        />
-      )}
+          },
+          storeSettings,
+          handleStoreFieldChange,
+          handleStoreSettingsSubmit,
+          isSettingsSaving,
+        }}
+      />
     </div>
   );
 }

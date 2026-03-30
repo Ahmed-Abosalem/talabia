@@ -3,12 +3,12 @@
 
 /* الحاوية الأساسية للكرت */
 .product-card {
-  display: grid;
-  grid-template-rows: 3fr 2fr; /* الصف العلوي للصورة ≈ 60% ، الصف السفلي للمحتوى ≈ 40% */
+  display: flex;
+  flex-direction: column;
+  /* إزالة الطول الثابت والاعتماد على المحتوى والنسبة */
   width: 100%;
-  height: 340px; /* ارتفاع ثابت لكل الكروت */
   background: #ffffff;
-  border-radius: 0.9rem;
+  border-radius: 0.85rem;
   box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
   overflow: hidden;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
@@ -20,13 +20,14 @@
 }
 
 /* =========================
-   المنطقة العلوية – الصورة (≈ 60%)
+   المنطقة العلوية – الصورة
    ========================= */
 
 .product-image-wrapper {
   position: relative;
   width: 100%;
-  height: 100%; /* تأخذ كامل صف الصورة (3fr من الكرت) */
+  /* توحيد النسبة العرضية (Aspect Ratio) لضمان التناسق البصري */
+  aspect-ratio: 4 / 5;
   overflow: hidden;
   background: #f9fafb;
 }
@@ -47,12 +48,13 @@
   opacity: 1;
 }
 
-/* الصورة نفسها – تتكيف مع المساحة حتى لو تمددت */
+/* الصورة نفسها – تملأ القالب بالكامل (No-Crop Policy) */
 .product-image {
   width: 100%;
   height: 100%;
-  object-fit: fill; /* حسب طلبك: تمطيط/تصغير/تكبير لتملأ كل المساحة */
-  object-position: center;
+  /* استخدام fill لضمان أن الصورة تمتد لتملأ الإطار بالكامل دون قص */
+  object-fit: fill;
+  display: block;
   transition: transform 0.2s ease;
 }
 
@@ -65,54 +67,61 @@
    ========================= */
 
 .product-content {
-  padding: 0.6rem 0.8rem 0.65rem;
+  padding: 0.55rem 0.75rem 0.6rem;
+  /* Mobile Default */
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: 0; /* يمنع تمدد الكرت */
+  min-height: 0;
+  /* يمنع تمدد الكرت */
 }
 
-/* اسم المنتج */
+/* اسم المنتج - ارتفاع ثابت لسطرين لضمان المحاذاة */
 .product-name {
   margin: 0;
-  margin-bottom: 0.16rem;
+  margin-bottom: 0.3rem;
   font-size: 0.95rem;
   font-weight: 700;
   color: #0f172a;
-  line-height: 1.2;
+  line-height: 1.25;
+  height: 2.5rem; /* Fixed height to prevent shifting */
   display: -webkit-box;
-  line-clamp: 2;         /* الخاصية القياسية */
-  -webkit-line-clamp: 2; /* دعم WebKit */
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  word-break: break-word; /* Ensure long words don't break layout */
 }
 
-/* الوصف المختصر */
+/* الوصف المختصر - ارتفاع ثابت لسطرين لضمان المحاذاة حتى لو الوصف فارغ */
 .product-description {
-  margin: 0.04rem 0 0.2rem 0;
+  margin: 0;
+  margin-bottom: 0.4rem;
   font-size: 0.8rem;
   color: #6b7280;
-  line-height: 1.35;
+  line-height: 1.4;
+  height: 2.25rem; /* Fixed height */
   display: -webkit-box;
-  line-clamp: 2;         /* الخاصية القياسية */
-  -webkit-line-clamp: 2; /* دعم WebKit */
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-/* صف السعر */
+/* صف السعر - محاذاة تلقائية لأسفل الجزء المخصص */
 .product-price-row {
   display: flex;
   align-items: baseline;
   gap: 0.25rem;
-  margin-top: auto; /* يدفع السعر للأسفل ويترك الاسم/الوصف في الأعلى */
+  margin-top: auto;
+  min-height: 1.2rem;
 }
 
 /* السعر */
 .product-price {
   font-size: 0.96rem;
   font-weight: 800;
-  color: #0f766e;
+  color: #a30000;
 }
 
 /* الخط الفاصل قبل الأيقونات */
@@ -164,16 +173,19 @@
 
 /* ⭐ السلة: دائرة ممتلئة بلون أزرق ناعم – أبرز أيقونة */
 .product-icon-circle.cart {
-  background: #3b82f6; /* أزرق ناعم */
-  color: #ffffff;      /* الأيقونة باللون الأبيض */
+  background: #4b502a;
+  /* اللون الموحد */
+  color: #ffffff;
+  /* الأيقونة باللون الأبيض */
   border-color: transparent;
-  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.35);
+  box-shadow: 0 3px 10px rgba(75, 80, 42, 0.35);
 }
 
 /* عند المرور على السلة */
 .product-icon-circle.cart:hover {
-  background: #2563eb; /* أزرق أغمق قليلاً */
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+  background: #3a3e20;
+  /* درجة أغمق قليلاً */
+  box-shadow: 0 4px 14px rgba(75, 80, 42, 0.45);
 }
 
 /* حالة التفعيل العامة (تُضاف مع favorite-active / cart-active / share-active) */
@@ -184,13 +196,21 @@
 
 /* مفضلة مفعّلة – هوية خضراء */
 .favorite-active {
-  background-color: #dcfce7; /* أخضر باهت كخلفية */
-  color: #16a34a;           /* أيقونة خضراء واضحة */
+  background-color: #fef2f2;
+  /* خلفية حمراء باهتة جداً */
+  color: #a30000;
+  /* أيقونة حمراء داكنة */
+}
+
+.favorite-active svg {
+  fill: currentColor;
+  /* تعبئة القلب */
 }
 
 /* سلة مفعّلة – تتحول لهوية خضراء مع حركة نبض خفيفة */
 .cart-active {
-  background-color: #16a34a; /* أخضر واضح */
+  background-color: #16a34a;
+  /* أخضر واضح */
   color: #ffffff;
   box-shadow: 0 4px 14px rgba(22, 163, 74, 0.45);
   animation: icon-pulse 0.4s ease;
@@ -198,8 +218,13 @@
 
 /* مشاركة مفعّلة */
 .share-active {
-  background-color: #fee2e2;
-  color: #b91c1c;
+  background-color: #fff7ed;
+  color: #ff7f00;
+}
+
+/* تخصيص أيقونة المشاركة (لتكون برتقالية دائماً) */
+.product-icon-circle.share {
+  color: #ff7f00;
 }
 
 /* حركة نبض اختيارية */
@@ -207,9 +232,11 @@
   0% {
     transform: translateY(0) scale(1);
   }
+
   50% {
     transform: translateY(-1px) scale(1.08);
   }
+
   100% {
     transform: translateY(0) scale(1);
   }
@@ -228,29 +255,153 @@
    📱 على الجوال – نفس الشكل تقريباً
    ========================= */
 
-@media (max-width: 640px) {
+@media (min-width: 640px) {
   .product-card {
-    height: 340px; /* يبقى ثابت أيضاً على الجوال */
-    border-radius: 0.85rem;
+    border-radius: 0.9rem;
   }
 
   .product-content {
-    padding: 0.55rem 0.75rem 0.6rem;
+    padding: 0.6rem 0.8rem 0.65rem;
+  }
+}
+
+/* =========================
+   حالات خاصة (Unavailable / Selected)
+   ========================= */
+
+.product-card.unavailable {
+  opacity: 0.7;
+}
+
+.product-card.unavailable .product-image {
+  filter: grayscale(0.5);
+}
+
+.product-card.selected {
+  outline: 2px solid #4b502a;
+  outline-offset: -2px;
+  box-shadow: 0 0 20px rgba(75, 80, 42, 0.2);
+}
+
+/* طبقة تحديد المنتج - ملغاة لصالح التوزيع الجديد في product-badge-actions */
+.product-select-overlay {
+  display: none;
+}
+
+.product-checkbox {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.product-checkbox:hover {
+  background: rgba(0, 0, 0, 0.4);
+  transform: scale(1.05);
+}
+
+.product-checkbox.checked {
+  background: #4b502a;
+  border-color: #4b502a;
+}
+
+/* منطقة البادجات والأيقونات العلوية - توزيع جديد */
+.product-badge-actions {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  right: 0.6rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* الأطراف تسمح بالتفاعل */
+.product-actions-left,
+.product-actions-right {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+}
+
+.product-badges-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  pointer-events: none;
+}
+
+.product-badge-offer {
+  background: #ef4444;
+  color: white;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+  white-space: nowrap;
+}
+
+.product-badge-soldout {
+  background: #64748b;
+  color: white;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.35);
+  white-space: nowrap;
+}
+
+.product-remove-icon {
+  background: rgba(255, 255, 255, 0.95);
+  color: #ef4444;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+.product-remove-icon:hover {
+  background: #ef4444;
+  color: white;
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* السعر القديم */
+.product-old-price {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  text-decoration: line-through;
+  margin-inline-start: 0.4rem;
+}
+
+/* الاستجابة للهاتف */
+@media (max-width: 640px) {
+  .product-icon-circle {
+    width: 1.8rem;
+    height: 1.8rem;
   }
 
-  .product-name {
-    font-size: 0.9rem;
-  }
-
-  .product-description {
-    font-size: 0.78rem;
-  }
-
-  .product-price {
-    font-size: 0.92rem;
-  }
-
-  .product-actions-row {
-    padding-inline: 0.2rem;
+  .product-icon-circle svg {
+    width: 16px;
+    height: 16px;
   }
 }

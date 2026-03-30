@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { LifeBuoy, RefreshCw, User, Mail, Phone } from "lucide-react";
+import { LifeBuoy, RefreshCw, User, Mail, Phone, Search, X, Send } from "lucide-react";
 import {
   getAdminSupportTickets,
   updateSupportTicketStatus,
   replyToSupportTicket,
   deleteSupportTicket,
 } from "@/services/adminService";
+import { formatDate } from "@/utils/formatters";
 import { useApp } from "@/context/AppContext";
+import "./AdminSupportSection.css";
 
 const STATUS_LABELS = {
   open: "مفتوحة",
@@ -162,32 +164,29 @@ export default function AdminSupportSection() {
   }
 
   return (
-    <section className="admin-section-card">
-      <div className="admin-section-header">
-        <div className="admin-section-header-main">
-          <div className="admin-section-icon">
-            <LifeBuoy size={18} />
-          </div>
-          <div>
-            <div className="admin-section-title">الدعم الفني والتذاكر</div>
-            <div className="admin-section-subtitle">
-              متابعة طلبات الدعم من العملاء والبائعين وشركات الشحن وتحديث
-              حالتها.
-            </div>
-          </div>
+    <section className="adm-section-panel">
+      <header className="adm-section-inner-header">
+        <div className="adm-section-icon">
+          <LifeBuoy size={22} />
         </div>
-        <div className="admin-section-actions">
+        <div className="adm-section-title-group">
+          <h2 className="adm-section-title">الدعم الفني والتذاكر</h2>
+          <p className="adm-section-subtitle">
+            متابعة ومعالجة طلبات الدعم الواردة من العملاء والشركاء.
+          </p>
+        </div>
+        <div className="adm-section-actions">
           <button
             type="button"
-            className="admin-button admin-button-ghost"
+            className="adm-btn outline"
             onClick={loadTickets}
             disabled={loading}
           >
-            <RefreshCw size={14} />
+            <RefreshCw size={18} className={loading ? "spin" : ""} />
             <span>تحديث</span>
           </button>
         </div>
-      </div>
+      </header>
 
       {errorMessage && (
         <div className="admin-error" style={{ marginBottom: "0.6rem" }}>
@@ -195,159 +194,120 @@ export default function AdminSupportSection() {
         </div>
       )}
 
-      <div className="users-toolbar" style={{ marginTop: "0.6rem" }}>
-        <input
-          className="users-search-input"
-          placeholder="بحث بعنوان التذكرة أو اسم المستخدم أو البريد..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <select
-          className="users-filter-select"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="all">كل الحالات</option>
-          <option value="open">{STATUS_LABELS.open}</option>
-          <option value="in_progress">{STATUS_LABELS.in_progress}</option>
-          <option value="resolved">{STATUS_LABELS.resolved}</option>
-          <option value="closed">{STATUS_LABELS.closed}</option>
-        </select>
+      <div className="adm-toolbar">
+        <div className="adm-search-wrapper" style={{ flex: 1 }}>
+          <Search size={16} className="adm-search-icon" />
+          <input
+            className="adm-search-input"
+            placeholder="بحث بعنوان التذكرة، اسم المستخدم، أو البريد..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="adm-filter-group">
+          <label className="adm-filter-label">الحالة:</label>
+          <select
+            className="adm-filter-select"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">كل الحالات</option>
+            <option value="open">{STATUS_LABELS.open}</option>
+            <option value="in_progress">{STATUS_LABELS.in_progress}</option>
+            <option value="resolved">{STATUS_LABELS.resolved}</option>
+            <option value="closed">{STATUS_LABELS.closed}</option>
+          </select>
+        </div>
       </div>
 
-      <div className="users-table-wrapper">
+      <div className="adm-table-container">
         {loading ? (
-          <div className="users-empty-state">جاري تحميل تذاكر الدعم...</div>
+          <div className="adm-loading-state">
+            <RefreshCw size={24} className="spin" />
+            <span>جاري التحميل...</span>
+          </div>
         ) : filtered.length === 0 ? (
-          <div className="users-empty-state">
-            لا توجد تذاكر مطابقة لخيارات البحث / التصفية.
+          <div className="adm-empty-state">
+            <LifeBuoy size={48} className="adm-text-soft" />
+            <p>لا توجد تذاكر مطابقة لخيارات البحث.</p>
           </div>
         ) : (
-          <table className="users-table">
+          <table className="adm-table">
             <thead>
               <tr>
                 <th>العنوان</th>
                 <th>المستخدم</th>
                 <th>الدور</th>
                 <th>الحالة</th>
-                <th>تاريخ الإنشاء</th>
-                <th>عرض التفاصيل</th>
-                <th>إجراءات</th>
+                <th>التاريخ</th>
+                <th style={{ width: '280px' }}>الإجراءات</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((t) => (
                 <tr key={t._id}>
-                  <td>{t.subject}</td>
                   <td>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "0.25rem",
-                      }}
-                    >
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.35rem",
-                        }}
-                      >
-                        <User size={14} />
-                        <span>{t.userName || "-"}</span>
-                      </span>
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.35rem",
-                        }}
-                      >
-                        <Mail size={14} />
-                        <span>{t.userEmail || "-"}</span>
-                      </span>
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.35rem",
-                        }}
-                      >
-                        <Phone size={14} />
-                        <span>{t.userPhone || "-"}</span>
-                      </span>
+                    <div className="adm-table-main" onClick={() => handleOpenDetails(t)} style={{ cursor: 'pointer' }}>
+                      <span className="adm-font-bold">{t.subject}</span>
                     </div>
                   </td>
                   <td>
-                    {(() => {
-                      const role = t.userRole || "";
-
-                      if (!role) return "-";
-                      if (role === "buyer") return "مشتري";
-                      if (role === "seller") return "بائع";
-                      if (role === "shipper") return "شركة شحن";
-                      if (role === "admin") return "مدير";
-
-                      return "-";
-                    })()}
+                    <div className="adm-table-main">
+                      <span className="adm-font-bold">{t.userName || "—"}</span>
+                      <span className="adm-meta-text">{t.userEmail}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className="adm-pill sm outline">
+                      {t.userRole === "buyer" ? "مشتري" :
+                        t.userRole === "seller" ? "بائع" :
+                          t.userRole === "shipper" ? "شحن" :
+                            t.userRole === "admin" ? "مدير" : "—"}
+                    </span>
                   </td>
                   <td>
                     <select
-                      className="users-role-select"
+                      className="adm-status-select"
                       value={t.status || "open"}
                       disabled={busyId === t._id}
-                      onChange={(e) =>
-                        handleStatusChange(t._id, e.target.value)
-                      }
+                      onChange={(e) => handleStatusChange(t._id, e.target.value)}
+                      data-status={t.status}
                     >
                       <option value="open">{STATUS_LABELS.open}</option>
-                      <option value="in_progress">
-                        {STATUS_LABELS.in_progress}
-                      </option>
+                      <option value="in_progress">{STATUS_LABELS.in_progress}</option>
                       <option value="resolved">{STATUS_LABELS.resolved}</option>
                       <option value="closed">{STATUS_LABELS.closed}</option>
                     </select>
                   </td>
                   <td>
-                    {t.createdAt
-                      ? new Date(t.createdAt).toLocaleString("ar-SA")
-                      : "-"}
+                    <span className="adm-text-soft" style={{ fontSize: '0.85rem' }}>
+                      {t.createdAt ? formatDate(t.createdAt) : "—"}
+                    </span>
                   </td>
                   <td>
-                    <button
-                      type="button"
-                      className="admin-button admin-button-ghost"
-                      onClick={() => handleOpenDetails(t)}
-                    >
-                      عرض التفاصيل
-                    </button>
-                  </td>
-                  <td>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "0.4rem",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      {/* زر رد – جعل النص داكن حتى لا يختفي على الخلفية البيضاء */}
+                    <div className="adm-table-actions">
                       <button
                         type="button"
-                        className="admin-button admin-button-secondary"
+                        className="adm-btn outline sm"
+                        onClick={() => handleOpenDetails(t)}
+                      >
+                        عرض
+                      </button>
+                      <button
+                        type="button"
+                        className="adm-btn primary sm"
                         onClick={() => handleOpenReply(t)}
                         disabled={busyId === t._id}
                       >
-                        <span style={{ color: "#111827" }}>رد</span>
+                        رد
                       </button>
-                      {/* زر حذف – جعل النص أحمر داكن واضح */}
                       <button
                         type="button"
-                        className="admin-button admin-button-danger"
+                        className="adm-btn danger sm"
                         onClick={() => handleDeleteTicket(t)}
                         disabled={busyId === t._id}
                       >
-                        <span style={{ color: "#b91c1c" }}>حذف</span>
+                        حذف
                       </button>
                     </div>
                   </td>
@@ -358,69 +318,47 @@ export default function AdminSupportSection() {
         )}
       </div>
 
-      {/* نافذة عرض تفاصيل التذكرة – لعرض نص الرسالة فقط */}
+      {/* نافذة عرض تفاصيل التذكرة */}
       {selectedTicket && (
-        <div
-          className="admin-modal-overlay"
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(15,23,42,0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
-          }}
-        >
-          <div
-            className="admin-modal"
-            style={{
-              width: "100%",
-              maxWidth: "640px",
-              maxHeight: "80vh",
-              overflow: "hidden",
-              borderRadius: "0.75rem",
-              backgroundColor: "#ffffff",
-              boxShadow: "0 20px 40px rgba(15,23,42,0.25)",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <div className="admin-modal-header">
-              <h3>تفاصيل التذكرة</h3>
+        <div className="adm-modal-backdrop" onClick={handleCloseDetails}>
+          <div className="adm-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="adm-modal-header">
+              <h3 className="adm-modal-title">تفاصيل تذكرة الدعم</h3>
+              <button type="button" className="adm-modal-close" onClick={handleCloseDetails}>
+                <X size={20} />
+              </button>
             </div>
-            <div
-              className="admin-modal-body"
-              style={{
-                padding: "0.75rem 1rem 1rem",
-                overflowY: "auto",
-              }}
-            >
-              <p>
-                <strong>نص الرسالة:</strong>
-              </p>
-              <pre
-                style={{
-                  whiteSpace: "pre-wrap",
-                  background: "#f9fafb",
-                  padding: "0.75rem",
-                  borderRadius: "0.5rem",
-                  border: "1px solid #e5e7eb",
-                  fontFamily: "inherit",
-                  fontSize: "0.85rem",
-                  marginTop: "0.5rem",
-                }}
-              >
-                {selectedTicket.message || "-"}
-              </pre>
+            <div className="adm-modal-body">
+              <div className="adm-info-grid">
+                <div className="adm-info-point">
+                  <span className="label">الموضوع:</span>
+                  <span className="value adm-font-bold">{selectedTicket.subject}</span>
+                </div>
+                <div className="adm-info-point">
+                  <span className="label">المستخدم:</span>
+                  <span className="value">{selectedTicket.userName} ({selectedTicket.userEmail})</span>
+                </div>
+                <div className="adm-info-point full">
+                  <span className="label">نص الرسالة:</span>
+                  <div className="adm-text-box">
+                    {selectedTicket.message}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="admin-modal-footer">
+            <div className="adm-modal-footer">
+              <button type="button" className="adm-btn outline" onClick={handleCloseDetails}>
+                إغلاق
+              </button>
               <button
                 type="button"
-                className="admin-button admin-button-secondary"
-                onClick={handleCloseDetails}
+                className="adm-btn primary"
+                onClick={() => {
+                  handleCloseDetails();
+                  handleOpenReply(selectedTicket);
+                }}
               >
-                إغلاق
+                رد على التذكرة
               </button>
             </div>
           </div>
@@ -429,93 +367,57 @@ export default function AdminSupportSection() {
 
       {/* نافذة الرد على التذكرة */}
       {replyTicket && (
-        <div
-          className="admin-modal-overlay"
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(15,23,42,0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
-          }}
-        >
-          <div
-            className="admin-modal"
-            style={{
-              width: "100%",
-              maxWidth: "640px",
-              maxHeight: "80vh",
-              overflow: "hidden",
-              borderRadius: "0.75rem",
-              backgroundColor: "#ffffff",
-              boxShadow: "0 20px 40px rgba(15,23,42,0.25)",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <div className="admin-modal-header">
-              <h3>الرد على التذكرة</h3>
+        <div className="adm-modal-backdrop" onClick={handleCloseReply}>
+          <div className="adm-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="adm-modal-header">
+              <h3 className="adm-modal-title">الرد على التذكرة</h3>
+              <button type="button" className="adm-modal-close" onClick={handleCloseReply}>
+                <X size={20} />
+              </button>
             </div>
-            <form
-              className="admin-modal-body"
-              onSubmit={handleSubmitReply}
-              style={{
-                padding: "0.75rem 1rem 1rem",
-                overflowY: "auto",
-              }}
-            >
-              <p style={{ marginBottom: "0.5rem" }}>
-                <strong>العنوان:</strong> {replyTicket.subject || "-"}
-              </p>
-              <p style={{ marginBottom: "0.5rem" }}>
-                <strong>المستخدم:</strong> {replyTicket.userName || "-"} (
-                {replyTicket.userEmail || "-"})
-              </p>
-
-              <label
-                htmlFor="admin-support-reply"
-                style={{ display: "block", marginBottom: "0.25rem" }}
-              >
-                نص الرد
-              </label>
-              <textarea
-                id="admin-support-reply"
-                rows={5}
-                style={{
-                  width: "100%",
-                  resize: "vertical",
-                  padding: "0.5rem",
-                  borderRadius: "0.5rem",
-                  border: "1px solid #d1d5db",
-                  fontFamily: "inherit",
-                  fontSize: "0.9rem",
-                }}
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-              />
-
-              <div
-                className="admin-modal-footer"
-                style={{ marginTop: "0.75rem" }}
-              >
-                <button
-                  type="button"
-                  className="admin-button admin-button-ghost"
-                  onClick={handleCloseReply}
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  className="admin-button admin-button-primary"
-                  disabled={busyId === replyTicket._id}
-                >
-                  إرسال الرد
-                </button>
+            <div className="adm-modal-body">
+              <div className="adm-form-grid">
+                <div className="adm-form-group">
+                  <label className="adm-form-label">الرد (سيصل للمستخدم عبر البريد/الإشعارات)</label>
+                  <textarea
+                    className="adm-form-input"
+                    rows={8}
+                    style={{ resize: 'vertical' }}
+                    value={replyText}
+                    placeholder="اكتب ردك هنا..."
+                    onChange={(e) => setReplyText(e.target.value)}
+                  />
+                </div>
               </div>
-            </form>
+            </div>
+            <div className="adm-modal-footer">
+              <button
+                type="button"
+                className="adm-btn outline"
+                onClick={handleCloseReply}
+                disabled={busyId === replyTicket._id}
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                className="adm-btn primary"
+                onClick={handleSubmitReply}
+                disabled={busyId === replyTicket._id}
+              >
+                {busyId === replyTicket._id ? (
+                  <>
+                    <RefreshCw size={18} className="spin" />
+                    <span>جاري الإرسال...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={18} />
+                    <span>إرسال الرد</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

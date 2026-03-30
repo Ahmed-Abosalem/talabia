@@ -1,0 +1,626 @@
+/* ============================================================
+   AdminSellerDetailsPage.css
+   الهوية البصرية: موحدة مع المرجعية (AdminUserDetails 10/10)
+   CSS خارجي: adm-shared.css (يحتوي على كل المتغيرات والكروت)
+   ⚠️ هذا الملف يحتوي فقط على أنماط خاصة بصفحة تفاصيل البائع
+   ============================================================ */
+
+/* @import "./adm-shared.css"; — Variables are handled globally */
+
+
+.admin-seller-details-page {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--adm-bg);
+    color: var(--adm-text-main);
+    padding-bottom: var(--sp-5);
+    direction: rtl;
+    text-align: right;
+    overflow-x: hidden;
+}
+
+/* 💎 Golden Standard Fluid Layout */
+.admin-seller-details-page .adm-header-inner {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.admin-seller-details-page .adm-header-inner {
+    padding: var(--sp-2);
+}
+
+/* 🎨 Selection - Golden Standard Professionalism */
+.admin-seller-details-page ::selection {
+    background: rgba(75, 80, 42, 0.2);
+    color: var(--adm-primary);
+}
+
+/* ── Layout Overrides ────────────────────────────────── */
+.adm-seller-profile-card {
+    grid-column: span 4;
+}
+
+.adm-seller-verification-card {
+    grid-column: span 8;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Info Grid Refinements ────────────────────────────── */
+.adm-info-grid.three-cols {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.adm-info-point.full {
+    grid-column: 1 / -1;
+}
+
+/* ── Document Preview Box ───────────────────────────── */
+.adm-doc-preview-box {
+    margin-top: var(--sp-3);
+    padding: var(--sp-3);
+    background: var(--adm-surface);
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    position: relative;
+    box-shadow: var(--shd-standard);
+}
+
+.adm-doc-preview-box::before {
+    content: "الوثيقة الوظيفية";
+    position: absolute;
+    top: -8px;
+    right: 20px;
+    background: var(--adm-primary);
+    color: white;
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: var(--rad-sm);
+    letter-spacing: 1px;
+}
+
+.adm-doc-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(75, 80, 42, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--rad-md);
+    color: var(--adm-primary);
+    flex-shrink: 0;
+    border: 1px solid rgba(75, 80, 42, 0.1);
+}
+
+.adm-doc-meta h3 {
+    font-size: 1rem;
+    font-weight: 800;
+    margin: 0 0 4px 0;
+    color: var(--adm-text-main);
+}
+
+.adm-doc-meta p {
+    font-size: 0.8rem;
+    color: var(--adm-text-muted);
+    margin: 0;
+}
+
+.adm-btn-view-doc {
+    margin-right: auto;
+    background: var(--adm-primary);
+    border: none;
+    padding: 10px 20px;
+    border-radius: var(--rad-md);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: var(--transition-fast);
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(75, 80, 42, 0.2);
+}
+
+.adm-btn-view-doc:hover {
+    background: var(--adm-primary-light);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(75, 80, 42, 0.3);
+}
+
+.adm-no-doc-note {
+    margin-right: auto;
+    font-size: 0.8rem;
+    color: var(--adm-text-muted);
+    font-style: italic;
+}
+
+/* ─────────────────────────────────────────────────────────
+   فاصل بين قسمي الكرت الكبير
+   ───────────────────────────────────────────────────────── */
+.adm-card-section-divider {
+    border-top: 1px solid var(--adm-border);
+    margin-top: var(--sp-3);
+}
+
+/* ── Card Section Header ────────────────────────────── */
+.adm-card-section-header {
+    background: #f1f2ef;
+    /* Solid Matte Olive Tint */
+    padding: var(--sp-2) var(--sp-3);
+    border-top: 1px dashed var(--adm-border);
+    border-bottom: 1px dashed var(--adm-border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: var(--sp-3);
+}
+
+.adm-card-section-header h2 {
+    font-size: 0.9rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--adm-primary);
+}
+
+.adm-card-section-header svg {
+    color: var(--adm-accent-solid);
+}
+
+/* ─────────────────────────────────────────────────────────
+   قيمة نصية طويلة (paragraph)
+   ───────────────────────────────────────────────────────── */
+.adm-value-para {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--adm-text-main);
+    margin: 4px 0 0 0;
+}
+
+/* ─────────────────────────────────────────────────────────
+   قيمة مع أيقونة
+   ───────────────────────────────────────────────────────── */
+.adm-value-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--adm-text-main);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+/* ─────────────────────────────────────────────────────────
+   نسخ المعرف في الهيدر
+   ───────────────────────────────────────────────────────── */
+.adm-id-copy-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    font-size: 0.65rem;
+    color: var(--adm-accent-solid);
+    transition: var(--transition-fast);
+}
+
+.adm-id-copy-header:hover {
+    color: var(--adm-accent-deep);
+}
+
+/* ── Rejection Box ────────────────────────────────── */
+.adm-rejection-box {
+    margin-top: var(--sp-2);
+    padding: var(--sp-3);
+    background: #fef2f2;
+    /* Pure Solid Matte Red Info */
+    border: 1px solid #fee2e2;
+    border-radius: var(--rad-lg);
+    border-right: 5px solid var(--adm-danger);
+}
+
+.adm-rejection-box .label {
+    color: var(--adm-danger) !important;
+    margin-bottom: 8px;
+}
+
+.adm-rejection-box .adm-value-para {
+    color: #991b1b;
+    font-style: italic;
+    font-weight: 500;
+}
+
+/* ⚡ MANAGEMENT ACTIONS (Absolute Matte Standard - SOLID CONTRAST) */
+.adm-actions-center-group {
+    justify-content: center !important;
+    padding: var(--sp-3) var(--sp-4) var(--sp-4) !important;
+    margin: 0 !important;
+    border-top: 1px solid var(--adm-border) !important;
+    background: rgba(15, 23, 42, 0.02);
+    width: 100%;
+}
+
+.adm-btn-mgmt {
+    padding: 12px 28px;
+    border-radius: var(--rad-md);
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: background 0.2s ease;
+    border: none;
+    white-space: nowrap;
+    min-width: 200px;
+    flex-shrink: 0;
+    color: white !important;
+    opacity: 1 !important;
+    box-shadow: none !important; /* No distracting effects */
+    transform: none !important; /* No distracting movement */
+}
+
+.adm-btn-mgmt.primary {
+    background: #4b502a !important; /* Pure Olive */
+    color: #ffffff !important;
+}
+
+.adm-btn-mgmt.primary:hover {
+    background: #5a6132 !important; /* Slight solid tint only */
+    color: #ffffff !important;
+}
+
+.adm-btn-mgmt.danger {
+    background: #a30000 !important; /* Pure Red */
+    color: #ffffff !important;
+}
+
+.adm-btn-mgmt.danger:hover {
+    background: #c00000 !important;
+    color: #ffffff !important;
+}
+
+.adm-btn-mgmt.suspend {
+    background: #1f2113 !important; /* DEEP CHARCOAL OLIVE (Brand Aligned - No Black) */
+    color: #ffffff !important;
+    border: none;
+    text-align: center;
+}
+
+.adm-btn-mgmt.suspend:hover {
+    background: #2d2f1a !important; /* Slightly lighter brand olive tint */
+    color: #ffffff !important;
+}
+
+.adm-btn-mgmt:active {
+    transform: scale(0.98) !important;
+}
+
+.adm-btn-mgmt:disabled {
+    opacity: 0.7 !important;
+    background: #cbd5e1 !important;
+    color: #475569 !important;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* ── Responsive Refinements ───────────────────────── */
+@media (max-width: 1024px) {
+
+    .adm-seller-profile-card,
+    .adm-seller-verification-card {
+        grid-column: span 12;
+    }
+}
+
+@media (max-width: 768px) {
+
+    /* 🛡️ ZERO-GAP ARCHITECTURE: Absolute Flush */
+    .admin-seller-details-page .adm-header-inner {
+        padding-inline: var(--sp-2) !important;
+    }
+
+    .admin-seller-details-page .adm-details-grid {
+        gap: 0 !important;
+        background: transparent !important;
+        padding: 0 !important;
+    }
+
+    .adm-card {
+        grid-column: span 12 !important;
+        border-radius: 0 !important;
+        border-right: none !important;
+        border-left: none !important;
+        border-bottom: 1px solid var(--adm-border) !important;
+        box-shadow: none !important;
+    }
+
+    .adm-doc-preview-box {
+        flex-direction: column;
+        text-align: center;
+        padding-top: var(--sp-4);
+    }
+
+    .adm-btn-view-doc {
+        margin: var(--sp-2) 0 0 0;
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ── Statistics Sections (Refined) ─────────────────── */
+.adm-stats-sections-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--sp-4);
+    margin: var(--sp-4) auto;
+    width: 100%;
+    max-width: 100%;
+    /* Flow edge-to-edge inline with golden standard */
+}
+
+.adm-stats-card {
+    height: auto;
+    min-height: 240px;
+}
+
+.adm-stats-card .header-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.adm-stats-content {
+    padding: var(--sp-4);
+}
+
+/* Products Stats Grid */
+.adm-stats-main-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--sp-3);
+}
+
+.adm-stat-item {
+    background: rgba(75, 80, 42, 0.03);
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-md);
+    padding: var(--sp-3);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: var(--transition-fast);
+}
+
+.adm-stat-item:hover {
+    transform: translateY(-3px);
+    background: #fff;
+    box-shadow: var(--shd-standard);
+    border-color: var(--adm-primary-light);
+}
+
+.adm-stat-item .label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--adm-text-muted);
+}
+
+.adm-stat-item .value {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--adm-text-main);
+    font-family: var(--font-mono);
+}
+
+.adm-stat-item.total .value {
+    color: var(--adm-primary);
+}
+
+.adm-stat-item.active .value {
+    color: #059669;
+}
+
+.adm-stat-item.inactive .value {
+    color: #6b7280;
+}
+
+.adm-stat-item.locked .value {
+    color: var(--adm-danger);
+}
+
+/* Orders Stats Grid - Advanced Responsive Layout */
+.adm-stats-orders-grid {
+    display: grid;
+    /* Adjusted from minmax to a 4-column layout to prevent desktop crowding */
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-3);
+}
+
+.adm-order-stat-box {
+    background: #fff;
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-md);
+    padding: var(--sp-3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: var(--transition-fast);
+}
+
+.adm-order-stat-box:hover {
+    background: rgba(75, 80, 42, 0.02);
+    border-color: var(--adm-accent-solid);
+}
+
+.adm-order-stat-box .box-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(75, 80, 42, 0.05);
+    color: var(--adm-text-muted);
+    flex-shrink: 0;
+}
+
+.adm-order-stat-box .box-data {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.adm-order-stat-box .label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--adm-text-muted);
+    line-height: 1.4;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+.adm-order-stat-box .value {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--adm-text-main);
+}
+
+/* Highlighting Statuses */
+.adm-order-stat-box.new {
+    border-right: 4px solid #3b82f6;
+}
+
+.adm-order-stat-box.new .box-icon {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.adm-order-stat-box.processing {
+    border-right: 4px solid #f59e0b;
+}
+
+.adm-order-stat-box.processing .box-icon {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.05);
+}
+
+.adm-order-stat-box.ready {
+    border-right: 4px solid #10b981;
+}
+
+.adm-order-stat-box.ready .box-icon {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.adm-order-stat-box.shipping {
+    border-right: 4px solid #8b5cf6;
+}
+
+.adm-order-stat-box.shipping .box-icon {
+    color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.05);
+}
+
+.adm-order-stat-box.delivered {
+    border-right: 4px solid #059669;
+}
+
+.adm-order-stat-box.delivered .box-icon {
+    color: #059669;
+    background: rgba(5, 150, 105, 0.05);
+}
+
+.adm-order-stat-box.cancelled-seller {
+    border-right: 4px solid #ef4444;
+}
+
+.adm-order-stat-box.cancelled-seller .box-icon {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.adm-order-stat-box.cancelled-shipping {
+    border-right: 4px solid #f87171;
+}
+
+.adm-order-stat-box.cancelled-shipping .box-icon {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.05);
+}
+
+.adm-order-stat-box.cancelled-admin {
+    border-right: 4px solid #b91c1c;
+}
+
+.adm-order-stat-box.cancelled-admin .box-icon {
+    color: #b91c1c;
+    background: rgba(185, 28, 28, 0.05);
+}
+
+/* Loader Mini */
+.adm-loader-mini {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(75, 80, 42, 0.1);
+    border-top-color: var(--adm-primary);
+    border-radius: 50%;
+    animation: spin_v2 0.8s linear infinite;
+    margin-right: auto;
+}
+
+@keyframes spin_v2 {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+    .adm-stats-orders-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 1200px) {
+    .adm-stats-sections-grid {
+        grid-template-columns: 1fr;
+        padding: 0;
+        max-width: 100%;
+        margin: var(--sp-4) 0;
+    }
+
+    .adm-stats-orders-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 1024px) {
+    .adm-stats-orders-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .adm-stats-orders-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .adm-stats-orders-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .adm-order-stat-box {
+        padding: var(--sp-2) var(--sp-3);
+    }
+}

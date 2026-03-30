@@ -1,350 +1,797 @@
-/* AdminOrdersSection.css */
-/* تنسيقات قسم إدارة الطلبات في لوحة تحكم الأدمن */
+/* AdminOrdersSection.css — Premium Card-Based Layout (Inspired by ShippingDashboard) */
+@import "../adm-shared.css";
 
-/* الحاوية العامة للقسم */
-.admin-orders-section {
+/* ─────────────────────────────────────────────────────────
+   🎨 Design Tokens (local overrides for Orders)
+   ───────────────────────────────────────────────────────── */
+:root {
+  --adm-orders-card-bg: #ffffff;
+  --adm-orders-border: #eeeeee;
+  --adm-orders-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  --adm-orders-transition: all 0.3s ease;
+}
+
+/* ─────────────────────────────────────────────────────────
+   📦 Orders Card List
+   ───────────────────────────────────────────────────────── */
+.adm-orders-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 1.4rem 1.6rem 1.8rem;
-  background: radial-gradient(circle at top left, #f8fafc 0, #ffffff 40%);
-}
-
-/* ترويسة القسم */
-.admin-orders-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1.2rem;
-}
-
-.admin-orders-header-main {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-}
-
-.admin-orders-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #eff6ff;
-  color: #1d4ed8;
-  flex-shrink: 0;
-}
-
-.admin-orders-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.admin-orders-subtitle {
-  font-size: 0.85rem;
-  color: #64748b;
-  margin-top: 0.15rem;
-}
-
-/* أزرار الترويسة */
-.admin-orders-actions {
-  display: flex;
-  align-items: center;
-}
-
-.admin-orders-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.4rem 0.8rem;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  border: 1px solid transparent;
-  background: #2563eb;
-  color: #ffffff;
-  transition: background 0.15s ease, border-color 0.15s ease,
-    transform 0.1s ease, box-shadow 0.15s ease;
-}
-
-.admin-orders-btn svg {
-  width: 14px;
-  height: 14px;
-}
-
-.admin-orders-btn:hover {
-  background: #1d4ed8;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
-}
-
-.admin-orders-btn:active {
-  transform: translateY(1px);
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.28);
-}
-
-.admin-orders-btn:disabled {
-  opacity: 0.7;
-  cursor: default;
-  box-shadow: none;
-}
-
-.admin-orders-btn-ghost {
-  background: #ffffff;
-  color: #0f172a;
-  border-color: #e2e8f0;
-}
-
-.admin-orders-btn-ghost:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #cbd5f5;
-}
-
-/* شريط البحث + الفلترة */
-.admin-orders-toolbar {
-  margin-top: 0.6rem;
-  padding: 0.7rem 0.95rem;
-  border-radius: 0.9rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-}
-
-.admin-orders-search {
-  flex: 1;
-  padding: 0.45rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid #e2e8f0;
-  font-size: 0.9rem;
-  background: #ffffff;
-  color: #0f172a;
-}
-
-.admin-orders-search::placeholder {
-  color: #94a3b8;
-}
-
-.admin-orders-search:focus {
-  outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
-}
-
-.admin-orders-filter {
-  min-width: 190px;
-  padding: 0.4rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid #e2e8f0;
-  font-size: 0.85rem;
-  background: #ffffff;
-  color: #0f172a;
-}
-
-.admin-orders-filter:focus {
-  outline: none;
-  border-color: #2563eb;
-}
-
-/* رسالة الخطأ */
-.admin-orders-error {
-  margin-top: 0.4rem;
-  padding: 0.55rem 0.8rem;
-  border-radius: 0.7rem;
-  border: 1px solid #fecaca;
-  background: #fef2f2;
-  color: #b91c1c;
-  font-size: 0.85rem;
-}
-
-/* الجدول / حالة عدم وجود بيانات */
-.admin-orders-table-wrapper {
-  margin-top: 0.5rem;
-  border-radius: 1rem;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  overflow-x: auto;   /* ✅ نفس الجدول على الجوال مع تمرير أفقي */
-  overflow-y: hidden;
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
-}
-
-/* لإخفاء سكرول بار مزعج في بعض المتصفحات مع الإبقاء على التمرير */
-.admin-orders-table-wrapper::-webkit-scrollbar {
-  height: 8px;
-}
-.admin-orders-table-wrapper::-webkit-scrollbar-track {
-  background: transparent;
-}
-.admin-orders-table-wrapper::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
-}
-
-/* حالة عدم وجود بيانات */
-.admin-orders-empty-state {
-  padding: 1.6rem 1.2rem;
-  text-align: center;
-  font-size: 0.9rem;
-  color: #64748b;
-}
-
-/* جدول الطلبات */
-.admin-orders-table {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 0.88rem;
-  min-width: 980px;   /* ✅ يحافظ على عرض الأعمدة كما في الكمبيوتر حتى على الجوال */
+  overflow: visible;
 }
 
-/* رأس الجدول ثابت أثناء التمرير العمودي داخل الكرت */
-.admin-orders-table thead {
-  background: #f8fafc;
+/* ─────────────────────────────────────────────────────────
+   💳 Order Card — 5-Column Grid (Desktop)
+   Col 1: Image (140px)
+   Col 2: Product Info (1fr)
+   Col 3: Order Meta — olive bg (1fr)
+   Col 4: Seller (1.5fr)
+   Col 5: Buyer (1.5fr)
+   ───────────────────────────────────────────────────────── */
+.adm-order-card {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr 1.5fr 1.5fr;
+  background: var(--adm-orders-card-bg);
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+  transition: var(--adm-orders-transition);
+  border-top: 1px solid var(--adm-orders-border);
+  border-bottom: 1px solid var(--adm-orders-border);
+  border-inline: none;
 }
 
-.admin-orders-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 5;
+.adm-order-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  border-color: var(--adm-primary);
 }
 
-/* خانات الجدول */
-.admin-orders-table th,
-.admin-orders-table td {
-  padding: 0.7rem 0.9rem;
-  border-bottom: 1px solid #e2e8f0;
-  text-align: right;
-  vertical-align: middle;
-}
-
-.admin-orders-table th {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #64748b;
-}
-
-/* صفوف الجدول */
-.admin-orders-table tbody tr {
-  transition: background 0.15s ease, box-shadow 0.15s ease,
-    transform 0.08s ease, border-color 0.15s ease;
-}
-
-/* تلوين صفوف بالتناوب لتقليل التشوش البصري */
-.admin-orders-table tbody tr:nth-child(even) {
+/* ─────────────  Column 1: Image  ───────────── */
+.adm-order-col-image {
+  position: relative;
+  width: 100%;
+  cursor: pointer;
   background: #f9fafb;
-}
-
-.admin-orders-table tbody tr:nth-child(odd) {
-  background: #ffffff;
-}
-
-.admin-orders-table tbody tr:hover {
-  background: #eef2ff;
-  box-shadow: 0 4px 12px rgba(129, 140, 248, 0.35);
-}
-
-/* عمود رقم الطلب المركب: (#الطلب | رقم العنصر) */
-.admin-orders-order-id {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.admin-orders-order-code {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.2rem 0.7rem;
-  border-radius: 999px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-}
-
-/* رقم العنصر داخل الطلب بجانب رقم الطلب */
-.admin-orders-order-item-index {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-/* الخط العمودي الفاصل بين رقم الطلب ورقم العنصر (نفس الشكل في الشحن/المشتري) */
-.shipping-order-id-separator {
-  width: 1px;
-  height: 1rem;
-  background-color: rgba(148, 163, 184, 0.9);
-}
-
-/* خلايا ذات عنوان + سطر فرعي */
-.admin-orders-cell-main {
   display: flex;
   flex-direction: column;
-  gap: 0.12rem;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
 }
 
-.admin-orders-cell-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.admin-orders-cell-sub {
-  font-size: 0.78rem;
-  color: #64748b;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-
-/* خلية المنتج: صورة + معلومات */
-.admin-orders-product-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-}
-
-.admin-orders-product-thumb {
-  width: 44px;
-  height: 44px;
-  border-radius: 0.75rem;
-  object-fit: cover;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+.adm-order-image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
   flex-shrink: 0;
 }
 
-/* قائمة الاختيار في الجدول */
-.admin-orders-select {
-  min-width: 170px;
-  padding: 0.3rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid #e2e8f0;
-  font-size: 0.82rem;
-  background: #ffffff;
-  color: #0f172a;
+.adm-order-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  transition: transform 0.5s ease;
 }
 
-.admin-orders-select:focus {
+.adm-order-image-wrapper:hover .adm-order-card-img {
+  transform: scale(1.1);
+}
+
+/* Status Badge — top-left on image */
+.adm-order-status-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(255, 127, 0, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #ffffff;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Payment Badge — bottom-left on image */
+.adm-order-payment-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  text-align: center;
+  padding: 3px 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 4px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+  transition: var(--adm-orders-transition);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: auto;
+  min-width: 60px;
+}
+
+.adm-order-payment-badge.payment-paid {
+  background: rgba(34, 197, 94, 0.85);
+  color: #ffffff;
+}
+
+.adm-order-payment-badge.payment-pending {
+  background: rgba(234, 179, 8, 0.85);
+  color: #ffffff;
+}
+
+.adm-order-payment-badge.payment-cod {
+  background: rgba(100, 116, 139, 0.85);
+  color: #ffffff;
+}
+
+.adm-order-payment-badge.payment-rejected {
+  background: rgba(239, 68, 68, 0.85);
+  color: #ffffff;
+}
+
+/* ───────────── Column 2: Product Info ───────────── */
+.adm-order-col-product,
+.adm-order-col-seller,
+.adm-order-col-buyer {
+  padding: 0.75rem;
+  border-left: 1px solid var(--adm-orders-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.adm-order-col-buyer {
+  border-left: none;
+}
+
+.adm-order-product-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--adm-primary);
+  margin-bottom: 0.45rem;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-order-product-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.adm-order-product-detail {
+  font-size: 0.85rem;
+  color: var(--adm-text-muted);
+}
+
+.adm-order-product-detail .label {
+  font-weight: 700;
+  color: var(--adm-text-muted);
+  opacity: 0.8;
+  margin-left: 0.2rem;
+}
+
+.adm-order-num-accent {
+  color: var(--adm-danger) !important;
+}
+
+.adm-order-price-highlight {
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+/* Shipping company — hidden on desktop, shown on mobile */
+.adm-order-mobile-shipping {
+  display: none;
+}
+
+/* Financial row — Admin-specific */
+.adm-order-financial-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+  flex-wrap: wrap;
+}
+
+.adm-order-financial-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.adm-order-financial-tag.seller-amount {
+  background: var(--adm-success-bg);
+  color: var(--adm-success);
+  border: 1px solid var(--adm-success-border);
+}
+
+.adm-order-financial-tag.platform-commission {
+  background: var(--adm-warning-bg);
+  color: var(--adm-warning);
+  border: 1px solid var(--adm-warning-border);
+}
+
+/* ───────────── Column 3: Order Metadata ───────────── */
+.adm-order-col-order {
+  padding: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border-left: 1px solid var(--adm-orders-border);
+  background: rgba(75, 80, 42, 0.12);
+}
+
+.adm-order-id-display {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  color: var(--adm-text-main);
+  margin-bottom: 0.2rem;
+}
+
+.adm-order-hash {
+  color: #ff7f00;
+}
+
+.adm-order-divider {
+  color: #ddd;
+  margin: 0 0.2rem;
+}
+
+.adm-order-num {
+  color: var(--adm-danger);
+}
+
+.adm-order-index {
+  font-size: 0.9rem;
+}
+
+.adm-order-date-display {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--adm-text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.adm-order-shipping-company {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--rad-sm);
+  border: 1px solid var(--adm-border);
+  background: var(--adm-bg);
+  font-size: 0.75rem;
+  color: var(--adm-text-main);
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.adm-order-payment-display {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--adm-danger);
+  margin-top: 0.2rem;
+}
+
+/* Status select dropdown */
+.adm-order-status-select {
+  margin-top: auto;
+  padding: 5px 10px;
+  border: 1px solid var(--adm-border);
+  border-radius: var(--rad-md);
+  font-size: 0.75rem;
+  background: var(--adm-surface);
+  color: var(--adm-text-main);
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  font-weight: 600;
+}
+
+.adm-order-status-select:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: var(--adm-primary);
 }
 
-/* استجابة بسيطة بدون تغيير شكل الجدول (فقط هوامش) */
-@media (max-width: 960px) {
-  .admin-orders-section {
-    padding-inline: 1.1rem;
+/* ───────────── "إدارة الطلب" Manage Button ───────────── */
+.adm-order-manage-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  border: 1.5px solid var(--adm-primary);
+  background: white;
+  color: var(--adm-primary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--adm-orders-transition);
+  white-space: nowrap;
+}
+
+.adm-order-manage-btn:hover {
+  background: var(--adm-primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(75, 80, 42, 0.2);
+}
+
+/* ─────────────────────────────────────────────────────────
+   🛠️ Manage Order Modal — Centered Premium
+   ───────────────────────────────────────────────────────── */
+.adm-manage-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  width: 92%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  animation: adm-manage-pop 0.25s ease-out;
+}
+
+@keyframes adm-manage-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
-@media (max-width: 720px) {
-  .admin-orders-section {
-    padding-inline: 0.9rem;
+/* Header */
+.adm-manage-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem;
+  background: linear-gradient(135deg, #4b502a, #5c6230);
+  color: #ffffff;
+}
+
+.adm-manage-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.adm-manage-modal-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.adm-manage-modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Product Info Bar */
+.adm-manage-modal-product {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1.1rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #eee;
+  gap: 0.5rem;
+}
+
+.adm-manage-modal-product-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--adm-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.adm-manage-modal-product-price {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--adm-danger);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Body */
+.adm-manage-modal-body {
+  padding: 1rem 1.1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Section */
+.adm-manage-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.adm-manage-section-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--adm-text-muted);
+}
+
+.adm-manage-section-label.danger {
+  color: var(--adm-danger);
+}
+
+/* Status Select inside modal */
+.adm-manage-status-select {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid var(--adm-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  background: var(--adm-surface);
+  color: var(--adm-text-main);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.adm-manage-status-select:focus {
+  outline: none;
+  border-color: var(--adm-primary);
+}
+
+/* Danger Zone */
+.adm-manage-danger-zone {
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(220, 38, 38, 0.2);
+}
+
+.adm-manage-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.55rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--adm-danger);
+  background: transparent;
+  color: var(--adm-danger);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.adm-manage-delete-btn:hover {
+  background: var(--adm-danger);
+  color: white;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+
+/* ───────────── Column 4 & 5: Seller / Buyer ───────────── */
+.adm-order-section-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--adm-text-main);
+  margin-bottom: 0.2rem;
+  display: block;
+}
+
+.adm-order-address-text {
+  font-size: 0.75rem;
+  color: var(--adm-text-muted);
+  line-height: 1.3;
+  margin-bottom: 0.4rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  min-height: 1.95rem;
+}
+
+.adm-order-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: auto;
+  font-size: 0.8rem;
+  color: var(--adm-primary);
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.adm-order-contact-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.8;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+}
+
+.adm-order-contact-divider {
+  color: rgba(75, 80, 42, 0.2);
+  font-weight: 300;
+}
+
+.adm-order-contact-phone {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────
+   📱 MOBILE LAYOUT — Grid Named Areas
+   ───────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Edge-to-Edge overrides */
+  .adm-section-panel {
+    padding: 0 !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
   }
 
-  .admin-orders-table-wrapper {
-    border-radius: 0.9rem;
+  .adm-section-inner-header {
+    padding: var(--sp-2) !important;
+  }
+
+  .adm-toolbar {
+    padding: var(--sp-2) !important;
+  }
+
+  /* ══════════════════════════════════════════
+     CARD: CSS Grid with 4 named-area rows
+     Row 1 : [order   order ]   — هيدر زيتوني
+     Row 2 : [img     product]  — الصورة + المنتج
+     Row 3 : [seller  seller]   — البائع
+     Row 4 : [buyer   buyer ]   — المشتري
+     ═════════════════════════════════════════= */
+  .adm-order-card {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    grid-template-rows: auto auto auto auto;
+    grid-template-areas:
+      "order   order"
+      "img     product"
+      "seller  seller"
+      "buyer   buyer";
+    border-radius: 0;
+    overflow: hidden;
+    min-width: unset;
+    box-shadow: var(--adm-orders-shadow);
+    border: 1px solid var(--adm-orders-border);
+    border-left: none;
+    border-right: none;
+    background: var(--adm-orders-card-bg);
+  }
+
+  /* Grid area assignments */
+  .adm-order-card .adm-order-col-image {
+    grid-area: img;
+  }
+
+  .adm-order-card .adm-order-col-product {
+    grid-area: product;
+  }
+
+  .adm-order-card .adm-order-col-order {
+    grid-area: order;
+  }
+
+  .adm-order-card .adm-order-col-seller {
+    grid-area: seller;
+  }
+
+  .adm-order-card .adm-order-col-buyer {
+    grid-area: buyer;
+  }
+
+  /* ─── Section 1a: Image ─── */
+  .adm-order-card .adm-order-col-image {
+    padding: 0;
+    border-left: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+    align-self: start;
+  }
+
+  .adm-order-card .adm-order-image-wrapper {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    border-radius: 0;
+  }
+
+  /* ─── Section 1b: Product Info ─── */
+  .adm-order-card .adm-order-col-product {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.75rem 0.75rem 0.75rem 0.6rem;
+    border-left: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+    background: var(--adm-orders-card-bg);
+  }
+
+  .adm-order-card .adm-order-product-name {
+    font-size: 0.85rem;
+    font-weight: 800;
+    margin-bottom: 0.18rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .adm-order-card .adm-order-product-detail {
+    font-size: 0.7rem;
+    margin: 0;
+  }
+
+  /* Financial row on mobile */
+  .adm-order-financial-row {
+    gap: 0.4rem;
+    margin-top: 0.25rem;
+    padding-top: 0.25rem;
+  }
+
+  .adm-order-financial-tag {
+    font-size: 0.62rem;
+    padding: 1px 5px;
+  }
+
+  /* Manage button on mobile */
+  .adm-order-card .adm-order-manage-btn {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.5rem;
+    gap: 0.25rem;
+  }
+
+  /* Show shipping company on mobile */
+  .adm-order-mobile-shipping {
+    display: block !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  /* ─── Section 2: Order Metadata — Olive Header (Top) ─── */
+  .adm-order-card .adm-order-col-order {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    align-items: center;
+    padding: 0.42rem 0.85rem;
+    border-left: none;
+    border-top: none;
+    border-bottom: none;
+    background: #4b502a;
+    color: #ffffff;
+  }
+
+  /* White overrides for olive header */
+  .adm-order-card .adm-order-col-order .adm-order-num-accent,
+  .adm-order-card .adm-order-col-order .adm-order-num,
+  .adm-order-card .adm-order-col-order .adm-order-index,
+  .adm-order-card .adm-order-col-order .adm-order-payment-display {
+    color: #ffffff !important;
+  }
+
+  .adm-order-card .adm-order-id-display {
+    grid-column: 1;
+    justify-self: start;
+    font-size: 0.72rem;
+    gap: 0.2rem;
+    font-weight: 800;
+  }
+
+  .adm-order-card .adm-order-date-display {
+    grid-column: 2;
+    justify-self: center;
+    font-size: 0.65rem;
+    color: #ffffff;
+    white-space: nowrap;
+  }
+
+  .adm-order-card .adm-order-payment-display {
+    grid-column: 3;
+    justify-self: end;
+    font-size: 0.65rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  /* Hide shipping company and status select on mobile header */
+  .adm-order-card .adm-order-shipping-company,
+  .adm-order-card .adm-order-col-order .adm-order-status-select {
+    display: none;
+  }
+
+  /* ─── Sections 3 & 4: Seller / Buyer ─── */
+  .adm-order-card .adm-order-col-seller,
+  .adm-order-card .adm-order-col-buyer {
+    display: block;
+    padding: 0.65rem 0.85rem;
+    border-left: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+  }
+
+  .adm-order-card .adm-order-section-title {
+    font-size: 0.78rem;
+  }
+
+  .adm-order-card .adm-order-address-text {
+    font-size: 0.7rem;
+    line-height: 1.35;
+    min-height: 1.9rem;
+  }
+
+  .adm-order-card .adm-order-contact-row {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    flex-wrap: nowrap;
+  }
+
+  .adm-order-card .adm-order-contact-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .adm-order-card .adm-order-contact-phone {
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 }

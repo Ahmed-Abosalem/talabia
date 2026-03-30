@@ -1,54 +1,221 @@
 /* src/pages/Admin/AdminDashboard.css */
+@import "./adm-shared.css";
+
+
+:root {
+  --admin-primary: #4b502a;
+  --admin-danger: #a30000;
+  --admin-warning: #d97706;
+  --admin-radius: 8px;
+  --admin-bg-soft: rgba(75, 80, 42, 0.05);
+  --admin-border: rgba(75, 80, 42, 0.12);
+}
+
+/* Mobile First Refactor */
+.adm-page-root {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* Dashboard-only layout mode:
+   navbar displacement is already handled globally by .app-root > main */
+.adm-page-root.adm-page-root--top-tabs {
+  padding-top: 0 !important;
+}
+
+/* Allow selection in specific content areas */
+.admin-main,
+.adm-section-panel,
+.adm-table {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+/* 🛡️ Smart Fluid Law (Base): Full-width modal content */
+@media (max-width: 899px) {
+  .admin-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+
+  .admin-modal-body,
+  .admin-modal-header,
+  .admin-modal-footer {
+    padding-inline: var(--safe-inset-right) var(--safe-inset-left) !important;
+  }
+}
 
 .admin-page {
   direction: rtl;
   text-align: right;
   min-height: 100vh;
-  padding: 1.5rem 1.5rem 2rem;
+  padding: 0 0.6rem 2rem;
+  /* Initialized with 0 top gap */
   background: #f3f4f6;
   color: #111827;
   box-sizing: border-box;
 }
 
-/* الشريط العلوي الثابت لأقسام الإدارات */
-.admin-top-tabs-sticky {
-  position: sticky;
-  top: var(--navbar-height, 4rem); /* ملاصق للـ Navbar من الأسفل */
-  z-index: 5;                      /* أقل من المودالات حتى لا يغطيها */
+@media (max-width: 899px) {
+
+  /* 🛡️ Smart Fluid Law: Edge-to-Edge background, Protected Content */
+  .admin-page {
+    padding-inline: 0 !important;
+    padding-bottom: calc(90px + var(--safe-inset-bottom, 0px));
+    /* Space for bottom nav */
+  }
+
+  /* 📏 Universal Professional Sharpness */
+  .admin-section-card {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    box-shadow: none !important;
+  }
 }
 
-/* الحاوية البيضاء للشريط (تشبه شريط التبويبات في المتجر الذي أعجبك) */
+@media (min-width: 900px) {
+  .admin-page {
+    padding: 0 1.5rem 3rem;
+    /* 0 top gap for desktop */
+  }
+}
+
+/* الشريط العلوي الثابت لأقسام الإدارات - FIXED PERSISTENCE LAYER */
+.admin-top-tabs-sticky {
+  /* Sticky keeps tabs in normal flow and eliminates synthetic gaps */
+  position: sticky;
+  top: 0;
+  z-index: 990;
+  background: var(--adm-surface, #ffffff);
+  width: 100%;
+  margin: 0;
+}
+
+/* 🏔️ Golden Standard: Leader Line Sync */
+.admin-top-tabs-sticky::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--adm-accent-solid, #ff7f00);
+  z-index: 100;
+}
+
 .admin-top-tabs-container {
   padding: 0 1.25rem;
   background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-  border-top: 1px solid #e5e7eb;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+  border-bottom: 1px solid #e2e8f0;
+  /* Removed border-top and gap shadow to fuse with navbar */
+  position: relative;
 }
 
-/* صف داخلي قابل للتمرير الأفقي عند الحاجة */
+/* Gradient Mask for overflow indication */
+.admin-top-tabs-container::before,
+.admin-top-tabs-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.admin-top-tabs-container::before {
+  right: 0;
+  /* 🌫️ SOFT-FEATHER ORGANIC FADE: Multi-stop for high-end digital fog */
+  background: linear-gradient(to left,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 0.9) 20%,
+      rgba(255, 255, 255, 0.4) 60%,
+      transparent 100%);
+}
+
+.admin-top-tabs-container::after {
+  left: 0;
+  /* 🌫️ SOFT-FEATHER ORGANIC FADE */
+  background: linear-gradient(to right,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 0.9) 20%,
+      rgba(255, 255, 255, 0.4) 60%,
+      transparent 100%);
+}
+
+@media (max-width: 768px) {
+
+  /* 🛡️ Smart Law: Tabs Bar – Full-width, safe content */
+  .admin-top-tabs-container {
+    padding: 0 !important;
+  }
+
+  .admin-top-tabs-scroll {
+    padding-inline: var(--safe-inset-right) var(--safe-inset-left);
+  }
+}
+
+@media (min-width: 900px) {
+  .admin-top-tabs-container {
+    padding: 0 1.25rem;
+  }
+}
+
 .admin-top-tabs-scroll {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.4rem;
+  gap: 0.6rem;
   overflow-x: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  /* Hide for Firefox */
+  -ms-overflow-style: none;
+  /* Hide for IE/Edge */
+  padding: 0.8rem 0;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .admin-top-tabs-scroll::-webkit-scrollbar {
-  height: 6px;
+  display: none;
+  /* Default: Hidden for mobile/swipe */
 }
 
-.admin-top-tabs-scroll::-webkit-scrollbar-track {
-  background: transparent;
+@media (min-width: 900px) {
+
+  /* 👑 PREMIUM DESKTOP SCROLLBAR RESTORATION */
+  .admin-top-tabs-scroll::-webkit-scrollbar {
+    display: block !important;
+    /* Override global suppression */
+    height: 4px !important;
+    /* Ultra-thin sleekness */
+  }
+
+  .admin-top-tabs-scroll::-webkit-scrollbar-thumb {
+    background: rgba(75, 80, 42, 0.15);
+    /* Brand Olive - Subtle */
+    border-radius: 10px;
+    transition: background 0.2s ease;
+  }
+
+  .admin-top-tabs-scroll:hover::-webkit-scrollbar-thumb {
+    background: rgba(75, 80, 42, 0.35);
+    /* Visible on engagement */
+  }
+
+  .admin-top-tabs-scroll::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 0 1.25rem;
+    /* Match container padding */
+  }
 }
 
-.admin-top-tabs-scroll::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.8);
-  border-radius: 999px;
-}
-
-/* تجميع تبويبات كل مجموعة (عملياً كلها في صف واحد الآن) */
 .admin-top-tabs-group {
   flex: 0 0 auto;
   display: flex;
@@ -56,7 +223,6 @@
   min-width: max-content;
 }
 
-/* عناوين المجموعات مخفية لأننا نعرض التبويبات فقط */
 .admin-top-tabs-group-title {
   display: none;
 }
@@ -67,93 +233,146 @@
   gap: 0.25rem;
 }
 
-/* تبويب الإدارة */
 .admin-top-tab-card {
   position: relative;
-  border: none;
-  background: transparent;
-  color: #4b5563;
-  padding: 0.55rem 0.85rem;
-  font-size: 0.82rem;
+  box-sizing: border-box;
+  /* Strict metrics */
+  border: 1px solid transparent;
+  background: #ffffff;
+  color: #6b7280;
+  padding: 0.5rem 0.4rem;
+  /* Tightened vertical padding */
+  width: 94px;
+  /* Slightly wider for Arabic text */
+  height: 88px;
+  /* Precision height to lock 2 lines + icon */
   cursor: pointer;
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
-  min-width: max-content;
-  border-radius: 0.55rem;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease;
-}
-
-/* خط سفلي يظهر فقط مع النشط */
-.admin-top-tab-card::after {
-  content: "";
-  position: absolute;
-  left: 0.4rem;
-  right: 0.4rem;
-  bottom: 0.2rem;
-  height: 2px;
-  border-radius: 999px;
-  background: transparent;
-  transition: background 0.15s ease;
+  justify-content: center;
+  gap: 0.5rem;
+  /* Precise tight gap */
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  overflow: hidden;
+  /* Internal Bounding Discipline */
 }
 
 .admin-top-tab-card:hover {
-  background: #f3f4f6;
-  color: #111827;
+  background: #f9fafb;
+  color: var(--admin-primary);
+  border-color: var(--admin-border);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .admin-top-tab-card-active {
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: #ffffff;
+  color: var(--admin-primary);
+  border-color: var(--admin-primary);
+  box-shadow: 0 4px 15px rgba(75, 80, 42, 0.1);
+  font-weight: 600;
 }
 
 .admin-top-tab-card-active::after {
-  background: #2563eb;
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(1);
+  width: 30%;
+  height: 3px;
+  background: var(--admin-primary);
+  border-radius: 0 0 4px 4px;
+  animation: admin-indicator-slide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* أيقونة التبويب */
+@keyframes admin-indicator-slide {
+  from {
+    transform: translateX(-50%) scaleX(0);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(-50%) scaleX(1);
+    opacity: 1;
+  }
+}
+
 .admin-top-tab-icon {
-  width: 1.4rem;
-  height: 1.4rem;
-  border-radius: 0.4rem;
-  background: transparent;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 10px;
+  background: #f3f4f6;
   color: #9ca3af;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition:
-    color 0.15s ease,
-    background 0.15s ease;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  /* Locking the icon container */
+}
+
+.admin-top-tab-icon svg {
+  width: 20px;
+  /* Fixed icon size */
+  height: 20px;
+  /* Fixed icon size */
+  flex-shrink: 0;
 }
 
 .admin-top-tab-card-active .admin-top-tab-icon {
-  color: #2563eb;
-  background: rgba(219, 234, 254, 0.7);
+  color: white;
+  background: var(--admin-primary);
+  transform: scale(1.05);
 }
 
-/* نص التبويب */
 .admin-top-tab-label {
-  white-space: nowrap;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  /* Allow wrap for clamp */
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.15;
+  width: 100%;
+  max-width: 100%;
+  padding: 0 4px;
+  /* Inner safety gutter */
 }
 
-/* استجابة للشاشات الأصغر */
-@media (max-width: 900px) {
-  .admin-page {
-    padding: 1.2rem 0.6rem 1.5rem;
-  }
-
-  .admin-top-tabs-container {
-    padding-inline: 0.7rem;
-  }
-
+@media (max-width: 899px) {
   .admin-top-tab-card {
-    padding: 0.45rem 0.7rem;
-    font-size: 0.78rem;
+    width: 84px;
+    height: 78px;
+    padding: 0.4rem 0.3rem;
+    border-radius: 10px;
+    gap: 0.4rem;
+  }
+
+  .admin-top-tab-icon {
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 8px;
+  }
+
+  .admin-top-tab-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .admin-top-tab-label {
+    font-size: 0.65rem;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 }
 
@@ -162,18 +381,56 @@
   min-height: 400px;
 }
 
-/* مسافة بسيطة تحت الشريط حتى لا يلتصق المحتوى به بصرياً */
 .admin-main-with-top-tabs {
-  margin-top: 0.35rem;
+  padding: 0;
+  overflow-x: hidden;
+  margin-top: 0 !important;
+  display: block;
+}
+
+/* 🛡️ GAP TERMINATION: Kill any automated margin from first children */
+.admin-main-with-top-tabs>*:first-child,
+.admin-main-with-top-tabs>.admin-section-card:first-child,
+.admin-main-with-top-tabs>div:first-child>.admin-section-card:first-child {
+  margin-top: 0 !important;
 }
 
 /* كروت الأقسام والجداول */
 .admin-section-card {
   background: white;
-  border-radius: 1rem;
+  border-radius: var(--admin-radius);
   padding: 0.9rem 1rem 1rem;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  box-shadow: none;
+  border: 1px solid var(--admin-border);
+}
+
+/* 🛡️ Smart Fluid Law (Base): Universal Safe-Zone Padding */
+@media (max-width: 899px) {
+
+  .admin-section-header,
+  .admin-section-actions,
+  .admin-section-body,
+  .admin-filters-row,
+  .admin-section-messages,
+  .users-toolbar,
+  .admin-filters-bar,
+  .admin-section-title-wrapper,
+  .admin-search-field,
+  .admin-section-form,
+  .admin-profile-form-row {
+    padding-inline: var(--safe-inset-right) var(--safe-inset-left);
+    box-sizing: border-box;
+  }
+
+  .admin-table-wrapper,
+  .users-table-wrapper,
+  .admin-table-container,
+  .users-table-container {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    margin-inline: 0;
+  }
 }
 
 .admin-section-header {
@@ -182,6 +439,8 @@
   gap: 0.75rem;
   align-items: flex-start;
   margin-bottom: 0.7rem;
+  flex-wrap: wrap;
+  /* Safety for mobile */
 }
 
 .admin-section-header-main {
@@ -192,12 +451,12 @@
 .admin-section-icon {
   width: 2rem;
   height: 2rem;
-  border-radius: 999px;
+  border-radius: var(--admin-radius);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: rgba(75, 80, 42, 0.1);
+  color: var(--admin-primary);
 }
 
 .admin-section-title {
@@ -218,52 +477,71 @@
   justify-content: flex-start;
 }
 
-/* أزرار عامة */
 .admin-button {
   border: none;
   outline: none;
   cursor: pointer;
-  border-radius: 999px;
-  padding: 0.32rem 0.7rem;
+  border-radius: var(--admin-radius);
+  padding: 0.45rem 1rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.78rem;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
   font-weight: 500;
-  background: #111827;
-  color: #f9fafb;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.25);
-  transition: transform 0.08s ease, box-shadow 0.12s ease,
-    background 0.16s ease, color 0.16s ease;
+  background: var(--admin-primary);
+  color: white;
+  box-shadow: none;
+  transition: all 0.15s ease;
 }
 
 .admin-button svg {
-  width: 0.9rem;
-  height: 0.9rem;
+  width: 0.95rem;
+  height: 0.95rem;
 }
 
-.admin-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.3);
+.admin-btn-primary {
+  background: var(--admin-primary);
+  color: white;
+}
+
+.admin-btn-primary:hover {
+  filter: brightness(0.92);
+}
+
+.admin-btn-danger {
+  background: var(--admin-danger);
+  color: white;
+}
+
+.admin-btn-danger:hover {
+  filter: brightness(0.92);
+}
+
+.admin-btn-warning {
+  background: var(--admin-warning);
+  color: white;
+}
+
+.admin-btn-warning:hover {
+  filter: brightness(0.92);
 }
 
 .admin-button:active {
-  transform: translateY(0);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.22);
+  transform: scale(0.98);
 }
 
 .admin-button-ghost {
-  background: white;
-  color: #111827;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
-  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: var(--admin-primary);
+  color: #fff;
+  border: none;
 }
 
 .admin-button-ghost:hover {
-  background: #f9fafb;
+  background: var(--admin-primary-light, #6d7345);
+  transform: translateY(-1px);
 }
 
-/* فلاتر وأدوات البحث المشتركة */
 .admin-filters-row {
   display: flex;
   flex-wrap: wrap;
@@ -273,59 +551,74 @@
 }
 
 .admin-filter-chip {
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.8);
-  padding: 0.2rem 0.65rem;
-  font-size: 0.72rem;
+  border-radius: var(--admin-radius);
+  border: 1px solid var(--admin-border);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
   background: white;
   color: #4b5563;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  transition:
-    background 0.14s ease,
-    color 0.14s ease,
-    border-color 0.14s ease;
+  gap: 0.3rem;
+  transition: all 0.14s ease;
 }
 
 .admin-filter-chip-active {
-  background: linear-gradient(135deg, #eff6ff, #ecfdf5);
-  border-color: transparent;
-  color: #111827;
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+  color: white;
 }
 
 .admin-input {
-  border-radius: 0.7rem;
+  border-radius: var(--admin-radius);
   border: 1px solid rgba(148, 163, 184, 0.9);
   padding: 0.3rem 0.6rem;
   font-size: 0.78rem;
   min-width: 130px;
   background: #f9fafb;
+  max-width: 100%;
 }
 
 .admin-input:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 1px rgba(75, 80, 42, 0.25);
 }
 
-/* عدّاد إجمالي المستخدمين (يستخدم في AdminUsersSection) */
 .admin-users-total-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.7rem;
-  border-radius: 999px;
-  background: #eef2ff;
-  border: 1px solid rgba(129, 140, 248, 0.6);
+  gap: 0.3rem;
+  padding: 0.25rem 0.85rem;
+  border-radius: var(--admin-radius);
+  background: var(--admin-bg-soft);
+  border: 1px solid var(--admin-border);
   font-size: 0.75rem;
   font-weight: 500;
   color: #111827;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+  box-shadow: none;
 }
 
 .admin-users-total-chip-number {
   font-weight: 700;
-  color: #2563eb;
+  color: var(--admin-primary);
+}
+
+/* ??? Global Section Transition Experience */
+.adm-section-fade-in {
+  animation: adm-section-swap 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+@keyframes adm-section-swap {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

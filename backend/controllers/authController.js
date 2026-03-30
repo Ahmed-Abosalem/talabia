@@ -16,6 +16,7 @@ import { fileURLToPath } from "url";
 
 import User from "../models/User.js";
 import Store from "../models/Store.js";
+import Address from "../models/Address.js";
 import generateToken from "../utils/generateToken.js";
 
 // ✅ تحديد مسار uploads بشكل ثابت وآمن
@@ -77,11 +78,16 @@ export const registerUser = asyncHandler(async (req, res) => {
     companyName,
     companyAddress,
     companyScope,
-    // بيانات عنوان المشتري (اختيارية – تُخزن في User.address)
+    // بيانات عنوان المشتري (اختيارية – تُخزن في User fields + address string)
     country,
     state,
     city,
+    district,     // ← جديد للمشتري
+    neighborhood, // ← جديد للمشتري
+    addressDetails, // ← جديد للمشتري
     addressLine,
+    // الموافقة على الشروط
+    agreedToTerms,
   } = req.body;
 
   const normalizedEmail = email?.toLowerCase().trim();
@@ -124,7 +130,15 @@ export const registerUser = asyncHandler(async (req, res) => {
   }
 
   // 🔧 تجهيز العنوان الكامل من أجزاء منفصلة (للمستخدم نفسه – خاصة المشتري)
-  const addressParts = [addressLine, city, state, country]
+  const addressParts = [
+    addressDetails,
+    neighborhood,
+    district,
+    city,
+    state,
+    country,
+    addressLine
+  ]
     .map((part) => (part ? part.toString().trim() : ""))
     .filter(Boolean);
   const fullAddress = addressParts.length ? addressParts.join(" - ") : undefined;
@@ -159,12 +173,19 @@ export const registerUser = asyncHandler(async (req, res) => {
       role: finalRole, // ← استخدام الدور النهائي الآمن (buyer | seller فقط)
       phone: phone?.trim() || undefined,
       address: fullAddress,
+      country: country?.trim() || undefined,
+      city: city?.trim() || undefined,
+      district: district?.trim() || undefined,
+      neighborhood: neighborhood?.trim() || undefined,
+      addressDetails: addressDetails?.trim() || undefined,
       nationality: nationality?.trim() || undefined,
       birthDate: birthDateValue,
       idType: idType?.trim() || undefined,
       idNumber: idNumber?.trim() || undefined,
       idIssuer: idIssuer?.trim() || undefined,
       idDocumentUrl: computedIdDocumentUrl || undefined,
+      agreedToTerms: agreedToTerms === 'true' || agreedToTerms === true,
+      termsAcceptedAt: (agreedToTerms === 'true' || agreedToTerms === true) ? new Date() : undefined,
       // title, permissions, isActive تستخدم القيم الافتراضية من المخطط
     });
 
@@ -223,12 +244,12 @@ export const registerUser = asyncHandler(async (req, res) => {
 
       const storeAddressDoc = hasAnyAddressPart
         ? {
-            country: normalizedStoreCountry || undefined,
-            city: normalizedStoreCity || undefined,
-            area: normalizedStoreDistrict || undefined, // ← المديرية
-            street: normalizedStoreNeighborhood || undefined, // ← الحي
-            details: normalizedStoreDetails || undefined, // ← بقية التفاصيل
-          }
+          country: normalizedStoreCountry || undefined,
+          city: normalizedStoreCity || undefined,
+          area: normalizedStoreDistrict || undefined, // ← المديرية
+          street: normalizedStoreNeighborhood || undefined, // ← الحي
+          details: normalizedStoreDetails || undefined, // ← بقية التفاصيل
+        }
         : undefined;
 
       await Store.create({
@@ -241,6 +262,20 @@ export const registerUser = asyncHandler(async (req, res) => {
         address: storeAddressDoc,
         status: "pending",
         isActive: true,
+      });
+    }
+
+    // ✅ إذا كان المستخدم مشتريًا ولدى بيانات عنوان -> إنشاء عنوان افتراضي في موديل Address
+    if (user.role === "buyer" && (country || city || district || neighborhood || addressDetails)) {
+      await Address.create({
+        user: user._id,
+        label: "العنوان المسجل",
+        city: country?.trim() || "", // المستخدم كدولة
+        area: city?.trim() || "",    // المستخدم كمدينة
+        district: district?.trim() || "",
+        street: neighborhood?.trim() || "", // المستخدم كحي
+        details: addressDetails?.trim() || "",
+        isDefault: true,
       });
     }
 
@@ -299,8 +334,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   }
 
   // ⏱️ تحديث آخر دخول / آخر ظهور
-  user.lastLoginAt = new Date();
-  await user.save();
+  await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
 
   // جلب نسخة آمنة بدون كلمة المرور
   const safeUser = await User.findById(user._id).select("-password");

@@ -13,6 +13,10 @@ import {
   ORDER_STATUS_CODES,
   mapShippingStatusKeyToCode,
   mapStatusCodeToLegacyArabic,
+  syncItemStatus,
+  syncOrderStatus,
+  isFinal,
+  isCompleted,
 } from "../utils/orderStatus.js";
 import { registerFinancialTransactionsForDeliveredOrder } from "../utils/financialTransactions.js";
 
@@ -73,22 +77,9 @@ function assertOrderBelongsToCompany(company, order) {
   return true;
 }
 
-// ✅ عنصر “نهائي” لا يجوز تغييره: مكتمل أو ملغى (بأي جهة)
+// ✅ عنصر “نهائي” لا يجوز تغييره استخدام المرجع الموحد
 function isFinalItem(item) {
-  if (!item) return false;
-
-  const code = item.statusCode;
-  const legacy = item.itemStatus;
-
-  const isDelivered = code === ORDER_STATUS_CODES.DELIVERED || legacy === "مكتمل";
-
-  const isCancelled =
-    legacy === "ملغى" ||
-    code === ORDER_STATUS_CODES.CANCELLED_BY_SELLER ||
-    code === ORDER_STATUS_CODES.CANCELLED_BY_ADMIN ||
-    code === ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING;
-
-  return Boolean(isDelivered || isCancelled);
+  return isFinal(item);
 }
 
 // ✅ هل كل عناصر الطلب وصلت إلى حالة نهائية؟ (Delivered أو Cancelled)
@@ -122,15 +113,14 @@ async function getPopulatedShippingOrderById(company, orderId) {
   // نفس التنظيف الموجود في getShippingOrders (إخفاء deliveryCode + فلترة العناصر الملغاة + نطاق الشركة)
   const items = Array.isArray(query.orderItems)
     ? query.orderItems
-        .filter((item) => {
-          if (!item) return false;
-          if (item.itemStatus === "ملغى") return false; // إخفاء الملغى من واجهة الشحن
-          return isItemVisibleForCompany(company, item);
-        })
-        .map((item) => {
-          const { deliveryCode, ...restItem } = item;
-          return restItem;
-        })
+      .filter((item) => {
+        if (!item) return false;
+        return isItemVisibleForCompany(company, item);
+      })
+      .map((item) => {
+        const { deliveryCode, ...restItem } = item;
+        return restItem;
+      })
     : [];
 
   if (!items.length) return null;
@@ -200,15 +190,14 @@ export const getShippingOrders = asyncHandler(async (req, res) => {
     .map((order) => {
       const items = Array.isArray(order.orderItems)
         ? order.orderItems
-            .filter((item) => {
-              if (!item) return false;
-              if (item.itemStatus === "ملغى") return false; // إخفاء الملغى من واجهة الشحن
-              return isItemVisibleForCompany(company, item);
-            })
-            .map((item) => {
-              const { deliveryCode, ...restItem } = item;
-              return restItem;
-            })
+          .filter((item) => {
+            if (!item) return false;
+            return isItemVisibleForCompany(company, item);
+          })
+          .map((item) => {
+            const { deliveryCode, ...restItem } = item;
+            return restItem;
+          })
         : [];
 
       if (!items.length) return null;
@@ -305,7 +294,7 @@ export const updateShippingStatus = asyncHandler(async (req, res) => {
       item.statusCode = ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING;
       item.itemStatus = "ملغى";
     });
-    order.shippingStatus = "cancelled_ship";
+    order.shippingStatus = "cancelled_shipping";
   }
 
   await order.save();
@@ -391,13 +380,11 @@ export const updateShippingItemStatus = asyncHandler(async (req, res) => {
   }
 
   if (mappedStatusCode === ORDER_STATUS_CODES.IN_SHIPPING) {
-    item.statusCode = ORDER_STATUS_CODES.IN_SHIPPING;
-    item.itemStatus = "قيد الشحن";
+    syncItemStatus(item, ORDER_STATUS_CODES.IN_SHIPPING);
     order.shippingStatus = "on_the_way";
   } else if (mappedStatusCode === ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING) {
-    item.statusCode = ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING;
-    item.itemStatus = "ملغى";
-    order.shippingStatus = "cancelled_ship";
+    syncItemStatus(item, ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING);
+    order.shippingStatus = "cancelled_shipping";
   }
 
   await order.save();
@@ -482,8 +469,7 @@ export const confirmDeliveryWithCode = asyncHandler(async (req, res) => {
   }
 
   // تحديث حالة المنتج
-  item.statusCode = ORDER_STATUS_CODES.DELIVERED;
-  item.itemStatus = "مكتمل";
+  syncItemStatus(item, ORDER_STATUS_CODES.DELIVERED);
   item.deliveredAt = new Date();
 
   // ✅ إذا كل العناصر وصلت حالة نهائية (Delivered أو Cancelled) → نغلق الطلب
@@ -494,6 +480,7 @@ export const confirmDeliveryWithCode = asyncHandler(async (req, res) => {
     order.deliveredAt = new Date();
   }
 
+  order.markModified("orderItems"); // ✅ ضمان حفظ التغييرات العميقة
   const updated = await order.save();
 
   const isDeliveredNow =

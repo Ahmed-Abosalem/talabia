@@ -1,0 +1,91 @@
+.adm-staff-password-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.adm-staff-password-input {
+  /* ترك مساحة لزر إظهار/إخفاء كلمة المرور (يسار الحقل في RTL) */
+  padding-left: 48px !important;
+}
+
+.adm-staff-password-toggle {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: var(--adm-text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--rad-sm);
+  transition: var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-staff-password-toggle:hover:not(:disabled) {
+  background: rgba(75, 80, 42, 0.06);
+  color: var(--adm-primary);
+}
+
+.adm-staff-password-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.adm-staff-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-notice-content {
+  line-height: 1.7;
+}
+
+.adm-tabs-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.adm-grid-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+
+.adm-grid-row .adm-notice-box {
+  margin-top: 0;
+}
+
+.adm-staff-permissions-table {
+  cursor: default !important;
+  user-select: text !important;
+}
+
+.adm-staff-footer {
+  padding: var(--sp-3) !important;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  background: #f8fafc;
+  border-top: 1px solid var(--adm-border);
+}
+
+.adm-staff-footer .adm-btn {
+  min-width: 140px;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .adm-staff-footer {
+    flex-direction: column-reverse;
+  }
+  
+  .adm-staff-footer .adm-btn {
+    width: 100%;
+  }
+}
+

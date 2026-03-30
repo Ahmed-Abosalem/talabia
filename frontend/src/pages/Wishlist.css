@@ -1,804 +1,224 @@
-/* frontend/src/pages/Wishlist.css */
+/* s:\Talabia_new\frontend\src\pages\Wishlist.css */
+@import "./Admin/adm-shared.css";
 
-/* الحاوية العامة للصفحة */
+/* 🌌 WISHLIST - GOLDEN STANDARD UI
+   Refactored to match Buyer Orders Page Design
+   Fluid, Edge-to-Edge, Premium Aesthetics
+*/
+
 .wishlist-page {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding-block: 1.2rem 2rem;
+  background-color: transparent !important;
 }
 
-/* ===================== الهيدر الأخضر ===================== */
-
-.wishlist-header {
-  padding: 1.2rem 1.4rem;
-  border-radius: 1.1rem;
-  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
-  border: 1px solid #bbf7d0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;            /* توسيط أفقي */
-  justify-content: center;
-  text-align: center;
-  gap: 0.7rem;
-  box-shadow: 0 10px 25px rgba(22, 163, 74, 0.12);
-  margin-bottom: 0.4rem;          /* تقليل الفراغ تحت الهيدر */
+/* 🏔️ Header Customizations */
+.wishlist-page-title {
+  color: var(--adm-primary) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
 }
 
-.wishlist-header-main {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+.wishlist-page-title svg {
+  color: var(--adm-accent-solid);
 }
 
-.wishlist-title-row {
+/* 🔢 Header Count Styles */
+.adm-header-count {
+  font-size: 0.8rem;
+  color: var(--adm-text-muted);
+  font-weight: 500;
+  margin-inline-start: 8px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
 }
 
-.wishlist-title-icon {
-  color: #16a34a;
-}
-
-.wishlist-title {
-  margin: 0;
-  font-size: 1.3rem;
+.adm-header-count .count-num {
+  color: var(--adm-danger);
   font-weight: 800;
-  color: #14532d;
-  letter-spacing: 0.01em;
+  margin-right: 4px;
 }
 
-.wishlist-subtitle {
-  margin: 0;
-  font-size: 0.92rem;
-  color: #166534;
+/* 🧪 2-Row Filters/Actions Layout */
+.wishlist-filter-row,
+.wishlist-actions-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
 }
 
-.wishlist-header-actions {
-  margin-top: 0.35rem;
-}
-
-/* زر العودة للتسوق (برتقالي بارز) */
-.btn-accent {
-  border: none;
-  outline: none;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  padding: 0.5rem 1.1rem;
-  background: #f97316;
-  color: #fff7ed;
-  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.35);
-  white-space: nowrap;
-  transition: background 0.15s ease, transform 0.1s ease,
-    box-shadow 0.15s ease;
-}
-
-.btn-accent:hover {
-  background: #ea580c;
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(234, 88, 12, 0.4);
-}
-
-.btn-accent:active {
-  transform: translateY(0);
-  box-shadow: 0 4px 10px rgba(234, 88, 12, 0.3);
-}
-
-/* ===================== أزرار عامة صغيرة ===================== */
-
-.btn-primary,
-.btn-primary-light,
-.btn-ghost {
-  border: none;
-  outline: none;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  padding: 0.4rem 0.9rem;
-  transition: background-color 0.15s ease, color 0.15s ease,
-    box-shadow 0.15s ease, transform 0.1s ease;
-  white-space: nowrap;
-}
-
-.btn-primary.small {
-  padding: 0.35rem 0.8rem;
-  font-size: 0.78rem;
-}
-
-.btn-primary {
-  background: #0f766e;
-  color: #ecfdf5;
-  box-shadow: 0 6px 12px rgba(15, 118, 110, 0.28);
-}
-
-.btn-primary:hover {
-  background: #115e59;
-  transform: translateY(-1px);
-}
-
-.btn-primary:disabled {
-  background: #e5e7eb;
-  color: #9ca3af;
-  box-shadow: none;
-  cursor: default;
-}
-
-.btn-primary-light {
-  background: #ecfeff;
-  color: #0f766e;
-  border: 1px solid #a5f3fc;
-}
-
-.btn-primary-light:hover {
-  background: #cffafe;
-}
-
-.btn-ghost {
-  background: transparent;
-  color: #4b5563;
-  padding-inline: 0.65rem;
-}
-
-.btn-ghost.full-width {
-  width: 100%;
-  justify-content: center;
-}
-
-.btn-ghost:hover:not(:disabled) {
-  background: #f3f4f6;
-}
-
-.btn-ghost.danger {
-  color: #b91c1c;
-}
-
-.btn-ghost.danger:hover:not(:disabled) {
-  background: #fef2f2;
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-/* ===================== شريط الأدوات ===================== */
-
-.wishlist-toolbar {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.7rem 1rem 0.25rem;
-  border-radius: 0.95rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  margin: 0;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
-}
-
-.wishlist-toolbar-main {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.85rem;
-}
-
-.wishlist-search-wrapper {
-  position: relative;
-  flex: 1;
-}
-
-.wishlist-search-icon {
-  position: absolute;
-  inset-inline-start: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
-}
-
-.wishlist-search-input {
-  width: 100%;
-  padding: 0.48rem 0.9rem;
-  padding-inline-start: 2.3rem;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  font-size: 0.82rem;
-  outline: none;
-  background: #ffffff;
-  box-shadow: 0 2px 5px rgba(17, 24, 39, 0.02);
-}
-
-.wishlist-search-input::placeholder {
-  color: #9ca3af;
-}
-
-.wishlist-search-input:focus {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 1px rgba(15, 118, 110, 0.15);
-}
-
-.wishlist-filters {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.wishlist-select-wrapper {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem 0.8rem;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  font-size: 0.78rem;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
-}
-
-.wishlist-select-wrapper select {
-  border: none;
-  background: transparent;
-  font-size: 0.78rem;
-  color: #374151;
-  outline: none;
-}
-
-/* سطر التحديد (تحديد الكل / حذف المحدد..) */
-.wishlist-toolbar-selection {
-  display: flex;
-  align-items: center;
+.wishlist-filter-row {
+  margin-bottom: 0;
+  padding-bottom: 12px;
+  border-bottom: none;
   flex-wrap: wrap;
-  gap: 0.3rem;
-  padding-top: 0.1rem;
-  border-top: 1px dashed #e5e7eb;
 }
 
-/* ===================== التخطيط العام ===================== */
-
-.wishlist-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 2.2fr) minmax(260px, 0.9fr);
-  gap: 1.3rem;
-  margin-top: 0;                  /* إلغاء الفراغ العلوي */
-}
-
-/* المنطقة الرئيسية */
-.wishlist-main-area {
-  min-height: 0;
-  padding: 0;
-}
-
-/* في حال وجود margin عام على main من global.css */
-main.wishlist-main-area {
-  margin-top: 0 !important;
-}
-
-/* ===================== حالات عامة ===================== */
-
-.wishlist-error-box {
+.wishlist-filter-row .search-wrap {
+  flex: 2;
+  min-width: 250px;
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.9rem 1rem;
-  border-radius: 0.9rem;
-  background: #fef2f2;
-  color: #991b1b;
+}
+
+.wishlist-filter-row .search-wrap svg {
+  position: absolute;
+  right: 12px;
+  color: var(--adm-text-muted);
+}
+
+.wishlist-filter-row .search-wrap .adm-form-input {
+  padding-right: 40px;
+}
+
+.wishlist-filter-row .sort-wrap {
+  flex: 1;
+  min-width: 150px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wishlist-filter-row .sort-wrap svg {
+  color: var(--adm-text-muted);
+}
+
+.wishlist-actions-row .adm-actions-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--adm-border);
+}
+
+.wishlist-actions-row .adm-btn {
+  padding: 10px 12px;
   font-size: 0.85rem;
-  border: 1px solid #fecaca;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
 }
 
-.wishlist-error-box button {
-  margin-top: 0.3rem;
-  border: none;
-  background: #fee2e2;
-  color: #991b1b;
-  border-radius: 999px;
-  padding: 0.25rem 0.7rem;
-  font-size: 0.78rem;
-  cursor: pointer;
+@media (max-width: 480px) {
+  .wishlist-actions-row .adm-actions-group {
+    gap: 6px;
+  }
+
+  .wishlist-actions-row .adm-btn {
+    padding: 10px 8px;
+    font-size: 0.75rem;
+    gap: 4px;
+  }
+
+  .wishlist-actions-row .adm-btn svg {
+    width: 14px;
+    height: 14px;
+  }
 }
 
-/* حالة فارغة / لا نتائج */
-.wishlist-empty {
-  padding: 2rem 1.5rem;
-  border-radius: 1rem;
-  border: 1px dashed #e5e7eb;
-  background: #f9fafb;
-  text-align: center;
+.bulk-selection-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
-.wishlist-empty-icon {
-  width: 54px;
-  height: 54px;
-  border-radius: 999px;
+/* 📦 Grid Flow for Items - MATCHES HOME PAGE DYNAMICS */
+.wishlist-products-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 0.75rem;
+  padding: 1rem 0 3rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.wishlist-card-wrapper {
+  width: 100%;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  display: flex;
+  justify-content: center;
+}
+
+/* Desktop Sizing (≥ 768px as per Home Page) */
+@media (min-width: 768px) {
+  .wishlist-products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+    gap: 1.25rem;
+  }
+}
+
+/* Legacy styles removed: .wishlist-item-card, .wish-col-image, etc. */
+
+/* 🏜️ Empty States - Golden Standard */
+.wishlist-empty-state {
+  flex-direction: column !important;
+  padding: 4rem 2rem !important;
+  background: var(--adm-surface) !important;
+  border: 1px dashed var(--adm-border) !important;
+  border-radius: var(--rad-lg) !important;
+  gap: 1.5rem !important;
+  align-items: center !important;
+  text-align: center !important;
+}
+
+.wishlist-empty-state .empty-icon-wrap {
+  width: 100px;
+  height: 100px;
+  background: rgba(75, 80, 42, 0.05);
+  border-radius: 50%;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--adm-primary);
+  opacity: 0.8;
+  margin-block-end: 0.5rem;
   margin-inline: auto;
-  background: #fee2e2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.6rem;
-  margin-bottom: 0.5rem;
+  padding: 0 !important;
 }
 
-.wishlist-empty-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-.wishlist-empty-text {
-  margin: 0.4rem 0 0.9rem;
-  font-size: 0.84rem;
-  color: #6b7280;
-}
-
-/* ===================== شبكة المنتجات ===================== */
-
-.wishlist-grid {
-  display: grid;
-  /* ✅ عدد الأعمدة يتغير تلقائيًا بحسب اتساع الشاشة، مع عرض كرت أقرب للثبات */
-  grid-template-columns: repeat(auto-fit, minmax(210px, 230px));
-  gap: 0.9rem;
-  align-items: stretch;
-  justify-content: center;   /* توسيط الشبكة في الصفحة */
-}
-
-/* بطاقة المنتج داخل المفضلة */
-.wishlist-item-card {
-  border-radius: 1rem;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
-  transition: box-shadow 0.16s ease, transform 0.12s ease,
-    border-color 0.15s ease;
-  min-height: 320px;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.wishlist-item-card:hover {
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-  transform: translateY(-2px);
-  border-color: #d1d5db;
-}
-
-.wishlist-item-unavailable {
-  opacity: 0.72;
-}
-
-/* أعلى البطاقة - أصبح Overlay على الصورة */
-.wishlist-item-top {
-  position: absolute;
-  inset: 0 0 auto 0;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.4rem;
-  padding: 0.55rem 0.6rem;
-  pointer-events: none; /* نعيد تفعيلها على العناصر نفسها */
-}
-
-.wishlist-item-top > * {
-  pointer-events: auto;
-}
-
-/* checkbox */
-.wishlist-checkbox-label {
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-  gap: 0.3rem;
-}
-
-.wishlist-checkbox-label input {
-  display: none;
-}
-
-.wishlist-checkbox-custom {
-  width: 16px;
-  height: 16px;
-  border-radius: 0.4rem;
-  border: 1px solid #d1d5db;
-  background: rgba(255,255,255,0.92);
-  position: relative;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
-}
-
-.wishlist-checkbox-label input:checked + .wishlist-checkbox-custom {
-  border-color: #0f766e;
-  background: #0f766e;
-}
-
-.wishlist-checkbox-label
-  input:checked
-  + .wishlist-checkbox-custom::after {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  border-radius: 0.25rem;
-  border: 2px solid #ecfdf5;
-  border-top: none;
-  border-left: none;
-  transform: rotate(45deg);
-}
-
-/* بادج العرض */
-.wishlist-badge-offer {
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  background: rgba(249,115,22,0.95);
-  color: #fff7ed;
-  font-size: 0.7rem;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.18);
-}
-
-/* زر الإزالة الفردي */
-.wishlist-remove-btn {
-  border: none;
-  background: rgba(255,255,255,0.92);
-  color: #9ca3af;
-  border-radius: 999px;
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
-}
-
-.wishlist-remove-btn:hover {
-  background: #fee2e2;
-  color: #b91c1c;
-  transform: translateY(-1px);
-}
-
-/* ------------------ منطقة الصورة (Full-bleed) ------------------ */
-.wishlist-item-image-wrapper {
-  position: relative;
-  width: 100%;
-  height: 180px;
-  background: #f3f4f6;
-  overflow: hidden;
-}
-
-.wishlist-item-image {
-  width: 100%;
-  height: 100%;
+.wishlist-empty-state .empty-icon-wrap svg {
+  margin: 0 !important;
   display: block;
-  object-fit: fill; /* بدون قص (قد يسبب تشويه بسيط) */
 }
 
-/* جسم البطاقة */
-.wishlist-item-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  flex: 1;
-  padding: 0.75rem 0.75rem 0.5rem;
-  min-height: 0;
-  overflow: hidden;
+.wishlist-empty-state .empty-icon-wrap.danger {
+  background: var(--adm-danger-bg);
+  color: var(--adm-danger);
 }
 
-.wishlist-item-name {
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: #111827;
+.wishlist-empty-state h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--adm-text-main);
   margin: 0;
 }
 
-/* وصف محصور في سطرين */
-.wishlist-item-desc {
-  margin: 0;
-  font-size: 0.78rem;
-  color: #6b7280;
-  display: -webkit-box;
-  line-clamp: 2;              /* النسخة القياسية */
-  -webkit-line-clamp: 2;      /* دعم WebKit */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.wishlist-item-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.25rem;
-}
-
-/* الأسعار */
-.wishlist-price-wrap {
-  display: flex;
-  align-items: baseline;
-  gap: 0.35rem;
-}
-
-.wishlist-price {
-  font-size: 0.98rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.wishlist-old-price {
-  font-size: 0.72rem;
-  color: #9ca3af;
-  text-decoration: line-through;
-}
-
-/* زر أسفل البطاقة (أضف إلى السلة) */
-.wishlist-item-footer {
-  margin-top: auto;
-  padding: 0 0.75rem 0.75rem;
-}
-
-.wishlist-footer-btn {
-  width: 100%;
-  border-radius: 999px;
-  border: none;
-  padding: 0.45rem 0.8rem;
-  font-size: 0.8rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.1s ease,
-    box-shadow 0.15s ease;
-}
-
-.wishlist-footer-btn.primary {
-  background: #0f766e;
-  color: #ecfdf5;
-  box-shadow: 0 6px 14px rgba(15, 118, 110, 0.22);
-}
-
-.wishlist-footer-btn.primary:hover:not(:disabled) {
-  background: #115e59;
-  transform: translateY(-1px);
-}
-
-.wishlist-footer-btn.primary:disabled {
-  background: #e5e7eb;
-  color: #9ca3af;
-  box-shadow: none;
-  cursor: default;
-}
-
-/* ===================== اللوحة الجانبية ===================== */
-
-.wishlist-side-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
-
-.side-card {
-  border-radius: 0.95rem;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  padding: 0.85rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
-}
-
-.side-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.side-card-header h2 {
-  margin: 0;
+.wishlist-empty-state p {
   font-size: 0.95rem;
-  font-weight: 600;
-  color: #111827;
-}
-
-.side-card-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  font-size: 0.8rem;
-}
-
-.side-stat-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.side-stat-value {
-  font-weight: 600;
-}
-
-.side-stat-value.available {
-  color: #166534;
-}
-
-.side-stat-value.offer {
-  color: #b45309;
-}
-
-.side-stat-value.unavailable {
-  color: #b91c1c;
-}
-
-.side-card-text {
+  color: var(--adm-text-muted);
   margin: 0;
-  font-size: 0.8rem;
-  color: #6b7280;
+  max-width: 300px;
+  line-height: 1.5;
 }
 
-/* ===================== فوتر أسفل صفحة المفضلة ===================== */
-
-.wishlist-footer {
-  margin-top: 1.4rem;
-  padding: 0.8rem 1rem;
-  border-radius: 0.9rem;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+/* 🏎️ Utilities */
+.spin {
+  animation: spin 1s linear infinite;
 }
 
-.wishlist-footer-left,
-.wishlist-footer-right {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.wishlist-footer-action {
-  border-radius: 999px;
-  border: none;
-  background: #f3f4f6;
-  color: #374151;
-  padding: 0.4rem 0.9rem;
-  font-size: 0.78rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease,
-    transform 0.1s ease;
-}
-
-.wishlist-footer-action:hover {
-  background: #e5e7eb;
-  transform: translateY(-1px);
-}
-
-.wishlist-footer-action.subtle {
-  background: #f9fafb;
-}
-
-.wishlist-footer-action.subtle.danger {
-  color: #b91c1c;
-}
-
-/* ===================== استجابة الموبايل ===================== */
-
-@media (max-width: 900px) {
-  .wishlist-layout {
-    grid-template-columns: minmax(0, 1fr);
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
   }
 
-  .wishlist-side-panel {
-    order: -1;
-  }
-
-  .wishlist-footer {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .wishlist-footer-left,
-  .wishlist-footer-right {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 640px) {
-  .wishlist-toolbar-main {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .wishlist-filters {
-    width: 100%;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .wishlist-toolbar-selection {
-    justify-content: flex-start;
-  }
-
-  /* ✅ الهاتف: عرض منتجين في كل صف */
-  .wishlist-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    justify-content: stretch;
-    gap: 0.7rem;
-  }
-
-  /* ✅ الهاتف: تثبيت هيكل الكرت بحيث الصورة 60% وباقي العناصر لا تهرب */
-  .wishlist-item-card{
-    display: grid;
-    grid-template-rows: 60% minmax(0, 1fr) auto;
-    height: clamp(260px, 48vh, 360px);
-  }
-
-  .wishlist-item-image-wrapper{
-    height: auto;
-    /* خلفية مشتقة من نفس الصورة لملء المساحة بدون فراغات أو تشويه */
-    background: #f3f4f6;
-  }
-
-  .wishlist-item-image-wrapper::before{
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: var(--wishlist-img);
-    background-size: cover;
-    background-position: center;
-    filter: blur(14px);
-    transform: scale(1.12);
-    opacity: 0.55;
-    pointer-events: none;
-  }
-
-  /* في الهاتف: اعرض الصورة كاملة بدون قص (contain) فوق خلفية ضبابية */
-  .wishlist-item-image{
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-
-  .wishlist-item-body{
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  /* يمنع الاسم الطويل من دفع زر الإضافة للخارج */
-  .wishlist-item-name{
-    display: -webkit-box;
-    line-clamp: 2;              /* النسخة القياسية */
-    -webkit-line-clamp: 2;      /* دعم WebKit */
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .wishlist-item-footer {
-    padding: 0 0.75rem 0.75rem;
-    margin-top: 0;
-  }
-
-  .wishlist-item-footer{
-    overflow: hidden;
+  to {
+    transform: rotate(-360deg);
   }
 }

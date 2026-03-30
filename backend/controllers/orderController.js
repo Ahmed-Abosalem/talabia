@@ -8,7 +8,9 @@
 import asyncHandler from "express-async-handler";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
+import Notification from "../models/Notification.js";
 import ShippingCompany from "../models/ShippingCompany.js";
+import SystemSettings from "../models/SystemSettings.js"; // ✅ NEW: System Settings
 import {
   ORDER_STATUS_CODES,
   mapAdminStatusInputToCode,
@@ -16,6 +18,15 @@ import {
   mapStatusCodeToLegacyArabic,
 } from "../utils/orderStatus.js";
 import { registerFinancialTransactionsForDeliveredOrder } from "../utils/financialTransactions.js";
+import { returnStock } from "../utils/inventoryUtils.js";
+import { processWalletPayment } from "./walletController.js";
+import Wallet from "../models/Wallet.js";
+import WalletTransaction, {
+  WALLET_TX_TYPES,
+  WALLET_TX_DIRECTIONS,
+  WALLET_TX_STATUS,
+} from "../models/WalletTransaction.js";
+import { sanitizeText } from "../utils/sanitize.js";
 
 // 🧮 توليد كود تسليم رقمي للمشتري (6 أرقام)
 // يُستخدم الآن على مستوى كل عنصر داخل الطلب (orderItems[].deliveryCode)
@@ -69,6 +80,10 @@ export const createOrder = asyncHandler(async (req, res) => {
     paymentSubMethod,
     bankTransferSenderName,
     bankTransferReferenceNumber,
+
+    // ✅ NEW: بيانات الدفع بالمحفظة
+    walletNumber,
+    walletPin,
   } = req.body;
 
   // التأكد من وجود عناصر
@@ -88,177 +103,255 @@ export const createOrder = asyncHandler(async (req, res) => {
   let storeId = null;
   let computedTotal = 0;
 
-  // بناء عناصر الطلب من قاعدة البيانات
-  for (const rawItem of orderItems) {
-    const productId = rawItem.product || rawItem.productId || rawItem.id;
+  // 1️⃣ حماية المخزون: مصفوفة لتتبع ما تم خصمه لضمان التراجع (Rollback) في حال الفشل
+  const deductedItems = [];
 
-    if (!productId) {
-      res.status(400);
-      throw new Error("معرّف المنتج غير موجود لأحد عناصر الطلب");
-    }
+  try {
+    // بناء عناصر الطلب من قاعدة البيانات مع الخصم الذري
+    for (const rawItem of orderItems) {
+      const productId = rawItem.product || rawItem.productId || rawItem.id;
 
-    // نضيف كل الحقول المحتملة للصورة حتى نلتقط الصورة الصحيحة أيًا كان شكل السكيمـا
-    const product = await Product.findById(productId).select(
-      "name price image images seller store mainImage mainImageUrl imageUrl thumbnail"
-    );
+      if (!productId) {
+        throw new Error("معرّف المنتج غير موجود لأحد عناصر الطلب");
+      }
 
-    if (!product) {
-      res.status(400);
-      throw new Error("أحد المنتجات في الطلب غير موجود أو تم حذفه");
-    }
+      const qty = Number(rawItem.qty || rawItem.quantity || 1);
 
-    const qty = rawItem.qty || rawItem.quantity || 1;
-    const price =
-      typeof rawItem.price === "number"
-        ? rawItem.price
-        : typeof product.price === "number"
-        ? product.price
-        : 0;
+      // ✅ (حماية إنتاجية) الخصم الذري: نخصم فقط إذا كان المنتج نشطاً والمخزون كافياً
+      const updatedProduct = await Product.findOneAndUpdate(
+        {
+          _id: productId,
+          stock: { $gte: qty },
+          isActive: true,
+        },
+        {
+          $inc: { stock: -qty },
+        },
+        { new: true }
+      );
 
-    const itemTotal = price * qty;
-    computedTotal += itemTotal;
+      if (!updatedProduct) {
+        // فشل الخصم: إما الكمية غير كافية أو المنتج غير نشط
+        const pCheck = await Product.findById(productId).select("name stock isActive");
+        let errorMsg = "أحد المنتجات غير متوفر حالياً";
+        if (pCheck) {
+          if (!pCheck.isActive) {
+            errorMsg = `المنتج "${pCheck.name}" غير متاح للبيع حالياً (غير نشط).`;
+          } else if (pCheck.stock < qty) {
+            errorMsg = `الكمية المطلوبة من "${pCheck.name}" غير متوفرة (المتاح: ${pCheck.stock}).`;
+          }
+        }
+        const error = new Error(errorMsg);
+        error.statusCode = 400;
+        throw error;
+      }
 
-    // أول منتج نستخدمه لتعبئة sellerId و storeId على مستوى الطلب (للتوافق مع المنطق القديم)
-    if (!sellerId && product.seller) {
-      sellerId = product.seller;
-    }
-    if (!storeId && product.store) {
-      storeId = product.store;
-    }
+      // تتبع الخصم للرجوع فيه إذا فشل الطلب لاحقاً
+      deductedItems.push({ id: productId, qty: qty, product: updatedProduct });
 
-    // 🎯 تحديد الصورة الرئيسية للمنتج داخل الطلب
-    // نضمن أن نخزن دائمًا نصًا (string) في orderItems.image، وليس كائنًا
-    let mainImage = null;
+      const product = updatedProduct;
 
-    // 1) نفضّل الصورة القادمة من الواجهة إن كانت نصًا جاهزًا (غالبًا URL كامل)
-    if (typeof rawItem.image === "string" && rawItem.image.trim()) {
-      mainImage = rawItem.image.trim();
-    } else if (
-      typeof rawItem.imageUrl === "string" &&
-      rawItem.imageUrl.trim()
-    ) {
-      mainImage = rawItem.imageUrl.trim();
-    } else {
-      // 2) نحاول جميع الحقول المحتملة من المنتج نفسه
-      const candidateFields = [
-        product.image,
-        product.mainImage,
-        product.mainImageUrl,
-        product.imageUrl,
-        product.thumbnail,
-      ];
+      // 🔄 إدارة الحالة التلقائية (Auto-Deactivation)
+      // نستخدم التحديث لضمان أن المنتج لن يظهر في المتجر إذا نفد
+      if (product.stock <= 0) {
+        await Product.updateOne(
+          { _id: productId },
+          {
+            $set: {
+              isActive: false,
+              status: "inactive",
+              autoDeactivated: true,
+            },
+          }
+        );
+      }
 
-      for (const candidate of candidateFields) {
-        if (typeof candidate === "string" && candidate.trim()) {
-          mainImage = candidate.trim();
-          break;
+      // 🔔 إدارة إشعارات نقص المخزون (مرة واحدة فقط)
+      if (
+        product.stock <= product.lowStockThreshold &&
+        !product.lowStockNotified
+      ) {
+        const notified = await Product.findOneAndUpdate(
+          { _id: productId, lowStockNotified: false },
+          { $set: { lowStockNotified: true } }
+        );
+
+        if (notified) {
+          try {
+            await Notification.create({
+              user: product.seller,
+              title: "تنبيه: مخزون منخفض",
+              message: `المنتج "${product.name}" وصل إلى حد التنبيه (${product.stock} قطعة متبقية).`,
+              type: "system",
+              link: "/seller/products",
+            });
+          } catch (err) {
+            console.error("فشل إرسال إشعار المخزون المنخفض:", err);
+          }
         }
       }
 
-      // 3) لو ما زلنا بدون صورة، نحاول من المصفوفة images
-      if (!mainImage && Array.isArray(product.images) && product.images.length) {
-        const firstImage = product.images[0];
+      const price = product.price || 0;
 
-        if (typeof firstImage === "string" && firstImage.trim()) {
-          // الحالة القديمة: images = ["path1", "path2", ...]
-          mainImage = firstImage.trim();
-        } else if (
-          firstImage &&
-          typeof firstImage === "object" &&
-          typeof firstImage.url === "string" &&
-          firstImage.url.trim()
-        ) {
-          // الحالة الجديدة: images = [{ url: "/uploads/...", public_id: "..." }, ...]
-          mainImage = firstImage.url.trim();
+      const itemTotal = price * qty;
+      computedTotal += itemTotal;
+
+      if (!sellerId && product.seller) {
+        sellerId = product.seller;
+      }
+      if (!storeId && product.store) {
+        storeId = product.store;
+      }
+
+      let mainImage = null;
+
+      if (typeof rawItem.image === "string" && rawItem.image.trim()) {
+        mainImage = rawItem.image.trim();
+      } else if (
+        typeof rawItem.imageUrl === "string" &&
+        rawItem.imageUrl.trim()
+      ) {
+        mainImage = rawItem.imageUrl.trim();
+      } else {
+        const candidateFields = [
+          product.image,
+          product.mainImage,
+          product.mainImageUrl,
+          product.imageUrl,
+          product.thumbnail,
+        ];
+
+        for (const candidate of candidateFields) {
+          if (typeof candidate === "string" && candidate.trim()) {
+            mainImage = candidate.trim();
+            break;
+          }
+        }
+
+        if (!mainImage && Array.isArray(product.images) && product.images.length) {
+          const firstImage = product.images[0];
+
+          if (typeof firstImage === "string" && firstImage.trim()) {
+            mainImage = firstImage.trim();
+          } else if (
+            firstImage &&
+            typeof firstImage === "object" &&
+            typeof firstImage.url === "string" &&
+            firstImage.url.trim()
+          ) {
+            mainImage = firstImage.url.trim();
+          }
         }
       }
+
+      const selectedColorLabel =
+        (typeof rawItem.selectedColor === "string" ? rawItem.selectedColor : "") ||
+        rawItem.selectedColorLabel ||
+        (rawItem.selectedColor &&
+          typeof rawItem.selectedColor === "object" &&
+          (rawItem.selectedColor.label || rawItem.selectedColor.name)) ||
+        rawItem.color ||
+        rawItem.colorLabel ||
+        "";
+
+      const selectedColorKey =
+        rawItem.selectedColorKey ||
+        (rawItem.selectedColor &&
+          typeof rawItem.selectedColor === "object" &&
+          rawItem.selectedColor.key) ||
+        rawItem.colorKey ||
+        "";
+
+      const selectedColorHex =
+        rawItem.selectedColorHex ||
+        (rawItem.selectedColor &&
+          typeof rawItem.selectedColor === "object" &&
+          rawItem.selectedColor.hex) ||
+        rawItem.colorHex ||
+        "";
+
+      const selectedSizeLabel =
+        (typeof rawItem.selectedSize === "string" ? rawItem.selectedSize : "") ||
+        rawItem.selectedSizeLabel ||
+        (rawItem.selectedSize &&
+          typeof rawItem.selectedSize === "object" &&
+          (rawItem.selectedSize.label || rawItem.selectedSize.name)) ||
+        rawItem.size ||
+        rawItem.sizeLabel ||
+        "";
+
+      const selectedSizeKey =
+        rawItem.selectedSizeKey ||
+        (rawItem.selectedSize &&
+          typeof rawItem.selectedSize === "object" &&
+          rawItem.selectedSize.key) ||
+        rawItem.sizeKey ||
+        "";
+
+      normalizedItems.push({
+        product: product._id,
+        name: product.name,
+        qty,
+        price,
+        image: mainImage || undefined,
+        ...(selectedColorLabel
+          ? { selectedColor: String(selectedColorLabel).trim() }
+          : {}),
+        ...(selectedColorKey
+          ? { selectedColorKey: String(selectedColorKey).trim() }
+          : {}),
+        ...(selectedColorHex
+          ? { selectedColorHex: String(selectedColorHex).trim() }
+          : {}),
+        ...(selectedSizeLabel
+          ? { selectedSize: String(selectedSizeLabel).trim() }
+          : {}),
+        ...(selectedSizeKey
+          ? { selectedSizeKey: String(selectedSizeKey).trim() }
+          : {}),
+        seller: product.seller || undefined,
+        store: product.store || undefined,
+        itemStatus: "جديد",
+        statusCode: ORDER_STATUS_CODES.AT_SELLER_NEW,
+        deliveryCode: generateDeliveryCode(),
+      });
     }
-
-    // ✅ (جديد) تطبيع اللون/الحجم من الواجهة (يدعم string أو object أو حقول بديلة)
-    const selectedColorLabel =
-      (typeof rawItem.selectedColor === "string" ? rawItem.selectedColor : "") ||
-      rawItem.selectedColorLabel ||
-      (rawItem.selectedColor &&
-        typeof rawItem.selectedColor === "object" &&
-        (rawItem.selectedColor.label || rawItem.selectedColor.name)) ||
-      rawItem.color ||
-      rawItem.colorLabel ||
-      "";
-
-    const selectedColorKey =
-      rawItem.selectedColorKey ||
-      (rawItem.selectedColor &&
-        typeof rawItem.selectedColor === "object" &&
-        rawItem.selectedColor.key) ||
-      rawItem.colorKey ||
-      "";
-
-    const selectedColorHex =
-      rawItem.selectedColorHex ||
-      (rawItem.selectedColor &&
-        typeof rawItem.selectedColor === "object" &&
-        rawItem.selectedColor.hex) ||
-      rawItem.colorHex ||
-      "";
-
-    const selectedSizeLabel =
-      (typeof rawItem.selectedSize === "string" ? rawItem.selectedSize : "") ||
-      rawItem.selectedSizeLabel ||
-      (rawItem.selectedSize &&
-        typeof rawItem.selectedSize === "object" &&
-        (rawItem.selectedSize.label || rawItem.selectedSize.name)) ||
-      rawItem.size ||
-      rawItem.sizeLabel ||
-      "";
-
-    const selectedSizeKey =
-      rawItem.selectedSizeKey ||
-      (rawItem.selectedSize &&
-        typeof rawItem.selectedSize === "object" &&
-        rawItem.selectedSize.key) ||
-      rawItem.sizeKey ||
-      "";
-
-    normalizedItems.push({
-      product: product._id,
-      name: product.name,
-      qty,
-      price,
-      // نخزن الصورة بشكل ثابت في orderItems.image كنص جاهز للعرض في الواجهة
-      image: mainImage || undefined,
-
-      // ✅ (جديد) حفظ اللون/الحجم داخل عنصر الطلب
-      ...(selectedColorLabel
-        ? { selectedColor: String(selectedColorLabel).trim() }
-        : {}),
-      ...(selectedColorKey
-        ? { selectedColorKey: String(selectedColorKey).trim() }
-        : {}),
-      ...(selectedColorHex
-        ? { selectedColorHex: String(selectedColorHex).trim() }
-        : {}),
-      ...(selectedSizeLabel
-        ? { selectedSize: String(selectedSizeLabel).trim() }
-        : {}),
-      ...(selectedSizeKey
-        ? { selectedSizeKey: String(selectedSizeKey).trim() }
-        : {}),
-
-      seller: product.seller || undefined,
-      store: product.store || undefined,
-
-      // حالة العنصر داخل الطلب (افتراضيًا جديد - legacy عربي)
-      itemStatus: "جديد",
-
-      // الحالة الموحدة على مستوى العنصر داخل الطلب
-      statusCode: ORDER_STATUS_CODES.AT_SELLER_NEW,
-
-      // كود التسليم الخاص بهذا المنتج
-      deliveryCode: generateDeliveryCode(),
-    });
+  } catch (error) {
+    console.error("فشل تأكيد المخزون لبعض العناصر، جاري التراجع...", error.message);
+    for (const item of deductedItems) {
+      try {
+        await Product.updateOne({ _id: item.id }, { $inc: { stock: item.qty } });
+      } catch (rollbackError) {
+        console.error("خطأ حرج: فشل التراجع عن خصم المخزون:", item.id);
+      }
+    }
+    res.status(error.statusCode || 500);
+    throw error;
   }
 
-  // تطبيع عنوان الشحن (نتعامل مع أكثر من شكل ممكن)
+  // 🛡️ SECURITY CHECK: Minimum Order Value Validation
+  try {
+    const minOrderSetting = await SystemSettings.findOne({ key: "minOrderLimit" }).lean();
+    if (minOrderSetting?.value?.active) {
+      const limitValue = typeof minOrderSetting.value.value === "number" ? minOrderSetting.value.value : 0;
+      if (computedTotal < limitValue) {
+        // إذا كان المجموع الكلي (قبل الشحن) أقل من الحد الأدنى
+        // نضطر للتراجع عن خصم المخزون قبل إصدار الخطأ
+        for (const item of deductedItems) {
+          try {
+            await Product.updateOne({ _id: item.id }, { $inc: { stock: item.qty } });
+          } catch (rollbackError) { }
+        }
+        res.status(400);
+        throw new Error(`الحد الأدنى للطلب هو ${limitValue} ر.ي. إجمالي منتجاتك الحالي هو ${computedTotal} ر.ي.`);
+      }
+    }
+  } catch (err) {
+    if (err.statusCode === 400) throw err; // rethrow the specific minimum order error
+    console.error("فشل التحقق من إعدادات الحد الأدنى للطلب", err);
+  }
+
+  // تطبيع عنوان الشحن
   const normalizedShipping = {
     fullName:
       shippingAddress.fullName ||
@@ -272,7 +365,6 @@ export const createOrder = asyncHandler(async (req, res) => {
       shippingAddress.phoneNumber ||
       "",
 
-    // ✅ الدولة حتى تظهر كاملة في كرت الشحن
     country:
       shippingAddress.country ||
       shippingAddress.countryName ||
@@ -280,13 +372,9 @@ export const createOrder = asyncHandler(async (req, res) => {
       "",
 
     city: shippingAddress.city || "",
-
-    // الحي / المنطقة: نحاول أكثر من حقل محتمل
     district: shippingAddress.district || shippingAddress.area || "",
-
-    // لو لم يُرسل street نسمح باستخدام addressLine كبديل
+    neighborhood: shippingAddress.neighborhood || "",
     street: shippingAddress.street || shippingAddress.addressLine || "",
-
     details:
       shippingAddress.details ||
       shippingAddress.addressLine ||
@@ -304,7 +392,7 @@ export const createOrder = asyncHandler(async (req, res) => {
     }
   });
 
-  // ✅ تطبيع طريقة الدفع لتتوافق مع enum في Order.js (COD / Online)
+  // ✅ تطبيع طريقة الدفع لتتوافق مع enum في Order.js (COD / Online / Wallet)
   let normalizedPaymentMethod = "COD";
   if (paymentMethod) {
     const val = String(paymentMethod).toLowerCase();
@@ -318,6 +406,13 @@ export const createOrder = asyncHandler(async (req, res) => {
       val === "الدفع الإلكتروني"
     ) {
       normalizedPaymentMethod = "Online";
+    } else if (
+      val === "wallet" ||
+      val === "محفظة" ||
+      val === "المحفظة" ||
+      val === "الدفع بالمحفظة"
+    ) {
+      normalizedPaymentMethod = "Wallet";
     }
   }
 
@@ -342,6 +437,18 @@ export const createOrder = asyncHandler(async (req, res) => {
     normalizedPaymentSubMethod === "BANK_TRANSFER"
       ? String(bankTransferReferenceNumber || "").trim()
       : "";
+
+  // 🔒 رفض الحوالات البنكية بدون بيانات إلزامية (يمنع bypass عبر Postman)
+  if (normalizedPaymentSubMethod === "BANK_TRANSFER") {
+    if (!normalizedBankSender) {
+      res.status(400);
+      throw new Error("اسم المرسل مطلوب عند اختيار الحوالة البنكية.");
+    }
+    if (!normalizedBankRef) {
+      res.status(400);
+      throw new Error("رقم مرجع الحوالة مطلوب عند اختيار الحوالة البنكية.");
+    }
+  }
 
   // 💸 حساب سعر الشحن النهائي (إن وُجد) + الإجمالي الكلي
   let shippingPriceFinal = 0;
@@ -392,18 +499,18 @@ export const createOrder = asyncHandler(async (req, res) => {
     // هنا نستخدم القيمة المنطبقة على الـ enum في Order.js
     paymentMethod: normalizedPaymentMethod,
 
-    
+
 
     // ✅ تفصيل الدفع الإلكتروني + بيانات الحوالة
     paymentSubMethod: normalizedPaymentSubMethod,
 
     ...(normalizedPaymentSubMethod === "BANK_TRANSFER"
       ? {
-          bankTransferSenderName: normalizedBankSender || undefined,
-          bankTransferReferenceNumber: normalizedBankRef || undefined,
-        }
+        bankTransferSenderName: normalizedBankSender || undefined,
+        bankTransferReferenceNumber: normalizedBankRef || undefined,
+      }
       : {}),
-// 📌 حالة الطلب العامة (Arabic enum في Order.js)
+    // 📌 حالة الطلب العامة (Arabic enum في Order.js)
     // enum: ["جديد", "قيد المعالجة", "قيد الشحن", "مكتمل", "ملغى"]
     status: "جديد",
 
@@ -420,6 +527,71 @@ export const createOrder = asyncHandler(async (req, res) => {
   });
 
   const created = await order.save();
+
+  // ────────────────────────────────────────────────
+  // 💳 الدفع بالمحفظة (إن كانت طريقة الدفع = Wallet)
+  // ────────────────────────────────────────────────
+  if (normalizedPaymentMethod === "Wallet") {
+    try {
+      const walletResult = await processWalletPayment(
+        walletNumber,
+        walletPin,
+        grandTotal,
+        created._id,
+        req.user.id,
+        req.ip
+      );
+
+      // تحديث حالة الدفع
+      created.isPaid = true;
+      created.paidAt = new Date();
+      await created.save();
+    } catch (walletError) {
+      // فشل الدفع بالمحفظة — إلغاء الطلب وإرجاع المخزون
+      try {
+        await Order.deleteOne({ _id: created._id });
+        for (const item of normalizedItems) {
+          await Product.updateOne(
+            { _id: item.product },
+            { $inc: { stock: item.qty } }
+          );
+        }
+      } catch (rollbackErr) {
+        console.error("خطأ حرج: فشل التراجع عن الطلب بعد فشل الدفع بالمحفظة:", rollbackErr);
+      }
+
+      res.status(walletError.statusCode || 400);
+      throw new Error(walletError.message || "فشل الدفع بالمحفظة");
+    }
+  }
+
+  // ────────────────────────────────────────────────
+  // 🔔 إرسال إشعار تلقائي للبائع(ـين) عند وصول طلب جديد
+  // ────────────────────────────────────────────────
+  try {
+    const uniqueSellerIds = [
+      ...new Set(
+        created.orderItems
+          .map((item) => (item.seller ? item.seller.toString() : null))
+          .filter((id) => id !== null)
+      ),
+    ];
+
+    const notificationPromises = uniqueSellerIds.map((sellerId) =>
+      Notification.create({
+        user: sellerId,
+        title: "طلب جديد",
+        message: "لديك طلب جديد، يرجى تحضيره للشحن في أقرب فرصة.",
+        type: "order",
+        link: "/seller/orders",
+      })
+    );
+
+    await Promise.all(notificationPromises);
+  } catch (notificationError) {
+    console.error("فشل إرسال الإشعار التلقائي للبائعين:", notificationError);
+  }
+
   res.status(201).json(created);
 });
 
@@ -674,12 +846,43 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 
   const updated = await order.save();
 
+  // ✅ إعادة المخزون إذا تحول الطلب إلى "ملغى" ولم يكن ملغى سابقاً
+  const isCancelledNow =
+    updated.status === "ملغى" ||
+    updated.statusCode === ORDER_STATUS_CODES.CANCELLED_BY_ADMIN ||
+    updated.statusCode === ORDER_STATUS_CODES.CANCELLED_BY_SELLER ||
+    updated.statusCode === ORDER_STATUS_CODES.CANCELLED_BY_BUYER;
+
+  const wasCancelledBefore =
+    previousStatus === "ملغى" ||
+    previousStatusCode === ORDER_STATUS_CODES.CANCELLED_BY_ADMIN ||
+    previousStatusCode === ORDER_STATUS_CODES.CANCELLED_BY_SELLER ||
+    previousStatusCode === ORDER_STATUS_CODES.CANCELLED_BY_BUYER;
+
+  if (isCancelledNow && !wasCancelledBefore) {
+    if (Array.isArray(updated.orderItems)) {
+      await returnStock(updated.orderItems);
+    }
+  }
+
   if (isDeliveredNow && !wasDeliveredBefore) {
     try {
       await registerFinancialTransactionsForDeliveredOrder(updated._id);
+
+      // ✅ زيادة عداد المبيعات للمنتجات في هذا الطلب
+      const updateScores = updated.orderItems.map(item => ({
+        updateOne: {
+          filter: { _id: item.product },
+          update: { $inc: { salesCount: item.qty } }
+        }
+      }));
+
+      if (updateScores.length > 0) {
+        await Product.bulkWrite(updateScores);
+      }
     } catch (err) {
       console.error(
-        "فشل تسجيل الحركات المالية عند تحديث حالة الطلب من الأدمن:",
+        "فشل تسجيل الحركات المالية أو تحديث المبيعات عند تحديث حالة الطلب من الأدمن:",
         updated._id,
         err
       );
@@ -687,4 +890,97 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   }
 
   res.json(updated);
+});
+
+// ────────────────────────────────────────────────
+// 💰 استرداد مبلغ الطلب للمحفظة (يدوي من قبل الأدمن)
+// POST /api/admin/orders/:id/refund
+// ────────────────────────────────────────────────
+export const refundOrderWallet = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    res.status(404);
+    throw new Error("الطلب غير موجود");
+  }
+
+  // 1. التحقق من حالة الطلب (يجب أن يكون ملغياً)
+  if (order.statusCode !== ORDER_STATUS_CODES.CANCELLED) {
+    res.status(400);
+    throw new Error("لا يمكن استرداد مبلغ طلب غير ملغى. يرجى إلغاء الطلب أولاً.");
+  }
+
+  // 2. التحقق من طريقة الدفع (يجب أن تكون WALLET أو تم دفعها فعلياً)
+  if (order.paymentMethod !== "WALLET") {
+    res.status(400);
+    throw new Error("هذا الطلب لم يتم دفعه عن طريق المحفظة الإلكترونية.");
+  }
+
+  // 3. التحقق من عدم وجود استرداد سابق لتفادي التكرار
+  if (order.isRefunded) {
+    res.status(400);
+    throw new Error("هذا الطلب تم استرداده مسبقاً.");
+  }
+
+  // 4. البحث عن محفظة المشتري
+  const wallet = await Wallet.findOne({ buyer: order.buyer });
+  if (!wallet) {
+    res.status(404);
+    throw new Error("لم يتم العثور على محفظة مرتبطة بهذا المشتري.");
+  }
+
+  const refundAmount = order.totalPrice;
+
+  // 5. تحديث رصيد المحفظة بشكل ذري
+  const updatedWallet = await Wallet.findOneAndUpdate(
+    { _id: wallet._id },
+    { $inc: { balance: refundAmount } },
+    { new: true }
+  );
+
+  if (!updatedWallet) {
+    res.status(500);
+    throw new Error("فشل تحديث رصيد المحفظة.");
+  }
+
+  // 6. تسجيل العملية المالية في سجل المحفظة
+  await WalletTransaction.create({
+    wallet: wallet._id,
+    type: WALLET_TX_TYPES.REFUND,
+    direction: WALLET_TX_DIRECTIONS.CREDIT,
+    amount: refundAmount,
+    balanceBefore: wallet.balance,
+    balanceAfter: updatedWallet.balance,
+    status: WALLET_TX_STATUS.COMPLETED,
+    reference: WalletTransaction.generateReference(),
+    note: `استرداد مبلغ الطلب رقم ${order.orderNumber} (يدوي بواسطة الإدارة)`,
+    orderId: order._id,
+    processedBy: req.user?._id,
+    processedAt: new Date(),
+  });
+
+  // 7. تحديث حالة الطلب ليعكس أنه استُرد
+  order.isRefunded = true;
+  order.refundedAt = new Date();
+  order.refundedBy = req.user?._id;
+  await order.save();
+
+  // 8. إشعار المشتري
+  try {
+    await Notification.create({
+      user: order.buyer,
+      title: "تم استرداد مبلغ الطلب 💰",
+      message: `تمت إعادة مبلغ ${refundAmount} ريال إلى محفظتك مقابل الطلب الملغى رقم (${order.orderNumber}). رصيدك الآن: ${updatedWallet.balance} ريال.`,
+      type: "wallet",
+      link: "/buyer/wallet",
+    });
+  } catch (err) {
+    console.error("فشل إرسال إشعار الاسترداد:", err);
+  }
+
+  res.json({
+    message: "تم استرداد المبلغ للمحفظة بنجاح",
+    refundAmount,
+    newBalance: updatedWallet.balance,
+  });
 });

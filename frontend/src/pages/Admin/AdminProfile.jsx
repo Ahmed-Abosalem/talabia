@@ -12,6 +12,7 @@ import {
   Lock,
   Save,
   RefreshCw,
+  MapPin,
 } from "lucide-react";
 import { getProfile, updateProfile } from "@/services/userService";
 import "./AdminProfile.css";
@@ -207,150 +208,130 @@ export default function AdminProfile() {
 
   if (loadingProfile) {
     return (
-      <div className="admin-profile-page">
-        <div className="admin-profile-header">
-          <div className="admin-profile-title-group">
-            <h1 className="admin-profile-title">حساب المدير</h1>
-            <p className="admin-profile-subtitle">
-              جاري تحميل بيانات حساب الأدمن...
-            </p>
-          </div>
-          <div className="admin-profile-role-pill">
-            <Shield size={16} />
-            <span>مدير النظام</span>
-          </div>
+      <section className="adm-section-panel">
+        <div className="adm-loading-state">
+          <RefreshCw size={40} className="spin" />
+          <p>جاري تحميل بيانات حساب الأدمن...</p>
         </div>
-        <div className="admin-profile-loading-card">
-          جاري التحميل...
-        </div>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="admin-profile-page">
-      <div className="admin-profile-header">
-        <div className="admin-profile-title-group">
-          <h1 className="admin-profile-title">حساب المدير</h1>
-          <p className="admin-profile-subtitle">
-            من هذه الصفحة يمكنك إدارة بيانات حساب الأدمن وتحديث معلومات الأمان.
-          </p>
+    <div className="adm-section-panel">
+      <header className="adm-section-inner-header">
+        <div className="adm-section-icon">
+          <User size={22} />
         </div>
-        <div className="admin-profile-role-pill">
+        <div className="adm-section-title-group">
+          <h2 className="adm-section-title">حساب المدير</h2>
+          <p className="adm-section-subtitle">إدارة بيانات حسابك الشخصي وكلمة المرور المشفرة.</p>
+        </div>
+        <div className="adm-profile-role-pill">
           <Shield size={16} />
           <span>مدير النظام</span>
         </div>
-      </div>
+      </header>
 
-      <div className="admin-profile-grid">
+      <div className="adm-profile-grid">
         {/* بطاقة البيانات الأساسية */}
-        <section className="admin-profile-card">
-          <div className="admin-profile-card-header">
-            <div className="admin-profile-card-title-group">
-              <h2>البيانات الأساسية</h2>
-              <p>تعديل اسمك، بريدك الإلكتروني، ورقم هاتفك.</p>
+        <section className="adm-card">
+          <div className="adm-section-inner-header plain no-padding" style={{ marginBottom: 'var(--sp-4)' }}>
+            <div className="adm-section-icon sm">
+              <User size={16} />
             </div>
-            <User className="admin-profile-card-icon" size={20} />
+            <div>
+              <h3 className="adm-font-bold" style={{ margin: 0, fontSize: '1rem' }}>البيانات الأساسية</h3>
+              <p className="adm-text-soft" style={{ fontSize: '0.8rem', margin: 0 }}>تعديل الاسم، البريد، والهاتف.</p>
+            </div>
           </div>
 
-          <form className="admin-profile-form" onSubmit={handleSaveProfile}>
-            <div className="admin-profile-form-row">
-              <div className="admin-profile-field">
-                <label>الاسم الكامل</label>
-                <div className="admin-profile-input-wrapper">
-                  <span className="admin-profile-input-icon">
-                    <User size={18} />
-                  </span>
+          <form className="adm-form" onSubmit={handleSaveProfile}>
+            <div className="adm-profile-form-row">
+              <div className="adm-form-group">
+                <label className="adm-form-label">الاسم الكامل</label>
+                <div style={{ position: 'relative' }}>
+                  <User className="adm-input-icon" size={18} />
                   <input
+                    className="adm-form-input adm-input-with-icon"
                     type="text"
                     value={profileForm.name}
-                    onChange={(e) =>
-                      handleProfileChange("name", e.target.value)
-                    }
-                    placeholder="أدخل اسم المدير"
+                    onChange={(e) => handleProfileChange("name", e.target.value)}
+                    placeholder="أدخل اسمك الكامل"
                   />
                 </div>
               </div>
 
-              <div className="admin-profile-field">
-                <label>البريد الإلكتروني</label>
-                <div className="admin-profile-input-wrapper">
-                  <span className="admin-profile-input-icon">
-                    <Mail size={18} />
-                  </span>
+              <div className="adm-form-group">
+                <label className="adm-form-label">البريد الإلكتروني</label>
+                <div style={{ position: 'relative' }}>
+                  <Mail className="adm-input-icon" size={18} />
                   <input
+                    className="adm-form-input adm-input-with-icon"
                     type="email"
                     value={profileForm.email}
-                    onChange={(e) =>
-                      handleProfileChange("email", e.target.value)
-                    }
+                    onChange={(e) => handleProfileChange("email", e.target.value)}
                     placeholder="example@domain.com"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="admin-profile-form-row">
-              <div className="admin-profile-field">
-                <label>رقم الجوال</label>
-                <div className="admin-profile-input-wrapper">
-                  <span className="admin-profile-input-icon">
-                    <Phone size={18} />
-                  </span>
+            <div className="adm-profile-form-row">
+              <div className="adm-form-group">
+                <label className="adm-form-label">رقم الجوال</label>
+                <div style={{ position: 'relative' }}>
+                  <Phone className="adm-input-icon" size={18} />
                   <input
+                    className="adm-form-input adm-input-with-icon"
                     type="tel"
                     value={profileForm.phone}
-                    onChange={(e) =>
-                      handleProfileChange("phone", e.target.value)
-                    }
-                    placeholder="مثال: 0550000000"
+                    onChange={(e) => handleProfileChange("phone", e.target.value)}
+                    placeholder="05XXXXXXXX"
                   />
                 </div>
               </div>
 
-              <div className="admin-profile-field">
-                <label>العنوان</label>
-                <div className="admin-profile-input-wrapper">
-                  <span className="admin-profile-input-icon">
-                    <MapPinIcon />
-                  </span>
+              <div className="adm-form-group">
+                <label className="adm-form-label">العنوان</label>
+                <div style={{ position: 'relative' }}>
+                  <MapPin className="adm-input-icon" size={18} />
                   <input
+                    className="adm-form-input adm-input-with-icon"
                     type="text"
                     value={profileForm.address}
-                    onChange={(e) =>
-                      handleProfileChange("address", e.target.value)
-                    }
-                    placeholder="المدينة، الحي، العنوان التقريبي"
+                    onChange={(e) => handleProfileChange("address", e.target.value)}
+                    placeholder="المدينة، الحي..."
                   />
                 </div>
               </div>
             </div>
 
-            <div className="admin-profile-actions">
+            <div className="adm-profile-actions">
               <button
                 type="button"
-                className="admin-profile-btn ghost"
+                className="adm-btn outline sm"
                 onClick={handleResetProfile}
                 disabled={isSavingProfile}
               >
                 <RefreshCw size={16} />
-                <span>استرجاع البيانات الأصلية</span>
+                <span>إرجاع</span>
               </button>
 
               <button
                 type="submit"
-                className="admin-profile-btn primary"
+                className="adm-btn primary"
                 disabled={isSavingProfile}
               >
                 {isSavingProfile ? (
                   <>
-                    <SavingSpinner />
+                    <RefreshCw size={16} className="spin" />
                     <span>جاري الحفظ...</span>
                   </>
                 ) : (
                   <>
                     <Save size={16} />
-                    <span>حفظ التغييرات</span>
+                    <span>حفظ البيانات</span>
                   </>
                 )}
               </button>
@@ -359,97 +340,87 @@ export default function AdminProfile() {
         </section>
 
         {/* بطاقة الأمان وكلمة المرور */}
-        <section className="admin-profile-card">
-          <div className="admin-profile-card-header">
-            <div className="admin-profile-card-title-group">
-              <h2>الأمان وكلمة المرور</h2>
-              <p>تغيير كلمة المرور الخاصة بحساب المدير.</p>
+        <section className="adm-card">
+          <div className="adm-section-inner-header plain no-padding" style={{ marginBottom: 'var(--sp-4)' }}>
+            <div className="adm-section-icon sm">
+              <Lock size={16} />
             </div>
-            <Lock className="admin-profile-card-icon" size={20} />
+            <div>
+              <h3 className="adm-font-bold" style={{ margin: 0, fontSize: '1rem' }}>الأمان وكلمة المرور</h3>
+              <p className="adm-text-soft" style={{ fontSize: '0.8rem', margin: 0 }}>تحديث كلمة السر لحماية الحساب.</p>
+            </div>
           </div>
 
-          <form className="admin-profile-form" onSubmit={handleSavePassword}>
-            <div className="admin-profile-field">
-              <label>كلمة المرور الحالية</label>
-              <div className="admin-profile-input-wrapper">
-                <span className="admin-profile-input-icon">
-                  <Lock size={18} />
-                </span>
+          <form className="adm-form" onSubmit={handleSavePassword}>
+            <div className="adm-form-group">
+              <label className="adm-form-label">كلمة المرور الحالية</label>
+              <div style={{ position: 'relative' }}>
+                <Lock className="adm-input-icon" size={18} />
                 <input
+                  className="adm-form-input adm-input-with-icon"
                   type="password"
                   value={passwordForm.currentPassword}
-                  onChange={(e) =>
-                    handlePasswordChange("currentPassword", e.target.value)
-                  }
+                  onChange={(e) => handlePasswordChange("currentPassword", e.target.value)}
                   placeholder="أدخل كلمة المرور الحالية"
                 />
               </div>
             </div>
 
-            <div className="admin-profile-form-row">
-              <div className="admin-profile-field">
-                <label>كلمة المرور الجديدة</label>
-                <div className="admin-profile-input-wrapper">
-                  <span className="admin-profile-input-icon">
-                    <Lock size={18} />
-                  </span>
+            <div className="adm-profile-form-row">
+              <div className="adm-form-group">
+                <label className="adm-form-label">كلمة المرور الجديدة</label>
+                <div style={{ position: 'relative' }}>
+                  <Lock className="adm-input-icon" size={18} />
                   <input
+                    className="adm-form-input adm-input-with-icon"
                     type="password"
                     value={passwordForm.newPassword}
-                    onChange={(e) =>
-                      handlePasswordChange("newPassword", e.target.value)
-                    }
-                    placeholder="كلمة مرور قوية لا تقل عن 6 رموز"
+                    onChange={(e) => handlePasswordChange("newPassword", e.target.value)}
+                    placeholder="6 رموز على الأقل"
                   />
                 </div>
               </div>
 
-              <div className="admin-profile-field">
-                <label>تأكيد كلمة المرور الجديدة</label>
-                <div className="admin-profile-input-wrapper">
-                  <span className="admin-profile-input-icon">
-                    <Lock size={18} />
-                  </span>
+              <div className="adm-form-group">
+                <label className="adm-form-label">تأكيد كلمة المرور</label>
+                <div style={{ position: 'relative' }}>
+                  <Lock className="adm-input-icon" size={18} />
                   <input
+                    className="adm-form-input adm-input-with-icon"
                     type="password"
                     value={passwordForm.confirmNewPassword}
-                    onChange={(e) =>
-                      handlePasswordChange(
-                        "confirmNewPassword",
-                        e.target.value
-                      )
-                    }
-                    placeholder="أعد إدخال كلمة المرور الجديدة"
+                    onChange={(e) => handlePasswordChange("confirmNewPassword", e.target.value)}
+                    placeholder="أعد إدخال الكلمة الجديدة"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="admin-profile-actions">
+            <div className="adm-profile-actions">
               <button
                 type="button"
-                className="admin-profile-btn ghost"
+                className="adm-btn outline sm"
                 onClick={handleResetPassword}
                 disabled={isSavingPassword}
               >
                 <RefreshCw size={16} />
-                <span>مسح الحقول</span>
+                <span>مسح</span>
               </button>
 
               <button
                 type="submit"
-                className="admin-profile-btn primary"
+                className="adm-btn primary"
                 disabled={isSavingPassword}
               >
                 {isSavingPassword ? (
                   <>
-                    <SavingSpinner />
+                    <RefreshCw size={16} className="spin" />
                     <span>جاري التحديث...</span>
                   </>
                 ) : (
                   <>
                     <Save size={16} />
-                    <span>تحديث كلمة المرور</span>
+                    <span>تحديث كلمة السر</span>
                   </>
                 )}
               </button>
@@ -458,35 +429,5 @@ export default function AdminProfile() {
         </section>
       </div>
     </div>
-  );
-}
-
-// أيقونة بسيطة للموقع الجغرافي بدون استيراد مكتبة إضافية
-function MapPinIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className="admin-profile-svg-icon"
-    >
-      <path
-        d="M12 12.75a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z"
-        fill="currentColor"
-      />
-      <path
-        d="M6.75 10.5c0 4.28 3.04 7.28 4.68 8.7.33.29.49.43.79.43s.46-.14.79-.43c1.64-1.42 4.68-4.42 4.68-8.7a6.25 6.25 0 1 0-11 3.9v0Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
-    </svg>
-  );
-}
-
-function SavingSpinner() {
-  return (
-    <span className="admin-profile-spinner" aria-hidden="true" />
   );
 }

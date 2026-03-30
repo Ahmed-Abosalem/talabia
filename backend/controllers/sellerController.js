@@ -9,16 +9,22 @@
 // - 🔹 تحديث حالة منتج واحد داخل الطلب من جهة البائع (Item-based)
 // ────────────────────────────────────────────────
 
+import mongoose from "mongoose";
 import asyncHandler from "express-async-handler";
 import Store from "../models/Store.js";
 import Product from "../models/Product.js";
 import Order from "../models/Order.js";
 import Category from "../models/Category.js";
+import Transaction from "../models/Transaction.js";
 import {
   ORDER_STATUS_CODES,
+  isCompleted,
+  isCancelled,
+  syncItemStatus,
+  syncOrderStatus,
   mapSellerStatusKeyToCode,
-  mapStatusCodeToLegacyArabic,
 } from "../utils/orderStatus.js";
+import { returnStock } from "../utils/inventoryUtils.js";
 
 // ────────────────────────────────────────────────
 // ✅ Helpers: sellerId + populate response consistent
@@ -66,23 +72,23 @@ async function getPopulatedSellerOrderById(sellerIdStr, orderId) {
   // فلترة عناصر الطلب لتكون فقط لعناصر هذا البائع
   const filteredItems = Array.isArray(order.orderItems)
     ? order.orderItems
-        .filter((item) => {
-          if (!item) return false;
+      .filter((item) => {
+        if (!item) return false;
 
-          const rawSeller =
-            item.seller && item.seller._id ? item.seller._id : item.seller;
+        const rawSeller =
+          item.seller && item.seller._id ? item.seller._id : item.seller;
 
-          if (!rawSeller || String(rawSeller) !== sellerIdStr) return false;
+        if (!rawSeller || String(rawSeller) !== sellerIdStr) return false;
 
-          // اختياري: لا نعرض العناصر الملغاة ضمن قائمة البائع (يمكن تعديلها إذا رغبت)
-          // لكن لا نحذفها من قاعدة البيانات، مجرد فلترة للعرض.
-          return true;
-        })
-        .map((item) => {
-          // لا نرسل deliveryCode للبائع (لو كان موجودًا)
-          const { deliveryCode, ...rest } = item || {};
-          return rest;
-        })
+        // اختياري: لا نعرض العناصر الملغاة ضمن قائمة البائع (يمكن تعديلها إذا رغبت)
+        // لكن لا نحذفها من قاعدة البيانات، مجرد فلترة للعرض.
+        return true;
+      })
+      .map((item) => {
+        // لا نرسل deliveryCode للبائع (لو كان موجودًا)
+        const { deliveryCode, ...rest } = item || {};
+        return rest;
+      })
     : [];
 
   return { ...order, orderItems: filteredItems };
@@ -157,7 +163,7 @@ function normalizeAddress(address, existingAddress) {
 
 async function computeSellerOrderStats(sellerId, dateFilter = {}) {
   const match = {
-    "orderItems.seller": sellerId,
+    "orderItems.seller": new mongoose.Types.ObjectId(sellerId),
   };
 
   if (dateFilter.from || dateFilter.to) {
@@ -253,7 +259,10 @@ async function computeSellerOrderStats(sellerId, dateFilter = {}) {
 
       const status = item.itemStatus || order.status;
 
-      if (status === "ملغى") continue;
+      // ✅ استخدام المرجع الموحد للحقيقة
+      const isCompletedItem = isCompleted(item);
+
+      if (isCancelled(item)) continue;
 
       totalItems += 1;
 
@@ -278,7 +287,7 @@ async function computeSellerOrderStats(sellerId, dateFilter = {}) {
       const commissionAmount = gross * commissionRate;
       const net = gross - commissionAmount;
 
-      if (status === "مكتمل") {
+      if (isCompletedItem) {
         completedItems += 1;
         totalRevenue += net;
       } else {
@@ -340,24 +349,89 @@ export const getSellerDashboard = asyncHandler(async (req, res) => {
       pendingOrders: 0,
       completedOrders: 0,
       totalRevenue: 0,
+      receivedBalance: 0,
+      lifetimeRevenue: 0,
+      outOfStockCount: 0,
+      lowStockCount: 0,
     });
   }
 
   const storeId = store._id;
+  const storeIdObj = new mongoose.Types.ObjectId(storeId);
 
-  const totalProducts = await Product.countDocuments({ store: storeId });
+  // 1. حساب عدد المنتجات (تراكمي)
+  const totalProducts = await Product.countDocuments({ seller: sellerId });
 
-  const { totalOrders, pendingItems, completedItems, totalRevenue } =
-    await computeSellerOrderStats(sellerId, dateFilter);
+  // ✅ حساب أعداد المخزون (المنخفض والمنفذ) باستخدام Aggregate لتفادي CastError في $lte
+  const inventoryStats = await Product.aggregate([
+    { $match: { seller: new mongoose.Types.ObjectId(sellerId) } },
+    {
+      $group: {
+        _id: null,
+        outOfStock: { $sum: { $cond: [{ $lte: ["$stock", 0] }, 1, 0] } },
+        lowStock: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $gt: ["$stock", 0] },
+                  { $lte: ["$stock", "$lowStockThreshold"] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
+  ]);
+
+  const stats = inventoryStats[0] || { outOfStock: 0, lowStock: 0 };
+
+  // 2. حساب إحصاءات الفترة المحددة (Filtered)
+  const periodStats = await computeSellerOrderStats(sellerId, dateFilter);
+
+  // 3. حساب الإيرادات التراكمية (Lifetime Revenue) لإدارة الرصيد
+  const lifetimeStats = await computeSellerOrderStats(sellerId, {});
+  const lifetimeRevenue = lifetimeStats.totalRevenue || 0;
+
+  // 4. حساب الرصيد المستلم التراكمي (Lifetime Received Balance)
+  // يمثل مجموع عمليات PAYOUT الناجحة لهذا المتجر منذ البداية
+  const payoutAgg = await Transaction.aggregate([
+    {
+      $match: {
+        store: storeIdObj,
+        role: "SELLER",
+        type: "PAYOUT",
+        status: { $in: ["COMPLETED", "مكتمل", "تم التسوية"] },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: "$amount" },
+      },
+    },
+  ]);
+
+  const receivedBalance = payoutAgg.length > 0 ? payoutAgg[0].total : 0;
+
+  // ✅ Force fresh data to prevent 304 issues with old stats
+  res.setHeader('Cache-Control', 'no-store');
 
   res.json({
     storeStatus: store.status || store.approvalStatus || "pending",
     storeName: store.name,
     totalProducts,
-    totalOrders,
-    pendingOrders: pendingItems,
-    completedOrders: completedItems,
-    totalRevenue,
+    totalOrders: periodStats.totalOrders,
+    pendingOrders: periodStats.pendingItems,
+    completedOrders: periodStats.completedItems,
+    totalRevenue: periodStats.totalRevenue,
+    receivedBalance: receivedBalance,
+    lifetimeRevenue: lifetimeRevenue,
+    outOfStockCount: stats.outOfStock,
+    lowStockCount: stats.lowStock,
   });
 });
 
@@ -464,10 +538,9 @@ export const getSellerProducts = asyncHandler(async (req, res) => {
       .json({ message: "غير مصرح: لا يوجد مستخدم مسجّل." });
   }
 
-  const products = await Product.find({ seller: sellerId }).populate(
-    "store",
-    "name"
-  );
+  const products = await Product.find({ seller: sellerId })
+    .populate("store", "name")
+    .populate("category", "name");
 
   res.json(products);
 });
@@ -490,18 +563,26 @@ function normalizeSellerStatusKey(value) {
   switch (v) {
     case "new":
     case "جديد":
+    case ORDER_STATUS_CODES.AT_SELLER_NEW.toLowerCase():
+    case "عند البائع طلب جديد":
       return "new";
     case "processing":
     case "قيد المعالجة":
+    case ORDER_STATUS_CODES.AT_SELLER_PROCESSING.toLowerCase():
+    case "عند البائع قيد المعالجة":
       return "processing";
     case "ready_for_shipping":
     case "ready-for-shipping":
     case "قيد الشحن":
     case "جاهز للشحن":
+    case ORDER_STATUS_CODES.AT_SELLER_READY_TO_SHIP.toLowerCase():
+    case "عند البائع جاهز للشحن":
       return "ready_for_shipping";
     case "cancelled":
     case "ملغى":
     case "ملغي":
+    case ORDER_STATUS_CODES.CANCELLED_BY_SELLER.toLowerCase():
+    case "ملغى من قبل البائع":
       return "cancelled";
     default:
       return null;
@@ -511,13 +592,18 @@ function normalizeSellerStatusKey(value) {
 function getAllowedNextSellerStatuses(currentKey) {
   switch (currentKey) {
     case "new":
-      return ["processing", "cancelled"];
+      // السماح بتخطي المعالجة مباشرة إلى الشحن، أو الإلغاء، أو البقاء في نفس الحالة
+      return ["new", "processing", "ready_for_shipping", "cancelled"];
     case "processing":
-      return ["ready_for_shipping", "cancelled"];
+      return ["processing", "ready_for_shipping", "cancelled"];
     case "ready_for_shipping":
-      return [];
+      // السماح بالإلغاء حتى بعد التجهيز للشحن (طالما لم تستلمها الشركة بعد)
+      return ["ready_for_shipping", "cancelled"];
+    case "cancelled":
+      return ["cancelled"];
     default:
-      return [];
+      // في حالة وجود حالة غير معروفة، نسمح بتصحيحها
+      return ["new", "processing", "ready_for_shipping", "cancelled"];
   }
 }
 
@@ -620,6 +706,14 @@ export const updateSellerOrderStatus = asyncHandler(async (req, res) => {
 
   await order.save();
 
+  // ✅ إعادة المخزون في حال كان التحديث إلى "ملغى"
+  if (requestedKey === "cancelled") {
+    const sellerItems = order.orderItems.filter(item =>
+      String(item.seller?._id || item.seller) === sellerIdStr
+    );
+    await returnStock(sellerItems);
+  }
+
   // ✅ نرجع Order populated ومتسق + مفلتر لعناصر هذا البائع فقط
   const populated = await getPopulatedSellerOrderById(sellerIdStr, order._id);
 
@@ -702,23 +796,26 @@ export const updateSellerOrderItemStatus = asyncHandler(async (req, res) => {
   }
 
   const unifiedCode = mapSellerStatusKeyToCode(requestedKey);
-  const itemStatusArabic = mapSellerStatusKeyToItemStatus(requestedKey);
 
-  if (itemStatusArabic) item.itemStatus = itemStatusArabic;
-  if (unifiedCode) item.statusCode = unifiedCode;
+  // ✅ تحديث ذري للبيانات باستخدام المرجع الموحد
+  if (unifiedCode) {
+    syncItemStatus(item, unifiedCode);
+  }
 
   // فقط للتوافق إذا كان الطلب لبائع واحد
   if (singleSeller) {
     order.sellerStatus = requestedKey;
-
     if (unifiedCode) {
-      order.statusCode = unifiedCode;
-      const legacy = mapStatusCodeToLegacyArabic(unifiedCode);
-      if (legacy) order.status = legacy;
+      syncOrderStatus(order, unifiedCode);
     }
   }
 
   await order.save();
+
+  // ✅ إعادة المخزون في حال كان التحديث إلى "ملغى" لهذا العنصر
+  if (requestedKey === "cancelled") {
+    await returnStock([item]);
+  }
 
   // ✅ نرجع Order populated ومتسق + مفلتر لعناصر هذا البائع فقط
   const populated = await getPopulatedSellerOrderById(sellerIdStr, order._id);

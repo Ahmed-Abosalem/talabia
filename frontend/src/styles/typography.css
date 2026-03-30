@@ -1,0 +1,96 @@
+/* frontend/src/styles/typography.css */
+
+/* 1. Import Tajawal from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700&display=swap');
+
+/* 2. Unified Font Variables */
+:root {
+    --font-primary: 'Tajawal', sans-serif;
+
+    /* Font Weights */
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+}
+
+/* 3. Global Font Application */
+body {
+    font-family: var(--font-primary) !important;
+    font-weight: var(--fw-regular);
+    /* Default text: 400 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 4. Headings Configuration */
+h1 {
+    font-family: var(--font-primary) !important;
+    font-weight: var(--fw-bold);
+    /* 700 */
+}
+
+h2,
+h3 {
+    font-family: var(--font-primary) !important;
+    font-weight: var(--fw-semibold);
+    /* 600 */
+}
+
+h4,
+h5,
+h6 {
+    font-family: var(--font-primary) !important;
+    font-weight: var(--fw-semibold);
+    /* 600 */
+}
+
+/* 5. Buttons Configuration */
+button,
+.btn,
+.button,
+input[type="submit"],
+input[type="reset"],
+input[type="button"] {
+    font-family: var(--font-primary) !important;
+    font-weight: var(--fw-semibold);
+    /* 500-600 (chose 600 for clarity) */
+    letter-spacing: 0.01em;
+    /* Slight spacing for readability */
+}
+
+/* 6. Navigation Elements */
+nav a,
+.nav-link,
+.navbar-link,
+.menu-item,
+[class*="nav-"],
+[class*="menu-"] {
+    font-family: var(--font-primary) !important;
+    font-weight: var(--fw-semibold);
+    /* 600 - User requirement */
+}
+
+/* 7. Form Elements */
+input,
+textarea,
+select {
+    font-family: var(--font-primary) !important;
+}
+
+/* 8. Utility Classes for Weights (if needed in HTML) */
+.font-regular {
+    font-weight: var(--fw-regular) !important;
+}
+
+.font-medium {
+    font-weight: var(--fw-medium) !important;
+}
+
+.font-semibold {
+    font-weight: var(--fw-semibold) !important;
+}
+
+.font-bold {
+    font-weight: var(--fw-bold) !important;
+}

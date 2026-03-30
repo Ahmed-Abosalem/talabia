@@ -5,15 +5,13 @@ import axios from "axios";
 /* ------------------------------------------------
    📌 تحديد عنوان الخادم (Backend Base URL)
    ------------------------------------------------
-   ✅ الخيار الاحترافي في الإنتاج:
-   - إذا تم وضع VITE_API_BASE_URL في ملف .env
-     سيتم استخدامه مباشرة (لما يكون الـ API على دومين/منفذ مختلف).
-   - وإلا: نستخدم "/api" (Same-origin)
-     وهذا يعمل في DEV عبر Vite Proxy،
-     ويعمل في PROD عبر Reverse Proxy (Nginx/Apache/Node) بدون مشاكل CORS.
-   ❌ نتجنب تمامًا fallback إلى localhost لأنه يكسر على الهاتف/الأجهزة الأخرى.
+   ✅ الخيار الاحترافي:
+   - في المتصفح: يمكننا استخدام "/api" (Same-origin).
+   - في التطبيق (Capacitor): يجب استخدام رابط كامل (Absolute URL) لأن التطبيق لا يملك same-origin.
 ---------------------------------------------------- */
-const baseURL = import.meta.env.VITE_API_BASE_URL || "/api";
+const isCapacitor = window.Capacitor?.isNativePlatform || window.location.protocol === 'capacitor:';
+const defaultBaseURL = isCapacitor ? "http://192.168.1.10:5000/api" : "/api"; // Default for local network testing
+const baseURL = import.meta.env.VITE_API_BASE_URL || defaultBaseURL;
 
 /* ------------------------------------------------
    📌 إنشاء Instance ثابت للتعامل مع الخادم
@@ -61,6 +59,12 @@ apiInstance.interceptors.response.use(
       localStorage.removeItem("talabia_token");
       localStorage.removeItem("talabia-auth");
       // يمكن مستقبلاً: redirect إلى صفحة تسجيل الدخول
+    }
+
+    // 🚷 تجاوز حد الطلبات
+    if (status === 429) {
+      console.error("Rate limit exceeded (429). Too many requests.");
+      // هنا يمكننا منع الطلبات القادمة لفترة أو إظهار رسالة عامة
     }
 
     return Promise.reject(error);

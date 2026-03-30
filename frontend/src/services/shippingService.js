@@ -8,7 +8,7 @@ function mapShippingStatusKeyForBackend(statusKey) {
   // الباك يفضل: cancelled_ship / on_the_way
   if (!statusKey) return statusKey;
 
-  if (statusKey === "cancelled") return "cancelled_ship";
+  if (statusKey === "cancelled") return "cancelled_shipping";
   if (statusKey === "on_the_way") return "on_the_way";
 
   // اترك أي قيم أخرى كما هي (تحسبًا لامتدادات مستقبلية)

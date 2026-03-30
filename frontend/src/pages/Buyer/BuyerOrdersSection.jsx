@@ -4,14 +4,27 @@
 import "./BuyerOrdersSection.css";
 
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCcw, Trash2, Star, Store } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  Trash2,
+  Star,
+  Package,
+  ArrowRight,
+  RefreshCw,
+  Search,
+  Filter,
+  Fingerprint,
+} from "lucide-react";
 
 import { useApp } from "@/context/AppContext";
 import {
   listBuyerOrders,
   hideOrderItemForBuyer,
-  rateOrderItem,
 } from "@/services/orderService";
+import { formatCurrency, formatDate, resolveAssetUrl } from "@/utils/formatters";
+import { createProductReview, updateProductReview } from "@/services/reviewService"; // ✅ New Service
+import ReviewModal from "@/components/ReviewModal"; // ✅ New Component
+
 import {
   ORDER_STATUS_CODES,
   normalizeOrderStatusCode,
@@ -65,14 +78,9 @@ const STATUS_FILTERS = [
   },
 ];
 
-// تسميات لحالة الشحن (shippingStatus)
-const SHIPPING_STATUS_LABELS = {
-  pending_pickup: "قيد الاستلام من البائع",
-  processing: "قيد التجهيز",
-  on_the_way: "في الطريق",
-  delivered: "تم التسليم",
-  cancelled: "ملغاة",
-};
+function getStatusLabelByKey(key) {
+  return STATUS_FILTERS.find((f) => f.key === key)?.label || "الكل";
+}
 
 // 🔗 دالة مساعدة لتكوين رابط الصورة بشكل صحيح
 function resolveImageUrl(raw) {
@@ -115,51 +123,6 @@ function resolveImageUrl(raw) {
 
   // في الحالات الأخرى نرجعه كما هو (احتياط)
   return trimmed;
-}
-
-// تحويل حالة الشحن الخام من الباك إند إلى مفتاح + تسمية
-function mapShippingStatus(rawStatus) {
-  const v = (rawStatus || "").toString().toLowerCase().trim();
-  if (!v) {
-    return {
-      key: null,
-      label: "لم تبدأ بعد",
-    };
-  }
-
-  let key;
-
-  if (
-    v === "pending_pickup" ||
-    v.includes("pending_pickup") ||
-    v.includes("انتظار") ||
-    v.includes("استلام")
-  ) {
-    key = "pending_pickup";
-  } else if (
-    v === "on_the_way" ||
-    v === "on the way" ||
-    v.includes("طريق") ||
-    v.includes("شحن")
-  ) {
-    key = "on_the_way";
-  } else if (
-    v === "delivered" ||
-    v === "completed" ||
-    v.includes("تسليم") ||
-    v.includes("مكتمل")
-  ) {
-    key = "delivered";
-  } else if (v === "cancelled" || v === "canceled" || v.includes("ملغ")) {
-    key = "cancelled";
-  } else {
-    key = "processing";
-  }
-
-  return {
-    key,
-    label: SHIPPING_STATUS_LABELS[key] || "قيد التجهيز",
-  };
 }
 
 // 🧠 تحويل النص الخام للحالة إلى مفتاح داخلي (نفس منطق البائع)
@@ -212,7 +175,6 @@ function mapStatusKeyToCode(key) {
     case STATUS_KEYS.DELIVERED:
       return ORDER_STATUS_CODES.DELIVERED;
     case STATUS_KEYS.CANCELLED:
-      // من ناحية المشتري لا نعرف من ألغى إلا إذا استنتجناه من الطلب
       return ORDER_STATUS_CODES.CANCELLED_BY_SELLER;
     default:
       return null;
@@ -221,7 +183,6 @@ function mapStatusKeyToCode(key) {
 
 // ✅ اشتقاق الكود الموحّد لحالة المنتج داخل الطلب من order + item
 function deriveBuyerItemUnifiedStatus(order, item) {
-  // 1) لو المنتج يحمل statusCode صريحًا
   const explicitCodeCandidate =
     item.statusCode ||
     item.itemStatusCode ||
@@ -235,7 +196,6 @@ function deriveBuyerItemUnifiedStatus(order, item) {
     return explicitCodeCandidate;
   }
 
-  // 2) من الحالة النصية على مستوى المنتج/الطلب
   const rawStatus =
     item.itemStatus ||
     item.status ||
@@ -248,14 +208,10 @@ function deriveBuyerItemUnifiedStatus(order, item) {
     "";
 
   const key = mapRawStatusToKey(rawStatus);
-
-  // 3) اشتقاق الكود الموحد من المفتاح النصي
   let unifiedStatusCode = mapStatusKeyToCode(key);
 
-  // 4) حالات الإلغاء: نحاول الاستفادة من statusCode على مستوى الطلب عند الحاجة
   if (key === STATUS_KEYS.CANCELLED) {
     const orderCode = normalizeOrderStatusCode(order);
-
     if (orderCode === ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING) {
       unifiedStatusCode = ORDER_STATUS_CODES.CANCELLED_BY_SHIPPING;
     } else if (orderCode === ORDER_STATUS_CODES.CANCELLED_BY_ADMIN) {
@@ -269,7 +225,6 @@ function deriveBuyerItemUnifiedStatus(order, item) {
 }
 
 // تحويل الكود الموحّد + الحالة الخام إلى مفتاح داخلي من منظور المشتري
-// (processing / shipping / completed / cancelled) لأغراض CSS والتقييم فقط
 function mapStatusCodeToBuyerKey(statusCode, rawStatus) {
   if (statusCode) {
     switch (statusCode) {
@@ -290,11 +245,8 @@ function mapStatusCodeToBuyerKey(statusCode, rawStatus) {
     }
   }
 
-  // في حال الطلب قديم ولا يحتوي statusCode، نستخدم المنطق السابق كاحتياط
   const v = (rawStatus || "").toString().toLowerCase().trim();
-
   if (!v) return "processing";
-
   if (
     v === "new" ||
     v === "pending" ||
@@ -303,7 +255,6 @@ function mapStatusCodeToBuyerKey(statusCode, rawStatus) {
   ) {
     return "processing";
   }
-
   if (
     v === "ready_for_shipping" ||
     v === "in_shipping" ||
@@ -312,55 +263,71 @@ function mapStatusCodeToBuyerKey(statusCode, rawStatus) {
   ) {
     return "shipping";
   }
-
   if (v === "delivered" || v === "completed" || v.includes("مكتمل")) {
     return "completed";
   }
-
   if (v === "cancelled" || v === "canceled" || v.includes("ملغ")) {
     return "cancelled";
   }
-
   return "processing";
 }
 
-function getStatusLabelByKey(key) {
-  if (key === "ALL") return "كل الحالات";
-  // باقي القيم هي statusCode موحد ⇒ نرجع النص من الملف الموحّد
-  return getOrderStatusLabel(key);
-}
 
-function safeFormatDate(value) {
-  if (!value) return "";
-  try {
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return "";
-    return d.toLocaleString("ar-SA", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  } catch {
-    return "";
+function formatPaymentMethodUI(method, subMethod) {
+  if (!method) return "—";
+  const code = String(method).toUpperCase();
+  const subCode = subMethod ? String(subMethod).toUpperCase() : "";
+
+  if (subCode === "BANK_TRANSFER") return "الحوالة البنكية";
+  if (subCode === "CARD") return "الدفع بالبطاقة";
+
+  switch (code) {
+    case "COD":
+    case "CASH_ON_DELIVERY":
+      return "الدفع عند الاستلام";
+    case "WALLET":
+      return "الدفع بالمحفظة";
+    case "ONLINE":
+      return "الدفع الإلكتروني";
+    default:
+      return method;
   }
 }
 
-// ✅ تحويل استجابة الـ API إلى مصفوفة عناصر مسطّحة (كل منتج داخل الطلب كعنصر مستقل)
-// ✅ الحالة الآن تُحسب على مستوى المنتج (item) بنفس منطق صفحة البائع
+function resolvePaymentStatusUI(order) {
+  const method = order.paymentMethod || "";
+  const subMethod = order.paymentSubMethod || "";
+  const bankStatus = order.bankTransferStatus || "";
+  const isPaid = order.isPaid || false;
+
+  if (method === "COD" || method === "CASH_ON_DELIVERY") {
+    return { label: "عند الاستلام", key: "cod" };
+  }
+  if (method === "Wallet") {
+    return { label: "مدفوع", key: "paid" };
+  }
+  if (subMethod === "CARD") {
+    return isPaid ? { label: "مدفوع", key: "paid" } : { label: "بانتظار الدفع", key: "pending" };
+  }
+  if (subMethod === "BANK_TRANSFER" || method === "Online") {
+    if (bankStatus === "confirmed") return { label: "مدفوع", key: "paid" };
+    if (bankStatus === "rejected") return { label: "مرفوض", key: "rejected" };
+    return { label: "بانتظار المراجعة", key: "pending" };
+  }
+  return { label: "بانتظار", key: "pending" };
+}
+
 function normalizeOrdersResponse(rawResponse) {
   const possible =
     Array.isArray(rawResponse) && rawResponse.length
       ? rawResponse
       : Array.isArray(rawResponse?.orders)
-      ? rawResponse.orders
-      : Array.isArray(rawResponse?.data?.orders)
-      ? rawResponse.data.orders
-      : Array.isArray(rawResponse?.data)
-      ? rawResponse.data
-      : [];
+        ? rawResponse.orders
+        : Array.isArray(rawResponse?.data?.orders)
+          ? rawResponse.data.orders
+          : Array.isArray(rawResponse?.data)
+            ? rawResponse.data
+            : [];
 
   const items = [];
 
@@ -375,12 +342,6 @@ function normalizeOrdersResponse(rawResponse) {
       (orderId ? String(orderId).slice(-6) : "—");
 
     const orderStatusRaw = order.status || order.orderStatus || order.state;
-    const paymentStatus =
-      order.paymentStatus ||
-      order.payment_state ||
-      order.payment_state_key ||
-      order.paymentStatusKey;
-
     const createdAt = order.createdAt || order.created_at || order.date;
 
     const fallbackStoreName =
@@ -394,8 +355,6 @@ function normalizeOrdersResponse(rawResponse) {
 
     orderItems.forEach((item, index) => {
       if (!item) return;
-
-      // إخفاء المنتج للمشتري
       if (item.hiddenForBuyer || item.isHiddenForBuyer) return;
 
       const product =
@@ -405,85 +364,59 @@ function normalizeOrdersResponse(rawResponse) {
         item.productData ||
         {};
 
-      // رقم تعريف العنصر (itemId) لاستخدامه مع API
       const itemId = item.id || item._id || item.itemId || item.orderItemId;
-
       const statusRaw =
         item.status ||
         item.itemStatus ||
         item.orderItemStatus ||
         orderStatusRaw;
 
-      // ✅ اشتقاق الحالة الموحدة على مستوى الـ item بنفس منطق البائع
       const unifiedStatusCode = deriveBuyerItemUnifiedStatus(order, item);
+      const orderStatusKey = mapStatusCodeToBuyerKey(unifiedStatusCode, statusRaw);
 
-      // مفتاح داخلي فقط لأغراض التصميم (لا يظهر كنص في الواجهة)
-      const orderStatusKey = mapStatusCodeToBuyerKey(
-        unifiedStatusCode,
-        statusRaw
-      );
-
-      const quantity =
-        item.quantity || item.qty || item.count || item.amount || 1;
-
-      const unitPrice =
-        item.unitPrice || item.price || item.unit_price || item.salePrice;
-
+      const quantity = item.quantity || item.qty || item.count || item.amount || 1;
+      const unitPrice = item.unitPrice || item.price || item.unit_price || item.salePrice;
       const totalForItem =
         item.totalForItem ||
         item.lineTotal ||
         item.totalPrice ||
         (typeof unitPrice === "number" ? unitPrice * quantity : undefined);
 
-      // كود التسليم الخاص بهذا المنتج
       const deliveryCode = item.deliveryCode || item.delivery_code || null;
+      const storeName = product.store?.name || product.storeName || fallbackStoreName || item.storeName;
 
-      const storeName =
-        product.store?.name ||
-        product.storeName ||
-        fallbackStoreName ||
-        item.storeName;
-
-      // نحاول جميع الاحتمالات الممكنة للصورة
       const rawImage =
-        item.image || // ما خزّناه من الباك إند في orderItems.image
+        item.image ||
         item.imageUrl ||
         product.mainImageUrl ||
         product.imageUrl ||
         product.image ||
-        (Array.isArray(product.images) && product.images.length
-          ? product.images[0]
-          : null) ||
-        product.thumbnail;
+        (Array.isArray(product.images) && product.images.length ? product.images[0] : null);
 
       const imageUrl = resolveImageUrl(rawImage);
 
-      // قراءة حالة الشحن (من العنصر أو الطلب) وتطبيعها
-      const shippingStatusRaw =
-        item.shippingStatus ||
-        item.shipping_status ||
-        order.shippingStatus ||
-        order.shipping_status ||
-        null;
-
-      const { key: shippingStatusKey, label: shippingStatusLabel } =
-        mapShippingStatus(shippingStatusRaw);
+      const paymentMethodUI = formatPaymentMethodUI(order.paymentMethod, order.paymentSubMethod);
+      const paymentStatusData = resolvePaymentStatusUI(order);
 
       items.push({
         key: `${orderId || "order"}-${index}`,
         orderId,
         orderNumber,
-        // ✅ نخزن statusCode الموحّد لكل منتج داخل الطلب
         statusCode: unifiedStatusCode || null,
-        orderStatusKey, // فقط للـ CSS والـ Rating
-        // 👇 النص المعروض للحالة مأخوذ من الملف الموحّد (نفس النص لكل الأدوار)
+        orderStatusKey,
         orderStatusLabel: getOrderStatusLabel(unifiedStatusCode),
-        paymentStatus,
-        paymentStatusLabel: paymentStatus,
+        paymentMethodUI,
+        paymentStatusLabel: paymentStatusData.label,
+        paymentStatusKey: paymentStatusData.key,
         createdAt,
         deliveryCode,
-        productName:
-          product.name || product.title || item.productName || "منتج بدون اسم",
+        productName: product.name || product.title || item.productName || "منتج بدون اسم",
+        productId: product._id || product.id || (typeof item.product === "string" ? item.product : null),
+        isProductActive: typeof product.isActive === "boolean"
+          ? product.isActive
+          : typeof product.status === "string"
+            ? product.status !== "inactive"
+            : true,
         storeName,
         imageUrl,
         quantity,
@@ -491,73 +424,35 @@ function normalizeOrdersResponse(rawResponse) {
         totalForItem,
         orderItemIndex: (index || 0) + 1,
         itemId,
-        shippingStatusKey,
-        shippingStatusLabel,
-        rating: item.rating || item.reviewRating,
-        raw: {
-          order,
-          item,
-          statusCode: unifiedStatusCode,
-        },
+        rating: item.rating?.value || 0,
+        reviewComment: item.rating?.comment || "",
+        isRated: item.isRated || !!item.review,
+        reviewId: item.review || null,
+        raw: { order, item, statusCode: unifiedStatusCode },
       });
     });
   }
-
   return items;
 }
 
-function RatingStars({ value = 0, onChange, disabled }) {
-  const stars = [1, 2, 3, 4, 5];
-
-  return (
-    <div className="buyer-rating-stars" aria-label="تقييم المنتج">
-      {stars.map((star) => {
-        const filled = star <= value;
-        return (
-          <button
-            key={star}
-            type="button"
-            className={`buyer-rating-star-btn${
-              filled ? " buyer-rating-star-btn--filled" : ""
-            }`}
-            onClick={() => !disabled && onChange && onChange(star)}
-            disabled={disabled}
-          >
-            <Star
-              size={16}
-              className={`buyer-rating-star${
-                filled ? " buyer-rating-star--filled" : ""
-              }`}
-            />
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 export default function BuyerOrdersSection() {
+  const navigate = useNavigate();
   const { showToast } = useApp() || {};
 
   const [items, setItems] = useState([]);
-  // ✅ الفلتر الآن يبدأ بـ "ALL"
   const [filterStatus, setFilterStatus] = useState("ALL");
-
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isBulkHiding, setIsBulkHiding] = useState(false);
 
-  const [ratingDrafts, setRatingDrafts] = useState({});
-  const [ratingSubmittingKey, setRatingSubmittingKey] = useState(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedReviewItem, setSelectedReviewItem] = useState(null);
+  const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
 
   async function loadOrders(options = { silent: false }) {
     const { silent } = options;
-
-    if (!silent) {
-      setIsLoading(true);
-    } else {
-      setIsRefreshing(true);
-    }
+    if (!silent) setIsLoading(true);
+    else setIsRefreshing(true);
 
     try {
       const response = await listBuyerOrders();
@@ -565,9 +460,7 @@ export default function BuyerOrdersSection() {
       setItems(normalized);
     } catch (error) {
       console.error("❌ تعذّر تحميل طلبات المشتري:", error);
-      if (showToast) {
-        showToast("تعذّر تحميل طلباتك. حاول مرة أخرى.", "error");
-      }
+      if (showToast) showToast("تعذّر تحميل طلباتك. حاول مرة أخرى.", "error");
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -575,12 +468,9 @@ export default function BuyerOrdersSection() {
   }
 
   useEffect(() => {
-    (async () => {
-      await loadOrders({ silent: false });
-    })();
+    loadOrders({ silent: false });
   }, []);
 
-  // ✅ الفلترة الآن تتم عبر statusCode الموحّد لكل منتج
   const filteredItems = useMemo(() => {
     if (filterStatus === "ALL") return items;
     return items.filter((item) => item.statusCode === filterStatus);
@@ -598,317 +488,245 @@ export default function BuyerOrdersSection() {
 
   async function handleBulkHide() {
     if (!hasItems) return;
-
     setIsBulkHiding(true);
-
     try {
       await Promise.all(
         filteredItems
           .filter((item) => item.itemId)
           .map((item) => hideOrderItemForBuyer(item.orderId, item.itemId))
       );
-
-      if (showToast) {
-        showToast("تم إخفاء الطلبات المعروضة من تبويب طلباتي.", "success");
-      }
-
+      if (showToast) showToast("تم إخفاء الطلبات المعروضة من تبويب طلباتي.", "success");
       await loadOrders({ silent: true });
     } catch (error) {
       console.error("❌ تعذّر إخفاء العناصر للمشتري:", error);
-      if (showToast) {
-        showToast("تعذّر إخفاء هذه الطلبات. حاول مرة أخرى.", "error");
-      }
+      if (showToast) showToast("تعذّر إخفاء هذه الطلبات. حاول مرة أخرى.", "error");
     } finally {
       setIsBulkHiding(false);
     }
   }
 
-  function handleRatingChange(item, value) {
-    if (!item) return;
-    setRatingDrafts((prev) => ({
-      ...prev,
-      [item.key]: value,
-    }));
+  function handleOpenReviewModal(item) {
+    // ✅ القيد الجديد: لا يمكن التقييم إلا بعد الاستلام
+    if (item.statusCode !== ORDER_STATUS_CODES.DELIVERED) {
+      if (showToast) {
+        showToast("يمكنك تقييم المنتج فقط بعد استلام الطلب وتغيير حالته إلى 'تم التسليم'.", "info");
+      }
+      return;
+    }
+
+    setSelectedReviewItem(item);
+    setIsReviewModalOpen(true);
   }
 
-  async function handleSubmitRating(item) {
-    if (!item) return;
-
-    const ratingValue =
-      ratingDrafts[item.key] != null ? ratingDrafts[item.key] : item.rating;
-
-    if (!ratingValue || ratingValue < 1 || ratingValue > 5) {
-      if (showToast) {
-        showToast("الرجاء اختيار تقييم من 1 إلى 5 نجوم.", "warning");
-      }
+  function handleProductClick(item) {
+    if (!item.productId) {
+      if (showToast) showToast("عذراً، تفاصيل هذا المنتج غير متوفرة حالياً.", "error");
       return;
     }
 
-    if (!item.itemId) {
-      if (showToast) {
-        showToast(
-          "لا يمكن إرسال التقييم لهذا المنتج لعدم توفر رقم التعريف الداخلي له.",
-          "error"
-        );
-      }
+    if (!item.isProductActive) {
+      if (showToast) showToast("عذراً، هذا المنتج تم إيقافه مؤقتاً أو لم يعد متوفراً.", "info");
       return;
     }
 
-    setRatingSubmittingKey(item.key);
+    navigate(`/products/${item.productId}`);
+  }
 
+  async function handleSubmitReview({ rating, comment }) {
+    if (!selectedReviewItem) return;
+    setIsReviewSubmitting(true);
     try {
-      await rateOrderItem(item.orderId, item.itemId, ratingValue);
+      const { itemId, orderId, product } = selectedReviewItem.raw?.item || {};
+      const productId = product?._id || product;
 
-      if (showToast) {
-        showToast("تم إرسال تقييمك بنجاح.", "success");
+      if (selectedReviewItem.isRated && selectedReviewItem.reviewId) {
+        await updateProductReview(selectedReviewItem.reviewId, { rating, comment });
+        showToast && showToast("تم تحديث تقييمك بنجاح.", "success");
+      } else {
+        await createProductReview({
+          productId,
+          rating,
+          comment,
+          orderId: selectedReviewItem.orderId,
+          orderItemId: selectedReviewItem.itemId,
+        });
+        showToast && showToast("تم إضافة تقييمك بنجاح.", "success");
       }
-
+      setIsReviewModalOpen(false);
       await loadOrders({ silent: true });
     } catch (error) {
-      console.error("❌ تعذّر إرسال التقييم:", error);
-      if (showToast) {
-        showToast("تعذّر إرسال التقييم. حاول مرة أخرى.", "error");
-      }
+      console.error("Review Submit Error:", error);
+      const msg = error?.response?.data?.message || "تعذّر حفظ التقييم.";
+      showToast && showToast(msg, "error");
     } finally {
-      setRatingSubmittingKey(null);
+      setIsReviewSubmitting(false);
     }
   }
 
+
   return (
-    <section className="buyer-orders-section">
-      <header className="buyer-orders-header">
-        <div className="buyer-orders-header-right">
-          {/* فلتر الحالة: قائمة منسدلة متطابقة مع نصوص الحالة الموحدة */}
-          <div className="buyer-orders-filters">
-            <select
-              className="buyer-orders-filter-select"
-              value={filterStatus}
-              onChange={(e) => handleFilterChange(e.target.value)}
-            >
-              {STATUS_FILTERS.map((filter) => (
-                <option key={filter.key} value={filter.key}>
-                  {filter.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* أزرار الآكشن: تحديث + مسح (أيقونات فقط) */}
-          <div className="buyer-orders-header-actions">
-            <button
-              type="button"
-              className="buyer-orders-header-btn buyer-orders-header-btn--icon"
-              onClick={handleRefresh}
-              disabled={isLoading || isRefreshing}
-              title="تحديث الطلبات"
-            >
-              <RefreshCcw size={16} />
+    <div className="adm-page-root buyer-orders-section">
+      <header className="adm-header">
+        <div className="adm-header-inner">
+          <div className="adm-header-right">
+            <button onClick={() => navigate("/")} className="adm-btn-back" title="العودة للتسوق">
+              <ArrowRight size={20} />
             </button>
-
-            <button
-              type="button"
-              className="buyer-orders-header-btn buyer-orders-header-btn--icon buyer-orders-header-btn--danger"
-              onClick={handleBulkHide}
-              disabled={isLoading || isBulkHiding || !hasItems}
-              title="مسح الطلبات المعروضة من واجهتي"
-            >
-              <Trash2 size={16} />
-            </button>
+            <h1 className="adm-page-title buyer-page-title">
+              <Package size={24} />
+              طلباتي
+              <span className="adm-header-count">
+                عدد الطلبات: <span className="count-num">{filteredItems.length}</span>
+              </span>
+            </h1>
           </div>
         </div>
       </header>
 
-      {/* محتوى الطلبات */}
-      {isLoading && !items.length ? (
-        <div className="buyer-orders-empty">جاري تحميل طلباتك...</div>
-      ) : !items.length ? (
-        <div className="buyer-orders-empty">لا توجد طلبات حتى الآن.</div>
-      ) : !hasItems ? (
-        <div className="buyer-orders-empty">
-          لا توجد طلبات مطابقة للحالة الحالية (
-          {getStatusLabelByKey(filterStatus)}).
-        </div>
-      ) : (
-        <div className="buyer-orders-list">
-          {filteredItems.map((item) => {
-            const statusModifier =
-              item.orderStatusKey === "shipping"
-                ? "buyer-order-status-pill--shipping"
-                : item.orderStatusKey === "completed"
-                ? "buyer-order-status-pill--completed"
-                : item.orderStatusKey === "cancelled"
-                ? "buyer-order-status-pill--cancelled"
-                : "buyer-order-status-pill--processing";
+      <div className="adm-main-container">
+        <main className="adm-details-grid">
+          {/* Filters card */}
+          <section className="adm-card span-12">
+            <div className="adm-card-header">
+              <Filter size={20} />
+              <h2>خيارات العرض والفلترة</h2>
+            </div>
+            <div className="adm-card-body">
+              {/* Row 1: Filter */}
+              <div className="buyer-filter-row">
+                <span className="filter-label">فلتر الحالة:</span>
+                <select
+                  className="adm-form-select"
+                  value={filterStatus}
+                  onChange={(e) => handleFilterChange(e.target.value)}
+                >
+                  {STATUS_FILTERS.map((f) => (
+                    <option key={f.key} value={f.key}>{f.label}</option>
+                  ))}
+                </select>
+              </div>
 
-            return (
-              <article key={item.key} className="buyer-order-card">
-                {/* الهيدر داخل الكرت */}
-                <header className="buyer-order-header">
-                  <div className="buyer-order-header-main">
-                    <span className="buyer-order-header-main-text">
-                      طلب:{" "}
-                      <span className="buyer-order-header-strong">
-                        {item.orderNumber ?? "—"}
-                      </span>
-                    </span>
-
-                    <span className="buyer-order-header-separator" />
-
-                    <span className="buyer-order-header-main-text">
-                      <span className="buyer-order-header-strong">
-                        {item.orderItemIndex ?? 1}
-                      </span>
-                    </span>
-                  </div>
-
-                  <div className="buyer-order-header-meta">
-                    {item.createdAt && (
-                      <span className="buyer-order-date">
-                        {safeFormatDate(item.createdAt)}
-                      </span>
-                    )}
-                  </div>
-                </header>
-
-                {/* خط فاصل بين الهيدر وبقية الكرت */}
-                <div className="buyer-order-divider" />
-
-                {/* القسم الأوسط: صورة + اسم المنتج + حالة المنتج + اسم المتجر + حالة الدفع */}
-                <div className="buyer-order-main">
-                  <div className="buyer-order-product-image">
-                    {item.imageUrl ? (
-                      <img
-                        src={item.imageUrl}
-                        alt={item.productName || "صورة المنتج"}
-                      />
-                    ) : (
-                      <span className="buyer-order-product-placeholder">
-                        بدون صورة
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="buyer-order-product-info">
-                    {/* اسم المنتج + حالة الطلب في سطر واحد */}
-                    <div className="buyer-order-product-top">
-                      <h3 className="buyer-order-product-name">
-                        {item.productName || "منتج بدون اسم"}
-                      </h3>
-
-                      <span
-                        className={`buyer-order-status-pill ${statusModifier}`}
-                      >
-                        <span className="buyer-order-status-text">
-                          {item.orderStatusLabel}
-                        </span>
-                      </span>
-                    </div>
-
-                    {/* اسم المتجر */}
-                    {item.storeName && (
-                      <div className="buyer-order-store-row">
-                        <Store size={14} className="buyer-order-store-icon" />
-                        <span className="buyer-order-store-name">
-                          {item.storeName}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* حالة الدفع تحت اسم المتجر */}
-                    <div className="buyer-order-payment-inline">
-                      <span className="buyer-order-payment-label">
-                        حالة الدفع:
-                      </span>
-                      <span className="buyer-order-payment-value">
-                        {item.paymentStatusLabel || "غير مدفوع بعد"}
-                      </span>
-                    </div>
-
-                    {/* حالة الشحن (مع إخفاء pending_pickup كما اتفقنا) */}
-                    {item.shippingStatusLabel &&
-                      item.shippingStatusKey &&
-                      item.shippingStatusKey !== "pending_pickup" && (
-                        <div className="buyer-order-shipping-inline">
-                          <span className="buyer-order-shipping-label">
-                            حالة الشحن:
-                          </span>
-                          <span className="buyer-order-shipping-value">
-                            {item.shippingStatusLabel}
-                          </span>
-                        </div>
-                      )}
-                  </div>
+              {/* Row 2: Actions */}
+              <div className="buyer-actions-row">
+                <div className="adm-actions-group no-border">
+                  <button type="button" className="adm-btn primary" onClick={handleRefresh} disabled={isLoading || isRefreshing} title="تحديث">
+                    <RefreshCw size={16} className={isRefreshing ? "spin" : ""} />
+                    تحديث
+                  </button>
+                  <button type="button" className="adm-btn danger" onClick={handleBulkHide} disabled={isLoading || isBulkHiding || !hasItems} title="تفريغ">
+                    <Trash2 size={16} />
+                    تفريغ
+                  </button>
                 </div>
+              </div>
+            </div>
+          </section>
 
-                {/* الفوتر: الكمية – سعر الواحدة – إجمالي المنتج – كود التسليم */}
-                <footer className="buyer-order-footer">
-                  <div className="buyer-order-meta-item">
-                    <span className="buyer-meta-label">الكمية</span>
-                    <span className="buyer-meta-value">
-                      {item.quantity ?? "—"}
-                    </span>
-                  </div>
+          <div className="span-12">
 
-                  <div className="buyer-order-meta-item">
-                    <span className="buyer-meta-label">سعر الواحدة</span>
-                    <span className="buyer-meta-value">
-                      {typeof item.unitPrice === "number"
-                        ? `${item.unitPrice} ر.ي`
-                        : "—"}
-                    </span>
-                  </div>
+            {!items.length ? (
+              <div className="adm-empty-center buyer-empty-state">
+                <div className="empty-icon-wrap">
+                  <Package size={48} />
+                </div>
+                <h3>لا توجد طلبات بعد</h3>
+                <p>ابدأ التسوق الآن واكتشف منتجاتنا الرائعة!</p>
+              </div>
+            ) : !hasItems ? (
+              <div className="adm-empty-center buyer-empty-state">
+                <div className="empty-icon-wrap">
+                  <Search size={48} />
+                </div>
+                <h3>لا توجد نتائج</h3>
+                <p>لا توجد طلبات مطابقة لفلتر: <strong>{getStatusLabelByKey(filterStatus)}</strong></p>
+              </div>
+            ) : (
+              <div className="buyer-orders-grid-flow">
+                {filteredItems.map((item) => {
+                  const statusKey = item.orderStatusKey;
+                  return (
+                    <article key={item.key} className="adm-card buyer-item-card">
+                      {/* Column 1: Image + Badges */}
+                      <div className="order-col-image">
+                        <div className="order-image-aspect-wrapper" onClick={() => handleProductClick(item)}>
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} alt={item.productName} className="order-card-img" />
+                          ) : (
+                            <div className="order-card-img-placeholder"><Package size={24} /></div>
+                          )}
+                          <div className="order-status-badge">{item.orderStatusLabel}</div>
+                          <div className={`order-payment-badge payment-${item.paymentStatusKey}`}>
+                            {item.paymentStatusLabel}
+                          </div>
+                        </div>
+                      </div>
 
-                  <div className="buyer-order-meta-item">
-                    <span className="buyer-meta-label">إجمالي المنتج</span>
-                    <span className="buyer-meta-value">
-                      {typeof item.totalForItem === "number"
-                        ? `${item.totalForItem} ر.ي`
-                        : "—"}
-                    </span>
-                  </div>
+                      {/* Column 2: Product Info */}
+                      <div className="order-col-product">
+                        <h3 className="order-product-name" onClick={() => handleProductClick(item)}>{item.productName}</h3>
+                        <div className="order-product-meta">
+                          <p className="order-product-detail">
+                            <span className="label">الكمية:</span> <span className="num-accent">{item.quantity}</span>
+                          </p>
+                          <p className="order-product-detail price-highlight">
+                            <span className="label">السعر:</span> <span className="num-accent">{formatCurrency(item.totalForItem)}</span>
+                          </p>
+                          <p className="order-product-detail order-seller-name">
+                            <span className="label">البائع:</span> {item.storeName}
+                          </p>
+                        </div>
+                      </div>
 
-                  <div className="buyer-order-meta-item buyer-order-meta-item--code">
-                    <span className="buyer-meta-label">كود التسليم</span>
-                    <span className="buyer-meta-value buyer-meta-value--code">
-                      {item.deliveryCode ?? "—"}
-                    </span>
-                  </div>
-                </footer>
+                      {/* Column 3: Order Metadata */}
+                      <div className="order-col-order">
+                        <div className="order-id-display">
+                          <span className="order-hash">#</span>
+                          <span className="order-num num-accent">{item.orderNumber}</span>
+                          <span className="order-divider">|</span>
+                          <span className="order-index num-accent">{String(item.orderItemIndex).padStart(2, '0')}</span>
+                        </div>
+                        <div className="order-date-display">{formatDate(item.createdAt)}</div>
+                        <div className="order-payment-display num-accent">
+                          {item.paymentMethodUI}
+                        </div>
+                      </div>
 
-                {/* التقييم (للطلبات المكتملة فقط) */}
-                {item.orderStatusKey === "completed" && (
-                  <div className="buyer-order-rating">
-                    <span className="buyer-order-rating-label">
-                      تقييم المنتج:
-                    </span>
+                      {/* Column 4: Actions & Code */}
+                      <div className="order-col-actions">
+                        <div className="order-action-row">
+                          <button className={`adm-btn buyer-btn-rating ${item.isRated ? 'is-rated' : ''}`} onClick={() => handleOpenReviewModal(item)}>
+                            <Star size={16} fill={item.isRated ? "#ff7f00" : "none"} stroke={item.isRated ? "#ff7f00" : "currentColor"} />
+                            {item.isRated ? "تعديل التقييم" : "تقييم المنتج"}
+                          </button>
 
-                    <RatingStars
-                      value={
-                        ratingDrafts[item.key] != null
-                          ? ratingDrafts[item.key]
-                          : item.rating || 0
-                      }
-                      onChange={(value) => handleRatingChange(item, value)}
-                      disabled={ratingSubmittingKey === item.key}
-                    />
+                          {item.deliveryCode && (
+                            <div className="delivery-code-box">
+                              <Fingerprint size={14} />
+                              <span className="label">كود الاستلام:</span>
+                              <span className="value monospace">{item.deliveryCode}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
 
-                    <button
-                      type="button"
-                      className="buyer-order-rating-submit"
-                      onClick={() => handleSubmitRating(item)}
-                      disabled={ratingSubmittingKey === item.key}
-                    >
-                      {ratingSubmittingKey === item.key
-                        ? "جاري الإرسال..."
-                        : "إرسال التقييم"}
-                    </button>
-                  </div>
-                )}
-              </article>
-            );
-          })}
-        </div>
-      )}
-    </section>
+      <ReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        onSubmit={handleSubmitReview}
+        isSubmitting={isReviewSubmitting}
+        initialRating={selectedReviewItem?.rating || 0}
+        initialComment={selectedReviewItem?.reviewComment || ""}
+        productName={selectedReviewItem?.productName}
+        mode={selectedReviewItem?.isRated ? "edit" : "create"}
+      />
+    </div>
   );
 }

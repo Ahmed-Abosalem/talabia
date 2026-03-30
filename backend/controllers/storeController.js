@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import Store from '../models/Store.js';
+import { sanitizeHTML, sanitizeText } from "../utils/sanitize.js";
 
 import fs from 'fs';
 import path from 'path';
@@ -44,8 +45,8 @@ export const createStore = asyncHandler(async (req, res) => {
   const { name, description, address, logo } = req.body;
   const store = await Store.create({
     owner: req.user.id,
-    name,
-    description,
+    name: sanitizeText(name),
+    description: sanitizeHTML(description),
     address,
     logo,
   });
@@ -90,8 +91,8 @@ export const updateStore = asyncHandler(async (req, res) => {
   } = req.body || {};
 
   // تحديث آمن: whitelist فقط
-  if (typeof name === 'string') store.name = name.trim();
-  if (typeof description === 'string') store.description = description;
+  if (typeof name === 'string') store.name = sanitizeText(name);
+  if (typeof description === 'string') store.description = sanitizeHTML(description);
 
   if (typeof phone === 'string') store.phone = phone.trim();
   if (typeof email === 'string') store.email = email.trim().toLowerCase();

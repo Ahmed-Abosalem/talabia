@@ -4,98 +4,65 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Heart,
-  Share2,
-  Printer,
-  Settings2,
-  ArrowUpDown,
   Search,
   Trash2,
   ShoppingCart,
   RefreshCw,
-  Download,
   AlertCircle,
-  Info,
-  CheckCircle2,
-  Tag,
-  FolderPlus,
+  ArrowRight,
+  Filter,
+  ArrowUpDown,
+  ChevronRight,
 } from "lucide-react";
+import ProductCard from "@/components/ProductCard/ProductCard";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import userService from "@/services/userService";
+import { formatCurrency, formatDate, resolveAssetUrl } from "@/utils/formatters";
 
 import "./Wishlist.css";
-
-/**
- * إعداد عنوان الـ API لبناء روابط الصور القادمة من الباك إند
- * نفس المنطق المستخدم في ProductDetails.jsx
- *
- * ✅ FIX للهاتف: لا نستخدم localhost افتراضيًا لأنه على الهاتف يعني الهاتف نفسه.
- * إذا لم توجد متغيرات بيئة، نشتق الـ hostname من نفس رابط Vite الحالي
- * ونفترض الباك إند على  أثناء التطوير.
- */
-const ENV_API_BASE =
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.VITE_API_BASE_URL ||
-  "";
-
-const API_BASE_URL = (
-  ENV_API_BASE ||
-  (typeof window !== "undefined"
-    ? ``
-    : "")
-).replace(/\/$/, "");
 
 /**
  * 🖼️ دالة مساعدة لتحويل أي صورة (string أو object)
  * إلى رابط صالح للاستخدام في <img src="...">
  */
-function resolveImageUrl(source) {
-  const PLACEHOLDER = "/assets/products/product-placeholder.jpg";
+function resolveImageUrl(raw) {
+  if (!raw) return null;
 
-  if (!source) return PLACEHOLDER;
-
-  let imagePath = "";
-
-  if (typeof source === "string") {
-    imagePath = source;
-  } else if (typeof source === "object") {
-    imagePath = source.url || source.path || source.src || "";
-  }
-
-  if (!imagePath) return PLACEHOLDER;
-
-  // لو الرابط أصلاً كامل (http أو https) نستخدمه كما هو
-  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
-    return imagePath;
-  }
-
-  let normalized = imagePath.trim();
-
-  // حالات شائعة لمسارات الصور النسبية
-  if (!normalized.startsWith("/")) {
-    if (normalized.startsWith("uploads/")) {
-      normalized = "/" + normalized; // → "/uploads/..."
-    } else if (normalized.startsWith("ads/")) {
-      normalized = "/uploads/" + normalized; // → "/uploads/ads/..."
-    } else if (normalized.startsWith("products/")) {
-      normalized = "/uploads/" + normalized; // → "/uploads/products/..."
-    } else {
-      // اسم ملف فقط → نفترض أنه تحت /uploads
-      normalized = "/uploads/" + normalized;
+  // لو جاءتنا كائن صورة من نوع { url: "..." } نحاول استخراج url
+  if (typeof raw === "object" && raw !== null) {
+    if (typeof raw.url === "string") {
+      return resolveImageUrl(raw.url);
     }
+    return null;
   }
 
-  return `${API_BASE_URL}${normalized}`;
-}
+  if (typeof raw !== "string") return null;
 
-/**
- * 🔧 تحويل رابط الصورة إلى قيمة صالحة لاستخدامها كـ background-image عبر CSS variable
- * الهدف: نعرض الصورة كاملة (object-fit: contain) بدون قص،
- * ونملأ الفراغات بخلفية ضبابية مشتقة من نفس الصورة.
- */
-function cssUrl(url) {
-  if (!url) return "none";
-  const safe = String(url).replace(/["\\]/g, "\\$&");
-  return `url("${safe}")`;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  // لو هو رابط كامل http أو https نستخدمه كما هو
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  // قاعدة الـ API من الإعدادات
+  const baseUrl = import.meta.env.VITE_API_URL || "";
+
+  if (trimmed.startsWith("/")) {
+    return `${baseUrl}${trimmed}`;
+  }
+
+  if (
+    trimmed.startsWith("uploads/") ||
+    trimmed.startsWith("products/") ||
+    trimmed.startsWith("static/")
+  ) {
+    return `${baseUrl}/${trimmed}`;
+  }
+
+  return trimmed;
 }
 
 /**
@@ -112,24 +79,22 @@ function mapWishlistItemsFromApi(apiItems) {
     const priceNumber = Number(p.price ?? p.salePrice ?? p.finalPrice ?? 0);
 
     const rawOldPrice = p.oldPrice ?? p.originalPrice ?? p.regularPrice ?? null;
-
     const oldPriceNumber = typeof rawOldPrice === "number" ? rawOldPrice : null;
 
-    // الصورة الأساسية: نتعامل مع mainImage / image / images[0] كـ string أو object
     let rawImage =
       p.mainImage ||
       p.image ||
       (Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null);
 
-    const image = resolveImageUrl(rawImage);
+    const imageUrl = resolveImageUrl(rawImage);
 
     // حالة التوفر
     const stock =
       typeof p.stock === "number"
         ? p.stock
         : typeof p.quantity === "number"
-        ? p.quantity
-        : null;
+          ? p.quantity
+          : null;
 
     let status = "available";
     if (stock !== null) {
@@ -151,10 +116,13 @@ function mapWishlistItemsFromApi(apiItems) {
       description,
       price: priceNumber,
       oldPrice: oldPriceNumber,
-      image,
+      image: imageUrl,
       status,
       inOffer,
       addedAt,
+      stock: p.stock ?? (status === "unavailable" ? 0 : 10),
+      isActive: p.isActive ?? true,
+      raw: p,
     };
   });
 }
@@ -167,94 +135,61 @@ export default function Wishlist() {
     showToast,
     clearWishlist,
     toggleWishlistItem,
-  } = useApp();
+    setWishlistCount,
+  } = useApp() || {};
+  const { isLoggedIn, isReady: authReady } = useAuth() || {};
 
-  // نبدأ بقائمة فارغة ثم نملؤها من الـ API
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("newest"); // newest | oldest | price-asc | price-desc
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [sortBy, setSortBy] = useState("newest");
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
   const total = items.length;
-  const hasSelection = selectedIds.length > 0;
 
-  const stats = useMemo(() => {
-    const available = items.filter((i) => i.status === "available").length;
-    const limited = items.filter((i) => i.status === "limited").length;
-    const unavailable = items.filter((i) => i.status === "unavailable").length;
-    const offers = items.filter((i) => i.inOffer).length;
-
-    return {
-      available,
-      limited,
-      unavailable,
-      offers,
-    };
-  }, [items]);
-
-  // مزامنة حالة المفضلة في الـ Context مع العناصر الحالية في الصفحة
+  // مزامنة حالة المفضلة في الـ Context
   const syncContextFromItems = (list) => {
-    clearWishlist();
+    if (setWishlistCount) setWishlistCount(list.length);
+    if (clearWishlist) clearWishlist();
     list.forEach((item) => {
-      toggleWishlistItem(item);
+      if (toggleWishlistItem) toggleWishlistItem(item);
     });
   };
 
   // جلب المفضلة من الباك إند
-  async function loadWishlist() {
+  async function loadWishlist(options = { silent: false }) {
+    if (!authReady) return;
+    if (!isLoggedIn) {
+      setItems([]);
+      return;
+    }
+
+    const { silent } = options;
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
+      else setIsRefreshing(true);
       setError(null);
 
       const data = await userService.getWishlist();
       const mapped = mapWishlistItemsFromApi(data);
 
       setItems(mapped);
-      setSelectedIds([]);
       syncContextFromItems(mapped);
     } catch (err) {
       console.error(err);
-      const message =
-        err?.response?.data?.message || "حدث خطأ أثناء جلب قائمة المفضلة";
+      const message = err?.response?.data?.message || "حدث خطأ أثناء جلب قائمة المفضلة";
       setError(message);
-      showToast(message, "error");
+      if (showToast) showToast(message, "error");
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }
 
-  // تحميل المفضلة عند فتح الصفحة
   useEffect(() => {
     loadWishlist();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const refreshPrices = () => {
-    // يمكن استخدام نفس الفكرة لتحديث البيانات من الخادم
-    loadWishlist();
-  };
-
-  const shareWishlist = async () => {
-    try {
-      const url = window.location.origin + "/wishlist";
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-      }
-      showToast("تم نسخ رابط قائمة المفضلة", "success");
-    } catch {
-      showToast("تعذر نسخ الرابط، حاول مرة أخرى", "error");
-    }
-  };
-
-  const printWishlist = () => {
-    window.print();
-  };
-
-  const downloadWishlist = () => {
-    showToast("سيتم دعم حفظ القائمة كملف PDF لاحقاً", "info");
-  };
 
   const visibleItems = useMemo(() => {
     let result = [...items];
@@ -269,413 +204,227 @@ export default function Wishlist() {
     }
 
     result.sort((a, b) => {
-      if (sortBy === "newest") {
-        return new Date(b.addedAt) - new Date(a.addedAt);
-      }
-      if (sortBy === "oldest") {
-        return new Date(a.addedAt) - new Date(b.addedAt);
-      }
-      if (sortBy === "price-asc") {
-        return a.price - b.price;
-      }
-      if (sortBy === "price-desc") {
-        return b.price - a.price;
-      }
+      if (sortBy === "newest") return new Date(b.addedAt) - new Date(a.addedAt);
+      if (sortBy === "oldest") return new Date(a.addedAt) - new Date(b.addedAt);
+      if (sortBy === "price-asc") return a.price - b.price;
+      if (sortBy === "price-desc") return b.price - a.price;
       return 0;
     });
 
     return result;
   }, [items, search, sortBy]);
 
-  const toggleSelect = (id) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
+  const hasVisibleItems = visibleItems.length > 0;
 
-  const selectVisible = () => {
-    const visibleIds = visibleItems.map((i) => i.id);
-    setSelectedIds(visibleIds);
-  };
-
-  const clearSelection = () => {
-    setSelectedIds([]);
-  };
-
-  const handleRetry = () => {
-    loadWishlist();
-  };
-
-  // ✅ إضافة منتج واحد إلى السلة من بطاقة المفضلة
   const addToCart = (item) => {
     if (item.status === "unavailable") {
-      showToast("هذا المنتج غير متاح حالياً", "error");
+      if (showToast) showToast("هذا المنتج غير متاح حالياً", "error");
       return;
     }
 
-    if (isInCart(item.id)) {
-      showToast("هذا المنتج موجود بالفعل في السلة", "info");
+    if (isInCart && isInCart(item.id)) {
+      if (showToast) showToast("هذا المنتج موجود بالفعل في السلة", "info");
       return;
     }
 
-    ensureInCart(item);
-    showToast("تمت إضافة المنتج إلى السلة", "success");
+    if (ensureInCart) ensureInCart(item);
+    if (showToast) showToast("تمت إضافة المنتج إلى السلة", "success");
   };
 
-  // ✅ إضافة كل المتوفر إلى السلة مع منع التكرار
   const addAllToCart = () => {
-    const availableItems = items.filter((i) => i.status !== "unavailable");
+    const availableItems = visibleItems.filter((i) => i.status !== "unavailable");
 
     if (availableItems.length === 0) {
-      showToast("لا يوجد منتجات متاحة لإضافتها إلى السلة", "info");
+      if (showToast) showToast("لا يوجد منتجات متاحة لإضافتها إلى السلة", "info");
       return;
     }
 
     let addedCount = 0;
-
     availableItems.forEach((item) => {
-      if (!isInCart(item.id)) {
-        ensureInCart(item);
+      if (isInCart && !isInCart(item.id)) {
+        if (ensureInCart) ensureInCart(item);
         addedCount += 1;
       }
     });
 
     if (addedCount === 0) {
-      showToast("كل هذه المنتجات موجودة بالفعل في السلة", "info");
+      if (showToast) showToast("كل هذه المنتجات موجودة بالفعل في السلة", "info");
     } else {
-      showToast(`تمت إضافة ${addedCount} منتج/منتجات إلى السلة`, "success");
+      if (showToast) showToast(`تمت إضافة ${addedCount} منتج/منتجات إلى السلة`, "success");
     }
   };
 
-  // حذف المنتجات المحددة من المفضلة (من السيرفر ثم من الواجهة)
-  const removeSelected = async () => {
-    if (!hasSelection) return;
-
-    try {
-      await Promise.all(selectedIds.map((id) => userService.removeFromWishlist(id)));
-
-      setItems((prev) => {
-        const updated = prev.filter((i) => !selectedIds.includes(i.id));
-        syncContextFromItems(updated);
-        return updated;
-      });
-
-      setSelectedIds([]);
-      showToast("تم حذف المنتجات المحددة من المفضلة", "success");
-    } catch (err) {
-      const message =
-        err?.response?.data?.message || "تعذر حذف بعض المنتجات المحددة من المفضلة";
-      showToast(message, "error");
-    }
-  };
-
-  // حذف منتج واحد من المفضلة
   const removeItem = async (id) => {
     try {
       await userService.removeFromWishlist(id);
-
       setItems((prev) => {
         const updated = prev.filter((i) => i.id !== id);
         syncContextFromItems(updated);
         return updated;
       });
-
-      setSelectedIds((prev) => prev.filter((x) => x !== id));
-      showToast("تم حذف المنتج من المفضلة", "success");
+      if (showToast) showToast("تم حذف المنتج من المفضلة", "success");
     } catch (err) {
-      const message = err?.response?.data?.message || "تعذر حذف هذا المنتج من المفضلة";
-      showToast(message, "error");
+      const message = err?.response?.data?.message || "تعذر حذف هذا المنتج";
+      if (showToast) showToast(message, "error");
     }
   };
 
-  // تنظيف المنتجات غير المتوفرة من المفضلة
-  const cleanUnavailable = async () => {
-    const toRemove = items.filter((i) => i.status === "unavailable");
-
-    if (toRemove.length === 0) {
-      showToast("لا يوجد منتجات غير متاحة للتنظيف", "info");
-      return;
-    }
-
+  async function handleBulkRemove() {
+    if (!hasVisibleItems) return;
+    setIsLoading(true);
     try {
-      await Promise.all(toRemove.map((item) => userService.removeFromWishlist(item.id)));
-
-      setItems((prev) => {
-        const updated = prev.filter((i) => i.status !== "unavailable");
-        syncContextFromItems(updated);
-        return updated;
-      });
-
-      setSelectedIds((prev) =>
-        prev.filter((id) =>
-          items.some((item) => item.id === id && item.status !== "unavailable")
-        )
-      );
-
-      showToast("تم تنظيف المنتجات غير المتاحة من المفضلة", "success");
-    } catch (err) {
-      const message =
-        err?.response?.data?.message || "تعذر تنظيف جميع المنتجات غير المتاحة";
-      showToast(message, "error");
+      if (search.trim() === "") {
+        await userService.clearWishlist();
+      } else {
+        // If filtered, remove only visible items sequentially
+        for (const item of visibleItems) {
+          await userService.removeFromWishlist(item.id);
+        }
+      }
+      if (showToast) showToast("تم تحديث قائمة المفضلة.", "success");
+      await loadWishlist({ silent: true });
+    } catch (error) {
+      console.error("❌ تعذّر تفريغ المفضلة:", error);
+      if (showToast) showToast("تعذّر تفريغ هذه العناصر. حاول مرة أخرى.", "error");
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }
 
-  let touchStartX = null;
-
-  const handleTouchStart = (e) => {
-    touchStartX = e.touches[0].clientX;
-  };
-
-  const handleTouchSwipe = (e, item) => {
-    if (touchStartX == null) return;
-    const deltaX = e.changedTouches[0].clientX - touchStartX;
-
-    if (deltaX < -80) {
-      // سحب لليسار → حذف من المفضلة (مع استدعاء السيرفر)
-      removeItem(item.id);
-    } else if (deltaX > 80 && item.status !== "unavailable") {
-      // سحب لليمين → إضافة للسلة
-      addToCart(item);
-    }
-
-    touchStartX = null;
-  };
-
-  const hasItems = items.length > 0;
-
-  // ✅ دالة فتح صفحة تفاصيل المنتج عند الضغط على الكرت
-  const handleCardClick = (id) => {
+  const handleProductClick = (id) => {
     if (!id) return;
     navigate(`/products/${id}`);
   };
 
   return (
-    <div className="page-container wishlist-page">
-      {/* الهيدر الأخضر */}
-      <header className="wishlist-header">
-        <div className="wishlist-header-main">
-          <div className="wishlist-title-row">
-            <Heart className="wishlist-title-icon" size={22} />
-            <h1 className="wishlist-title">قائمتي المفضلة</h1>
+    <div className="adm-page-root wishlist-page">
+      <header className="adm-header">
+        <div className="adm-header-inner">
+          <div className="adm-header-right">
+            <button onClick={() => navigate("/")} className="adm-btn-back" title="العودة للتسوق">
+              <ArrowRight size={20} />
+            </button>
+            <h1 className="adm-page-title wishlist-page-title">
+              <Heart size={24} />
+              قائمة المفضلة
+              <span className="adm-header-count">
+                لديك: <span className="count-num">{items.length}</span> منتج
+              </span>
+            </h1>
           </div>
-          <p className="wishlist-subtitle">
-            {isLoading
-              ? "جاري تحميل قائمة المفضلة..."
-              : error
-              ? "حدث خطأ أثناء تحميل قائمة المفضلة"
-              : total === 0
-              ? "قائمتك المفضلة فارغة حالياً"
-              : `لديك ${total} منتج في المفضلة`}
-          </p>
-        </div>
-
-        <div className="wishlist-header-actions">
-          <button type="button" className="btn-accent" onClick={() => navigate("/")}>
-            <ShoppingCart size={16} />
-            <span>العودة للتسوق</span>
-          </button>
         </div>
       </header>
 
-      {/* شريط الأدوات */}
-      <section className="wishlist-toolbar">
-        <div className="wishlist-toolbar-main">
-          <div className="wishlist-search-wrapper">
-            <Search className="wishlist-search-icon" size={16} />
-            <input
-              type="text"
-              className="wishlist-search-input"
-              placeholder="ابحث داخل المفضلة..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-
-          <div className="wishlist-filters">
-            <div className="wishlist-select-wrapper">
-              <ArrowUpDown size={15} />
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                <option value="newest">الأحدث أولاً</option>
-                <option value="oldest">الأقدم أولاً</option>
-                <option value="price-asc">السعر: من الأقل للأعلى</option>
-                <option value="price-desc">السعر: من الأعلى للأقل</option>
-              </select>
+      <div className="adm-main-container">
+        <main className="wishlist-main-grid">
+          {/* Filters card */}
+          <section className="adm-card span-12">
+            <div className="adm-card-header">
+              <Filter size={20} />
+              <h2>خيارات العرض والفلترة</h2>
             </div>
-          </div>
-        </div>
-
-        <div className="wishlist-toolbar-selection">
-          <button type="button" className="btn-ghost" onClick={selectVisible}>
-            تحديد الكل الظاهر
-          </button>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={clearSelection}
-            disabled={!hasSelection}
-          >
-            إلغاء التحديد
-          </button>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={addAllToCart}
-            disabled={!hasItems}
-          >
-            <ShoppingCart size={15} />
-            <span>إضافة المحدد إلى السلة</span>
-          </button>
-          <button
-            type="button"
-            className="btn-ghost danger"
-            onClick={removeSelected}
-            disabled={!hasSelection}
-          >
-            <Trash2 size={15} />
-            <span>حذف المحدد</span>
-          </button>
-        </div>
-      </section>
-
-      {/* التخطيط العام */}
-      <section className="wishlist-layout">
-        <main className="wishlist-main-area">
-          {/* حالة الخطأ */}
-          {!isLoading && error && (
-            <div className="wishlist-error-box">
-              <AlertCircle size={18} />
-              <div>
-                <div>{error}</div>
-                <button type="button" onClick={handleRetry}>
-                  إعادة المحاولة
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* حالة فارغة */}
-          {!isLoading && !error && visibleItems.length === 0 && (
-            <div className="wishlist-empty">
-              <div className="wishlist-empty-icon">
-                <Heart />
-              </div>
-              <p className="wishlist-empty-title">لا توجد منتجات في قائمتك المفضلة</p>
-              <p className="wishlist-empty-text">
-                ابدأ بإضافة المنتجات إلى المفضلة من صفحة المنتج أو من الصفحة الرئيسية.
-              </p>
-              <button
-                type="button"
-                className="btn-primary small"
-                onClick={() => navigate("/")}
-              >
-                <FolderPlus size={14} />
-                <span>ابدأ التسوق الآن</span>
-              </button>
-            </div>
-          )}
-
-          {/* شبكة المنتجات */}
-          {!isLoading && !error && visibleItems.length > 0 && (
-            <div className="wishlist-grid">
-              {visibleItems.map((item) => {
-                const isSelected = selectedIds.includes(item.id);
-                const isUnavailable = item.status === "unavailable";
-                const showDiscount =
-                  item.inOffer && item.oldPrice && item.oldPrice > item.price;
-
-                return (
-                  <article
-                    key={item.id}
-                    className={
-                      "wishlist-item-card" +
-                      (isUnavailable ? " wishlist-item-unavailable" : "")
-                    }
-                    onClick={() => handleCardClick(item.id)}
-                    onTouchStart={handleTouchStart}
-                    onTouchEnd={(e) => handleTouchSwipe(e, item)}
+            <div className="adm-card-body">
+              {/* Row 1: Search and Sort */}
+              <div className="wishlist-filter-row">
+                <div className="search-wrap">
+                  <Search size={18} />
+                  <input
+                    type="text"
+                    className="adm-form-input"
+                    placeholder="ابحث في مفضلتك..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+                <div className="sort-wrap">
+                  <ArrowUpDown size={18} />
+                  <select
+                    className="adm-form-select"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
                   >
-                    <div
-                      className="wishlist-item-image-wrapper"
-                      style={{ "--wishlist-img": cssUrl(item.image) }}
-                    >
-                      <div className="wishlist-item-top">
-                        <label
-                          className="wishlist-checkbox-label"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleSelect(item.id)}
-                          />
-                          <span className="wishlist-checkbox-custom" />
-                        </label>
+                    <option value="newest">الأحدث</option>
+                    <option value="oldest">الأقدم</option>
+                    <option value="price-asc">الأرخص</option>
+                    <option value="price-desc">الأغلى</option>
+                  </select>
+                </div>
+              </div>
 
-                        {showDiscount && (
-                          <span className="wishlist-badge-offer">عرض خاص</span>
-                        )}
-
-                        <button
-                          type="button"
-                          className="wishlist-remove-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeItem(item.id);
-                          }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="wishlist-item-image"
-                      />
-                    </div>
-
-                    <div className="wishlist-item-body">
-                      <h3 className="wishlist-item-name">{item.name}</h3>
-                      <p className="wishlist-item-desc">{item.description}</p>
-
-                      <div className="wishlist-item-meta">
-                        <div className="wishlist-price-wrap">
-                          <span className="wishlist-price">
-                            {item.price.toLocaleString()} ر.ي
-                          </span>
-                          {showDiscount && (
-                            <span className="wishlist-old-price">
-                              {item.oldPrice.toLocaleString()} ر.ي
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="wishlist-item-footer">
-                      <button
-                        type="button"
-                        className="wishlist-footer-btn primary"
-                        disabled={isUnavailable}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToCart(item);
-                        }}
-                      >
-                        <ShoppingCart size={15} />
-                        <span>{isUnavailable ? "غير متاح" : "أضف إلى السلة"}</span>
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
+              {/* Row 2: Bulk Actions */}
+              <div className="wishlist-actions-row">
+                <div className="adm-actions-group">
+                  <button
+                    type="button"
+                    className="adm-btn accent"
+                    onClick={addAllToCart}
+                    disabled={!hasVisibleItems}
+                  >
+                    <ShoppingCart size={16} />
+                    إضافة الكل
+                  </button>
+                  <button
+                    type="button"
+                    className="adm-btn danger"
+                    onClick={handleBulkRemove}
+                    disabled={!hasVisibleItems || isLoading}
+                  >
+                    <Trash2 size={16} />
+                    تفريغ الكل
+                  </button>
+                </div>
+              </div>
             </div>
-          )}
-        </main>
+          </section>
 
-        {/* اللوحة الجانبية تبقى كما هي عندك/أو يمكن تفعيلها لاحقًا باستخدام stats */}
-        {/* يمكن لاحقًا استخدام stats.available / stats.unavailable / stats.offers */}
-      </section>
+          <div className="span-12">
+            {isLoading && !items.length ? (
+              <div className="adm-loading">
+                <RefreshCw size={48} className="spin" />
+                <p>جاري تحميل المفضلة...</p>
+              </div>
+            ) : error ? (
+              <div className="adm-empty-center wishlist-empty-state">
+                <div className="empty-icon-wrap danger">
+                  <AlertCircle size={48} />
+                </div>
+                <h3>حدث خطأ</h3>
+                <p>{error}</p>
+                <button className="adm-btn primary" onClick={() => loadWishlist()}>إعادة المحاولة</button>
+              </div>
+            ) : !items.length ? (
+              <div className="adm-empty-center wishlist-empty-state">
+                <div className="empty-icon-wrap">
+                  <Heart size={48} />
+                </div>
+                <h3>مفضلتك فارغة</h3>
+                <p>لم تقم بإضافة أي منتجات إلى قائمتك المفضلة حتى الآن.</p>
+                <button className="adm-btn primary" onClick={() => navigate("/")}>ابدأ التسوق</button>
+              </div>
+            ) : !hasVisibleItems ? (
+              <div className="adm-empty-center wishlist-empty-state">
+                <div className="empty-icon-wrap">
+                  <Search size={48} />
+                </div>
+                <h3>لا توجد نتائج</h3>
+                <p>لا توجد منتجات مطابقة للبحث: <strong>{search}</strong></p>
+              </div>
+            ) : (
+              <div className="wishlist-products-grid">
+                {visibleItems.map((item) => (
+                  <div key={item.id} className="wishlist-card-wrapper">
+                    <ProductCard
+                      product={item}
+                      showRemove={true}
+                      onRemove={() => removeItem(item.id)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

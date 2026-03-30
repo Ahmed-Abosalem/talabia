@@ -17,7 +17,7 @@ function normalizeRole(rawRole) {
   if (r.includes("seller") || r.includes("store") || r.includes("merchant"))
     return "seller";
 
-  // أي شيء يحتوي ship / delivery / transport نعامله كـ "شركة شحن"
+  // أي شيء يحتوي ship / delivery / transport نعامله كـ "شركة شحن" (shipper)
   if (
     r.includes("ship") ||
     r.includes("delivery") ||
@@ -25,7 +25,7 @@ function normalizeRole(rawRole) {
     r.includes("logistic") ||
     r.includes("transport")
   ) {
-    return "shipping";
+    return "shipper";
   }
 
   return r; // القيمة كما هي إن لم تُطابق أي نمط
@@ -47,9 +47,7 @@ export default function RoleRoute({ allowedRoles = [], children }) {
 
   const rawRole = user?.role || role;
   const normalizedUserRole = normalizeRole(rawRole);
-
   const normalizedAllowed = allowedRoles.map((r) => normalizeRole(r));
-
   const isAllowed = normalizedAllowed.includes(normalizedUserRole);
 
   if (!isAllowed) {

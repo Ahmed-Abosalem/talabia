@@ -1,468 +1,384 @@
-/* frontend/src/pages/Buyer/BuyerProfileSection.css */
+/* s:\Talabia_new\frontend\src\pages\Buyer\BuyerProfileSection.css */
+@import "../Admin/adm-shared.css";
 
-/* الحاوية العامة لتبويب الملف الشخصي */
+/* 👤 BUYER PROFILE - BRAND IDENTITY & UX POLISH
+   Refactored with Brand Colors:
+   Olive: #4b502a | Red: #a30000 | Orange: #ff7f00
+*/
+
+:root {
+  --brand-olive: #4b502a;
+  --brand-red: #a30000;
+  --brand-orange: #ff7f00;
+  --brand-orange-rgb: 255, 127, 0;
+}
+
 .buyer-profile-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
+  background-color: transparent !important;
 }
 
-/* رأس القسم */
-.buyer-section-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+.buyer-page-title {
+  color: var(--brand-olive) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
 }
 
-.buyer-section-title {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #111827;
-  letter-spacing: -0.01em;
+.buyer-page-title svg {
+  color: var(--brand-orange);
 }
 
-.buyer-section-subtitle {
-  margin: 0;
-  font-size: 0.82rem;
-  color: #6b7280;
-}
-
-/* شبكة الكروت (كرت البيانات + كرت العناوين) */
-.buyer-profile-grid {
+/* 🧪 Layout Grid - Standard Admin 12 Col */
+.adm-details-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr);
-  gap: 1.1rem;
-  align-items: flex-start;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+  width: 100%;
 }
 
-/* كرت عام داخل الملف الشخصي */
+.span-12 {
+  grid-column: span 12;
+}
+
+.span-8 {
+  grid-column: span 8;
+}
+
+.span-6 {
+  grid-column: span 6;
+}
+
+.span-4 {
+  grid-column: span 4;
+}
+
+@media (max-width: 1024px) {
+
+  .span-12,
+  .span-8,
+  .span-6,
+  .span-4 {
+    grid-column: span 12;
+  }
+}
+
+/* 🎨 Card Enhancements */
 .buyer-profile-card {
-  border-radius: 1.1rem;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  padding: 1rem 1.05rem;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
 }
 
-/* هيدر الكرت */
 .buyer-profile-card-header {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 1rem;
 }
 
 .buyer-profile-card-icon {
-  width: 1.45rem;
-  height: 1.45rem;
-  color: #0f766e;
-  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  color: var(--brand-orange);
+  background: rgba(var(--brand-orange-rgb), 0.1);
+  padding: 6px;
+  border-radius: 8px;
 }
 
 .buyer-profile-card-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--adm-text-main);
   margin: 0;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #111827;
 }
 
-.buyer-profile-card-subtitle {
-  margin: 0.13rem 0 0;
-  font-size: 0.78rem;
-  color: #6b7280;
-}
-
-/* جسم الكرت */
+/* 📝 Forms & Inputs */
 .buyer-profile-card-body {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 1.25rem;
 }
 
-/* فوتر الكرت (مثل زر حفظ البيانات) */
-.buyer-profile-card-footer {
-  margin-top: 0.4rem;
+.buyer-profile-card-divider {
+  height: 1px;
+  background: var(--adm-border);
+  margin: 1.5rem 0;
+  border: none;
+}
+
+/* BRAND FOCUS STATES */
+.buyer-profile-section .adm-form-input:focus {
+  border-color: var(--brand-orange) !important;
+  box-shadow: 0 0 0 3px rgba(var(--brand-orange-rgb), 0.1) !important;
+  outline: none !important;
+}
+
+.buyer-input-wrapper {
+  position: relative;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
 }
 
-/* مجموعات الحقول */
-.buyer-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.22rem;
+.buyer-field-icon {
+  position: absolute;
+  right: 12px;
+  color: var(--brand-orange);
+  pointer-events: none;
+  z-index: 2;
 }
 
-.buyer-form-label {
-  font-size: 0.76rem;
-  color: #4b5563;
+/* 📏 UX FIX: Ensure text starts AFTER the icon */
+.buyer-input-wrapper .adm-form-input {
+  padding-right: 44px !important;
+  width: 100% !important;
 }
 
-/* حقول الإدخال */
-.buyer-form-input,
-.buyer-form-textarea {
-  border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  font-size: 0.82rem;
-  padding: 0.45rem 0.7rem;
-  outline: none;
-  transition: border-color 0.12s ease, box-shadow 0.12s ease,
-    background 0.12s ease, transform 0.06s ease;
-}
-
-.buyer-form-input:focus,
-.buyer-form-textarea:focus {
-  border-color: #0ea5e9;
-  box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.16);
-  background: #ffffff;
-  transform: translateY(-0.5px);
-}
-
-/* في حالة الخطأ */
-.buyer-form-input.has-error,
-.buyer-form-textarea.has-error {
-  border-color: #f97373;
-  background: #fef2f2;
-}
-
-.buyer-form-error {
-  font-size: 0.74rem;
-  color: #b91c1c;
-}
-
-/* أزرار عامة داخل تبويب الملف الشخصي */
-.buyer-primary-btn,
-.buyer-secondary-btn,
-.buyer-danger-btn,
-.buyer-text-btn {
-  border-radius: 999px;
-  font-size: 0.78rem;
-  padding: 0.32rem 0.95rem;
-  border: 1px solid transparent;
+.buyer-password-toggle {
+  position: absolute;
+  left: 10px;
+  background: none;
+  border: none;
+  color: var(--adm-text-muted);
   cursor: pointer;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem;
-  transition: background 0.15s ease, color 0.15s ease,
-    border-color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+  padding: 4px;
+  transition: color 0.2s;
+  z-index: 2;
 }
 
-/* زر أساسي */
-.buyer-primary-btn {
-  background: #111827;
-  color: #f9fafb;
-  border-color: #111827;
+.buyer-password-toggle:hover {
+  color: var(--brand-orange);
 }
 
-.buyer-primary-btn:hover:not(:disabled) {
-  background: #0f172a;
-  border-color: #0f172a;
-  transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.2);
-}
-
-/* زر ثانوي */
-.buyer-secondary-btn {
-  background: #f3f4f6;
-  color: #111827;
-  border-color: #e5e7eb;
-}
-
-.buyer-secondary-btn:hover:not(:disabled) {
-  background: #e5e7eb;
-  transform: translateY(-1px);
-}
-
-/* زر تحذيري (لحذف عنوان مثلاً) */
-.buyer-danger-btn {
-  background: #fee2e2;
-  color: #b91c1c;
-  border-color: #fecaca;
-}
-
-.buyer-danger-btn:hover:not(:disabled) {
-  background: #fecaca;
-  transform: translateY(-1px);
-}
-
-/* زر نصي بسيط */
-.buyer-text-btn {
-  background: transparent;
-  border-color: transparent;
-  color: #0f766e;
-  padding-inline: 0.1rem;
-}
-
-.buyer-text-btn:hover {
-  color: #0e7490;
-}
-
-.buyer-danger-text {
-  color: #b91c1c;
-}
-
-.buyer-text-btn.buyer-danger-text:hover {
-  color: #991b1b;
-}
-
-/* حالة التعطيل */
-.buyer-primary-btn:disabled,
-.buyer-secondary-btn:disabled,
-.buyer-danger-btn:disabled {
-  opacity: 0.6;
-  cursor: default;
-  transform: none;
-  box-shadow: none;
-}
-
-/* عناوين الشحن – القائمة */
+/* 🎫 Address Cards */
 .buyer-addresses-list {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 1rem;
 }
 
-.buyer-addresses-empty {
-  padding: 0.75rem 0.85rem;
-  border-radius: 0.85rem;
-  background: #f9fafb;
-  border: 1px dashed #e5e7eb;
-  font-size: 0.78rem;
-  color: #6b7280;
-}
-
-/* كرت عنوان */
 .buyer-address-card {
-  border-radius: 0.95rem;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  padding: 0.65rem 0.75rem;
-  display: flex;
-  justify-content: space-between;
-  gap: 0.8rem;
-  align-items: flex-start;
+  padding: 1.25rem;
+  background: var(--adm-bg);
+  border: 1px solid var(--adm-border);
+  border-radius: 12px;
+  transition: var(--adm-transition-fast);
+  position: relative;
+}
+
+.buyer-address-card:hover {
+  border-color: var(--brand-orange);
+  background: var(--adm-surface);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 .buyer-address-card.is-default {
-  border-color: #0ea5e9;
-  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.16);
-  background: linear-gradient(
-    135deg,
-    #f0f9ff 0%,
-    #ffffff 40%,
-    #ecfeff 100%
-  );
-}
-
-.buyer-address-main {
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
-  min-width: 0;
-}
-
-.buyer-address-title-row {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
+  border-color: var(--brand-orange);
+  background: rgba(var(--brand-orange-rgb), 0.03);
 }
 
 .buyer-address-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--brand-olive);
   margin: 0;
-  font-size: 0.84rem;
-  font-weight: 700;
-  color: #111827;
 }
 
 .buyer-address-badge {
-  font-size: 0.72rem;
-  border-radius: 999px;
-  padding: 0.08rem 0.55rem;
-  background: #ecfdf5;
-  color: #047857;
+  background: var(--brand-orange);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
-.buyer-address-text {
-  font-size: 0.78rem;
-  color: #4b5563;
+.buyer-address-details {
+  font-size: 0.8rem;
+  color: var(--adm-text-muted);
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--adm-border);
 }
 
-.buyer-address-details,
-.buyer-address-details-extra {
-  font-size: 0.76rem;
-  color: #6b7280;
-}
-
-/* أزرار العنوان (تعديل / حذف) */
-.buyer-address-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  align-items: flex-end;
-}
-
-/* نموذج العنوان */
+/* 🏗️ UX FIX: Standard Fill (Removed double-nesting) */
+.buyer-password-form,
 .buyer-address-form {
-  margin-top: 0.7rem;
-  padding-top: 0.7rem;
-  border-top: 1px dashed #e5e7eb;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--adm-border);
+  background: transparent;
 }
 
 .buyer-address-form-title {
-  margin: 0;
-  font-size: 0.84rem;
-  font-weight: 700;
-  color: #111827;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--brand-olive);
+  margin-bottom: 1.25rem;
 }
 
 .buyer-address-form-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.55rem;
+  grid-template-columns: 1fr;
+  gap: 1rem;
 }
 
-/* مربع الاختيار */
-.buyer-checkbox {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.78rem;
-  color: #4b5563;
-}
-
-.buyer-checkbox input[type="checkbox"] {
-  width: 0.9rem;
-  height: 0.9rem;
-}
-
-/* أزرار نموذج العنوان */
-.buyer-address-form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.45rem;
-}
-
-/* تفضيلات الإشعارات – منطق محفوظ لو استخدمناه لاحقًا */
-.buyer-notify-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  margin-top: 0.3rem;
-}
-
-.buyer-switch-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  color: #374151;
-}
-
-.buyer-switch {
-  border: none;
-  outline: none;
-  border-radius: 999px;
-  width: 2.2rem;
-  height: 1.2rem;
-  padding: 0.12rem;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  background: #e5e7eb;
-  transition: background 0.15s ease;
-}
-
-.buyer-switch-handle {
-  width: 0.95rem;
-  height: 0.95rem;
-  border-radius: 999px;
-  background: #ffffff;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.3);
-  transform: translateX(0);
-  transition: transform 0.15s ease;
-}
-
-.buyer-switch.is-on {
-  background: #22c55e;
-}
-
-.buyer-switch.is-on .buyer-switch-handle {
-  transform: translateX(0.95rem);
-}
-
-.buyer-switch.is-off {
-  background: #e5e7eb;
-}
-
-/* فاصل بسيط بين جزء البيانات وجزء الأمان */
-.buyer-profile-card-divider {
-  margin-block: 0.55rem;
-  height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    #e5e7eb,
-    transparent
-  );
-}
-
-/* قسم أمان الحساب */
-.buyer-profile-security {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.buyer-profile-security-header {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-}
-
-/* نموذج كلمة المرور */
-.buyer-password-form {
-  margin-top: 0.4rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-}
-
-.buyer-password-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.45rem;
-  margin-top: 0.2rem;
-}
-
-/* استجابة الشاشات المتوسطة والصغيرة */
-@media (max-width: 1100px) {
-  .buyer-profile-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 800px) {
-  .buyer-address-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .buyer-address-actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-  }
-
+@media (min-width: 640px) {
   .buyer-address-form-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.buyer-checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand-orange);
+}
+
+/* 🏎️ Buttons & Brand Accents - High Contrast Solid */
+.buyer-profile-section .adm-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  height: 48px !important;
+  /* Unified Height */
+  padding: 0 1.5rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-radius: 10px !important;
+}
+
+.buyer-profile-section .adm-btn.mini {
+  height: 38px !important;
+  padding: 0 1.25rem !important;
+  font-size: 0.85rem !important;
+}
+
+.buyer-profile-section .adm-btn.primary {
+  background-color: var(--brand-olive) !important;
+  border-color: var(--brand-olive) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  opacity: 1 !important;
+}
+
+.buyer-profile-section .adm-btn.primary:hover {
+  background-color: #3a3f21 !important;
+  border-color: #3a3f21 !important;
+  box-shadow: 0 6px 20px rgba(75, 80, 42, 0.25);
+  transform: translateY(-2px);
+}
+
+.buyer-profile-section .adm-btn.outline {
+  border-color: var(--brand-olive) !important;
+  color: var(--brand-olive) !important;
+  background: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.buyer-profile-section .adm-btn.outline:hover {
+  background: #fbfcf8 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.buyer-profile-section .adm-btn.danger.outline,
+.buyer-profile-section .adm-btn.mini.danger.outline {
+  background-color: var(--brand-red) !important;
+  border-color: var(--brand-red) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.buyer-profile-section .adm-btn.danger.outline:hover,
+.buyer-profile-section .adm-btn.mini.danger.outline:hover {
+  background-color: #8a0000 !important;
+  border-color: #8a0000 !important;
+  box-shadow: 0 6px 20px rgba(163, 0, 0, 0.25);
+  transform: translateY(-2px);
+}
+
+/* Edit/Mini Buttons */
+.buyer-profile-section .adm-btn.mini.outline {
+  background-color: #f0f1ec !important;
+  border: 1px solid var(--brand-olive) !important;
+  color: var(--brand-olive) !important;
+}
+
+/* 🏗️ UX Fix: Action Clusters & Spacing - ROBUST MOBILE FIT */
+.buyer-password-actions,
+.buyer-address-actions {
+  display: flex !important;
+  gap: 1rem !important;
+  flex-wrap: nowrap !important;
+  /* Force Single Line */
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.buyer-password-actions .adm-btn,
+.buyer-address-actions .adm-btn {
+  flex: 1;
+  min-width: 0 !important;
+  /* Allow shrink */
+  white-space: nowrap !important;
+  /* No text wrap */
+}
+
+/* Weighting: Update button gets more priority */
+.buyer-password-actions .adm-btn.primary,
+.buyer-address-actions .adm-btn.primary {
+  flex: 1.8 !important;
+}
+
+/* 📱 GOLDEN STANDARD MOBILE OVERRIDES */
+@media (max-width: 768px) {
+  .buyer-profile-section .adm-header-right {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  .buyer-page-title {
+    font-size: 1.15rem !important;
+    gap: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .buyer-page-title svg {
+    display: block !important;
+    width: 24px;
+    height: 24px;
+  }
+
+  .adm-main-container {
+    padding-inline: 0 !important;
+  }
+
+  .adm-details-grid {
+    gap: 0 !important;
+  }
+
+  .adm-card {
+    border-radius: 0 !important;
+    border-inline: none !important;
+    border-top: 1px solid var(--adm-border) !important;
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .adm-card-header,
+  .adm-card-body,
+  .adm-card-footer {
+    padding-inline: 1.25rem !important;
+  }
+
+  .buyer-password-form,
+  .buyer-address-form {
+    margin-inline: 0;
+    padding-inline: 0 !important;
   }
 }

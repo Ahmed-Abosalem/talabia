@@ -1,0 +1,116 @@
+/* frontend/src/components/Footer/BottomBar.css */
+
+/* 1️⃣ Structural Architecture */
+.bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 64px;
+    background: #4b502a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 1000;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+    transition: background 0.3s ease;
+    direction: ltr;
+    /* Ensure layout order is consistent with design: Social Left, Privacy Right */
+}
+
+/* 2️⃣ Layout Zones */
+.social-zone {
+    flex: 1;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.center-zone {
+    flex: 1;
+}
+
+.privacy-zone {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* 3️⃣ Social Icons */
+.social-icons {
+    display: flex;
+    gap: 16px;
+}
+
+.social-icons a {
+    width: 34px;
+    /* Mobile Default: ~30-34px */
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+    transition: all 0.25s ease;
+    text-decoration: none;
+}
+
+.social-icons svg {
+    width: 18px;
+    height: 18px;
+    fill: white;
+    color: white;
+    /* Ensure stroke color if fill not applied by icon lib */
+    transition: all 0.25s ease;
+}
+
+/* Hover Effect */
+.social-icons a:hover {
+    background: white;
+    transform: translateY(-2px);
+}
+
+.social-icons a:hover svg {
+    fill: #4b502a;
+    color: #4b502a;
+}
+
+/* 4️⃣ Privacy Policy Visual Hierarchy */
+.privacy-link {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.85rem;
+    /* Mobile Default */
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+/* Hover Effect */
+.privacy-link:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+}
+
+/* Active / Focus */
+.privacy-link:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+/* 6️⃣ Responsive Rules (Adjustments if needed, but keeping base robust) */
+@media (max-width: 480px) {
+    .social-icons a {
+        width: 30px;
+        height: 30px;
+    }
+
+    .privacy-link {
+        font-size: 0.8rem;
+    }
+
+    .bottom-bar {
+        padding: 0 16px;
+    }
+}

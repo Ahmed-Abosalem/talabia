@@ -45,24 +45,40 @@ function safeDeleteProductImages(images) {
 
 // GET /api/admin/products
 export const getAdminProducts = asyncHandler(async (req, res) => {
-  const { status, storeId, search } = req.query;
+  const { status, storeId, search, featured } = req.query;
+
+  // ✅ إضافة باراميترات الصفحات (Pagination)
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 20; // 20 منتج في الصفحة افتراضياً
+  const skip = (page - 1) * limit;
 
   const filter = {};
   if (status) filter.status = status;
   if (storeId) filter.store = storeId;
+  if (req.query.category) filter.category = req.query.category;
   if (search) {
     filter.name = { $regex: search, $options: "i" };
   }
 
-  // ✅ نستخدم lean() حتى تصبح النتيجة كائنات عادية،
-  // وبذلك يظهر الحقل المؤقت salesCount في JSON المرسل للفرونت.
+  // ✅ فلترة حسب التميز
+  if (featured === "true") {
+    filter.isFeatured = true;
+  } else if (featured === "false") {
+    filter.isFeatured = false;
+  }
+
+  // ✅ جلب إجمالي العدد للفلتر الحالي (قبل الـ Limit)
+  const totalCount = await Product.countDocuments(filter);
+
+  // ✅ جلب المنتجات مع الـ Pagination والترتيب
   const products = await Product.find(filter)
     .populate("store", "name")
     .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
     .lean();
 
-  // ✅ حساب عدد الوحدات المباعة لكل منتج (salesCount)
-  // نعتمد على الطلبات التي حالتها "تم التسليم" سواء بالكود الموحّد أو بالنص العربي القديم
+  // ✅ حساب عدد الوحدات المباعة لكل منتج في الصفحة الحالية فقط (تحسين أداء Aggregation)
   const productIds = products.map((p) => p._id);
 
   let salesMap = {};
@@ -70,15 +86,12 @@ export const getAdminProducts = asyncHandler(async (req, res) => {
   if (productIds.length > 0) {
     const deliveredCode = ORDER_STATUS_CODES?.DELIVERED;
 
-    // نجمع كل الاحتمالات في نفس الـ $or
     const matchStage = {
       "orderItems.product": { $in: productIds },
       $or: [
-        // حالة الكود الموحّد إن وُجد
         ...(deliveredCode
           ? [{ statusCode: deliveredCode }, { "orderItems.statusCode": deliveredCode }]
           : []),
-        // والحالة القديمة بالنص العربي
         { status: "تم التسليم" },
         { "orderItems.itemStatus": "تم التسليم" },
       ],
@@ -95,7 +108,6 @@ export const getAdminProducts = asyncHandler(async (req, res) => {
       {
         $group: {
           _id: "$orderItems.product",
-          // ✅ حماية: لو qty غير موجود نعتبره 0
           totalQty: { $sum: { $ifNull: ["$orderItems.qty", 0] } },
         },
       },
@@ -107,13 +119,18 @@ export const getAdminProducts = asyncHandler(async (req, res) => {
     }, {});
   }
 
-  // نحقن salesCount لكل منتج (ليصل إلى الفرونت مباشرة)
   products.forEach((p) => {
     const key = p._id.toString();
     p.salesCount = salesMap[key] || 0;
   });
 
-  res.json({ products });
+  // ✅ إرجاع البيانات مع معلومات الصفحات
+  res.json({
+    products,
+    page,
+    pages: Math.ceil(totalCount / limit),
+    totalCount
+  });
 });
 
 // GET /api/admin/products/:id/details
@@ -122,6 +139,8 @@ export const getAdminProductDetails = asyncHandler(async (req, res) => {
 
   const productDoc = await Product.findById(productId)
     .populate("store", "name")
+    .populate("seller", "name")
+    .populate("category", "name")
     .lean();
 
   if (!productDoc) {
@@ -160,6 +179,7 @@ export const getAdminProductDetails = asyncHandler(async (req, res) => {
 
   res.json({
     product: {
+      _id: id,
       id,
       name: productDoc.name,
       description: productDoc.description,
@@ -181,6 +201,11 @@ export const getAdminProductDetails = asyncHandler(async (req, res) => {
       adminControlLabel,
       ordersCount,
       favoritesCount,
+      addToCartCount: productDoc.addToCartCount || 0,
+      seller: productDoc.seller,
+      storeId: productDoc.store?._id || productDoc.store || null,
+      isFeatured: !!productDoc.isFeatured,
+      featuredOrder: productDoc.featuredOrder || 0,
       createdAt: productDoc.createdAt,
       updatedAt: productDoc.updatedAt,
     },
@@ -231,3 +256,58 @@ export const deleteProductAsAdmin = asyncHandler(async (req, res) => {
 
   res.json({ message: "تم حذف المنتج بنجاح." });
 });
+// PUT /api/admin/products/:id/feature-status
+export const updateProductFeatureStatus = asyncHandler(async (req, res) => {
+  const { isFeatured, featuredOrder } = req.body;
+  const product = await Product.findById(req.params.id);
+
+  if (!product) {
+    res.status(404);
+    throw new Error("المنتج غير موجود");
+  }
+
+  // ✅ منطق التفعيل / إلغاء التفعيل
+  if (isFeatured === true) {
+    // 1. تفعيل التميز
+    product.isFeatured = true;
+
+    // 2. التعامل مع الترتيب
+    if (typeof featuredOrder !== "undefined") {
+      // إذا تم إرسال رقم ترتيب، يجب أن يكون >= 1
+      const orderVal = Number(featuredOrder);
+      if (isNaN(orderVal) || orderVal < 1) {
+        res.status(400);
+        throw new Error("رقم الترتيب للمنتج المميز يجب أن يكون 1 أو أكثر.");
+      }
+      product.featuredOrder = orderVal;
+    } else {
+      // إذا لم يرسل ترتيب (تفعيل سريع)، نحسب الرقم التالي تلقائياً
+      // نأخذ أعلى featuredOrder موجود حالياً ونضيف 1
+      // ملاحظة: قد يحدث تكرار بسيط في حالات نادرة جداً من التزامن (Race Condition)
+      // لكنه مقبول هنا لأن النظام يعالج التساوي عبر finalSortScore
+      const lastFeatured = await Product.findOne({ isFeatured: true })
+        .sort({ featuredOrder: -1 })
+        .select("featuredOrder");
+
+      const maxOrder = lastFeatured?.featuredOrder || 0;
+      product.featuredOrder = maxOrder + 1;
+    }
+  } else {
+    // إلغاء التميز
+    product.isFeatured = false;
+    // تصفير الترتيب (قيمة مهملة)
+    product.featuredOrder = 0;
+  }
+
+  await product.save();
+
+  res.json({
+    _id: product._id,
+    isFeatured: product.isFeatured,
+    featuredOrder: product.featuredOrder,
+    message: product.isFeatured
+      ? `تم تمييز المنتج بنجاح (ترتيب: ${product.featuredOrder})`
+      : "تم إلغاء تمييز المنتج",
+  });
+});
+

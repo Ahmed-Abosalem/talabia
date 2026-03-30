@@ -7,7 +7,8 @@ import { useApp } from "@/context/AppContext";
 import MenuDropdown from "./MenuDropdown";
 import SearchBar from "@/components/SearchBar";
 import "./Navbar.css";
-import logo from "../../assets/logo.png";
+import logo from "@/assets/logo.png";
+import { CartPage, WishlistPage, NotificationsPage } from "@/router";
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -29,12 +30,10 @@ export default function Navbar() {
     effectiveRole === "seller"
       ? "لوحة تحكم البائع"
       : effectiveRole === "admin"
-      ? "لوحة تحكم المدير"
-      : effectiveRole === "shipping_company" ||
-        effectiveRole === "shipper" ||
-        effectiveRole === "shipping"
-      ? "لوحة تحكم شركة الشحن"
-      : null;
+        ? "لوحة تحكم المدير"
+        : effectiveRole === "shipper"
+          ? "لوحة تحكم شركة الشحن"
+          : null;
 
   // =========================
   // ✅ منطق البحث (إضافة فقط)
@@ -108,9 +107,11 @@ export default function Navbar() {
         <div className="navbar-left">
           <button
             type="button"
-            className="navbar-icon-button navbar-menu-button"
+            className={`navbar-icon-button navbar-menu-button ${menuOpen ? "is-active" : ""
+              }`}
             onClick={() => setMenuOpen((prev) => !prev)}
             aria-label="فتح القائمة"
+            aria-expanded={menuOpen}
           >
             <span className="navbar-menu-line" />
             <span className="navbar-menu-line" />
@@ -119,10 +120,10 @@ export default function Navbar() {
 
           <div className="navbar-logo">
             <img
-  src={logo}
-  alt="Talabia"
-  style={{ height: 44, width: "auto", display: "block", objectFit: "contain" }}
-/>
+              src={logo}
+              alt="Talabia"
+              className="navbar-logo-img"
+            />
 
           </div>
         </div>
@@ -150,8 +151,9 @@ export default function Navbar() {
           {showShopArea && (
             <button
               type="button"
-              className="navbar-icon-button"
+              className="navbar-icon-button navbar-icon-button--cart"
               onClick={handleCartClick}
+              onMouseEnter={() => CartPage.preload()}
               aria-label="السلة"
             >
               <span className="navbar-icon">
@@ -169,8 +171,9 @@ export default function Navbar() {
           {showShopArea && (
             <button
               type="button"
-              className="navbar-icon-button"
+              className="navbar-icon-button navbar-icon-button--wishlist"
               onClick={handleWishlistClick}
+              onMouseEnter={() => WishlistPage.preload()}
               aria-label="المفضلة"
             >
               <span className="navbar-icon">
@@ -189,6 +192,7 @@ export default function Navbar() {
             type="button"
             className="navbar-icon-button"
             onClick={handleNotificationsClick}
+            onMouseEnter={() => NotificationsPage.preload()}
             aria-label="الإشعارات"
           >
             <span className="navbar-icon">

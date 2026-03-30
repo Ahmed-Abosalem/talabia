@@ -17,6 +17,7 @@ export const PERMISSION_GROUP_KEYS = [
   'notifications',
   'support',
   'admins',
+  'payment',   // ✅ إدارة خيارات الدفع
 ];
 
 export const PERMISSION_LEVELS = ['none', 'view', 'partial', 'full'];

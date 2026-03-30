@@ -1,9 +1,11 @@
 // src/components/ProductCard/ProductCard.jsx
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, ShoppingCart, Share2, Check } from "lucide-react";
+import { Heart, ShoppingCart, Share2, Check, Trash2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import userService from "@/services/userService";
+import { formatCurrency } from "@/utils/formatters";
+import SafeImage from "@/components/SafeImage";
 import "./ProductCard.css";
 
 // ✅ توحيد رابط صورة المنتج بشكل إنتاجي نهائي
@@ -39,10 +41,29 @@ const resolveProductImageSrc = (src) => {
   return "/uploads" + normalized;
 };
 
-export default function ProductCard({ product }) {
+const ProductCard = memo(({
+  product,
+  selectable = false,
+  selected = false,
+  onSelect,
+  showRemove = false,
+  onRemove,
+}) => {
   const navigate = useNavigate();
 
-  const { id, name, description, price, image } = product;
+  const {
+    id,
+    name,
+    description,
+    price,
+    image,
+    oldPrice,
+    status,
+    inOffer,
+    stock,
+    isActive,
+  } = product;
+
   const {
     isInCart,
     isInWishlist,
@@ -55,6 +76,9 @@ export default function ProductCard({ product }) {
 
   const inCart = isInCart(id);
   const inWishlist = isInWishlist(id);
+  const isOutOfStock = stock <= 0 || isActive === false || status === "inactive";
+  const isUnavailable = isOutOfStock; // توحيد المسمى للتوافق مع التنسيقات الموجودة
+  const showDiscount = (inOffer || (oldPrice && oldPrice > price));
 
   const handleCardClick = () => {
     navigate(`/products/${id}`);
@@ -62,6 +86,7 @@ export default function ProductCard({ product }) {
 
   const handleCartClick = (event) => {
     event.stopPropagation();
+    if (isUnavailable) return;
     toggleCartItem(product);
 
     if (inCart) {
@@ -113,23 +138,74 @@ export default function ProductCard({ product }) {
     }
   };
 
+  const handleRemoveClick = (event) => {
+    event.stopPropagation();
+    onRemove?.(id);
+  };
+
+  const handleCheckboxClick = (event) => {
+    event.stopPropagation();
+    onSelect?.(id);
+  };
+
   const imageSrc = resolveProductImageSrc(image);
 
   return (
-    <article className="product-card" onClick={handleCardClick}>
+    <article
+      className={`product-card ${isUnavailable ? "unavailable" : ""} ${selected ? "selected" : ""
+        } ${selectable ? "selectable" : ""}`}
+      onClick={handleCardClick}
+    >
       <div className="product-image-wrapper">
-        <img src={imageSrc} alt={name} className="product-image" />
+        <SafeImage src={imageSrc} alt={name} className="product-image" />
         <div className="product-image-overlay" />
+
+        {/* Top Badges & Actions Area */}
+        <div className="product-badge-actions">
+          {/* Left Side: Selection Checkbox */}
+          <div className="product-actions-left">
+            {selectable && (
+              <div className={`product-checkbox ${selected ? "checked" : ""}`} onClick={handleCheckboxClick}>
+                {selected && <Check size={14} />}
+              </div>
+            )}
+          </div>
+
+          {/* Center: Badges */}
+          <div className="product-badges-center">
+            {isOutOfStock && <span className="product-badge-soldout">نفذت الكمية</span>}
+            {showDiscount && !isOutOfStock && <span className="product-badge-offer">عرض</span>}
+          </div>
+
+          {/* Right Side: Remove Icon */}
+          <div className="product-actions-right">
+            {showRemove && (
+              <button
+                type="button"
+                className="product-remove-icon"
+                onClick={handleRemoveClick}
+                aria-label="حذف من المفضلة"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="product-content">
         <h3 className="product-name">{name}</h3>
-        <p className="product-description">{description}</p>
+        <p className="product-description">{description || "\u00A0"}</p>
 
         <div className="product-price-row">
           <span className="product-price">
-            {price.toLocaleString("ar-SA")} ر.ي
+            {formatCurrency(price)}
           </span>
+          {showDiscount && oldPrice && (
+            <span className="product-old-price">
+              {formatCurrency(oldPrice)}
+            </span>
+          )}
         </div>
 
         <div className="product-divider" />
@@ -155,6 +231,7 @@ export default function ProductCard({ product }) {
             }
             aria-label={inCart ? "إزالة من السلة" : "إضافة إلى السلة"}
             onClick={handleCartClick}
+            disabled={isUnavailable}
           >
             {inCart ? <Check size={18} /> : <ShoppingCart size={18} />}
           </button>
@@ -174,4 +251,6 @@ export default function ProductCard({ product }) {
       </div>
     </article>
   );
-}
+});
+
+export default ProductCard;

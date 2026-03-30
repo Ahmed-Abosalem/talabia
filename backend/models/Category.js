@@ -20,6 +20,7 @@ const categorySchema = new mongoose.Schema(
       type: String,
       trim: true,
       lowercase: true,
+      index: true,
     },
 
     description: {
@@ -44,6 +45,12 @@ const categorySchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+
+    // 🛡️ قسم محمي (مثل "الكل") لا يمكن حذفه
+    isProtected: {
+      type: Boolean,
+      default: false,
     },
 
     // 💰 نسبة عمولة المنصة على هذا القسم

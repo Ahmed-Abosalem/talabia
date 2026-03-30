@@ -1,25 +1,22 @@
-// backend/routes/reviewRoutes.js
-// ────────────────────────────────────────────────
-// ✅ Reviews Routes (Talabia)
-// - GET  /api/reviews/product/:productId
-// - POST /api/reviews/product/:productId  (buyer فقط + بعد DELIVERED)
-// ────────────────────────────────────────────────
-
 import express from "express";
-
-import { protect } from "../middleware/authMiddleware.js";
-import { allowRoles } from "../middleware/roleMiddleware.js";
 import {
   getProductReviews,
   createProductReview,
+  updateProductReview,
 } from "../controllers/reviewController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { allowRoles } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-// عرض تقييمات منتج (عام)
+// Public: Get reviews
 router.get("/product/:productId", getProductReviews);
 
-// إضافة تقييم (مشتري فقط)
-router.post("/product/:productId", protect, allowRoles("buyer"), createProductReview);
+// Private: Create review (Buyer only)
+// Note: Changed from /product/:productId to / to support unified body payload
+router.post("/", protect, allowRoles("buyer"), createProductReview);
+
+// Private: Update review (Owner only)
+router.put("/:id", protect, updateProductReview);
 
 export default router;

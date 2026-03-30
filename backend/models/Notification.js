@@ -24,7 +24,7 @@ const notificationSchema = new mongoose.Schema(
     // all / buyers / sellers / shipping
     audience: {
       type: String,
-      enum: ['all', 'buyers', 'sellers', 'shipping'],
+      enum: ['all', 'buyers', 'sellers', 'shipper'],
       default: undefined,
     },
 
@@ -58,6 +58,10 @@ const notificationSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// فهارس استعلامات شائعة لتحسين الأداء عند تضخم البيانات
+notificationSchema.index({ audience: 1, createdAt: -1 });
+notificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });
 
 const Notification = mongoose.model('Notification', notificationSchema);
 

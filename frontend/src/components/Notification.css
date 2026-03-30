@@ -2,7 +2,7 @@
   position: fixed;
   top: 4rem;
   inset-inline-end: 1rem;
-  z-index: 50;
+  z-index: 2000;
 }
 
 .toast-card {

@@ -103,6 +103,36 @@ const productSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // ✅ نظام الترتيب والتميز الإداري (Smart Ranking)
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+    featuredOrder: {
+      type: Number,
+      default: 0,
+    },
+
+    // 📈 مقاييس الأداء (Performance Metrics)
+    viewsCount: {
+      type: Number,
+      default: 0,
+    },
+    salesCount: {
+      type: Number,
+      default: 0,
+    },
+    addToCartCount: {
+      type: Number,
+      default: 0,
+    },
+
+    // ⚡ حقل مخزن (Cached) لسرعة الترتيب
+    performanceScore: {
+      type: Number,
+      default: 0,
+    },
+
     // ✅ حالة نصية للمنتج ("active" / "inactive")
     status: {
       type: String,
@@ -122,11 +152,117 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // 🛡️ نظام المخزون الديناميكي
+    lowStockThreshold: {
+      type: Number,
+      default: 2,
+      min: [0, 'حد التنبيه لا يمكن أن يكون سالباً'],
+    },
+    lowStockNotified: {
+      type: Boolean,
+      default: false,
+    },
+    autoDeactivated: {
+      type: Boolean,
+      default: false,
+    },
+
+    // 🔍 حقول البحث المتقدم (New Search System)
+    // يتم تعبئتها تلقائياً عبر pre-save hook
+    search_text: {
+      type: String,
+      trim: true,
+      select: false, // لا نريد إرجاعها في الاستعلامات العادية
+    },
+    keywords: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
   },
   {
     timestamps: true,
   }
 );
+
+// ────────────────────────────────────────────────
+// ⚡ الفهارس (Indexes)
+// ────────────────────────────────────────────────
+
+// 1. الفهرس النصي المتقدم (يغطي الاسم، الوصف، الكلمات المفتاحية، الماركة)
+productSchema.index(
+  {
+    name: 'text',
+    search_text: 'text',
+    keywords: 'text',
+    brand: 'text',
+    description: 'text',
+  },
+  {
+    weights: {
+      name: 10,         // الاسم هو الأهم
+      search_text: 8,   // النص المعالج يأتي ثانياً
+      keywords: 6,      // الكلمات المفتاحية (والمرادفات)
+      brand: 5,         // الماركة
+      description: 2,   // الوصف (أقل أهمية)
+    },
+    name: 'AdvancedProductSearchIndex',
+    default_language: 'none', // لتعطيل الـ Stemming الافتراضي غير المناسب للعربية
+  }
+);
+
+// 2. فهرس للحقول التي نستخدمها في الفلترة مع البحث
+productSchema.index({ status: 1, isActive: 1, stock: 1 });
+productSchema.index({ category: 1 });
+productSchema.index({ finalSortScore: -1 });
+
+// ⚡ 3. فهارس متقدمة لمحرك التوصيات (Enterprise Recommendation Indexes)
+// تحسين أداء البحث عن المنتجات المشابهة (Similar Products)
+productSchema.index({ isActive: 1, adminLocked: 1, category: 1, price: 1, rating: 1, stock: 1 });
+// تحسين أداء البحث عن منتجات نفس المتجر (Store Synergy)
+productSchema.index({ isActive: 1, adminLocked: 1, store: 1, stock: 1 });
+// تحسين أداء البحث عن المنتجات الأكثر مبيعاً في القسم (Trending)
+productSchema.index({ isActive: 1, adminLocked: 1, category: 1, salesCount: -1 });
+
+// ────────────────────────────────────────────────
+// 🎣 Hooks (Pre-save)
+// ────────────────────────────────────────────────
+import { processText } from '../utils/textProcessor.js';
+
+productSchema.pre('save', function (next) {
+  // تحديث حقل البحث فقط إذا تغيرت الحقول المؤثرة
+  if (
+    this.isModified('name') ||
+    this.isModified('description') ||
+    this.isModified('brand') ||
+    this.isModified('category') ||
+    this.isModified('unitLabel')
+  ) {
+    // تجميع النص الخام من كل الحقول المهمة
+    const rawTextParts = [
+      this.name,
+      this.brand,
+      // يمكن إضافة اسم التصنيف هنا إذا كان متوفراً (غالباً ObjectId، لذا نعتمد على الـ tokens للحظة)
+      this.description,
+      this.unitLabel
+    ].filter(Boolean);
+
+    const fullText = rawTextParts.join(' ');
+
+    // معالجة النص باستخدام الـ Utility الخاصة بنا
+    const { normalized, tokens } = processText(fullText);
+
+    this.search_text = normalized;
+
+    // يمكننا تخزين التوكنز ككلمات مفتاحية إضافية إذا أردنا
+    // لكن حالياً نكتفي بتخزينها في search_text للبحث
+    // ونترك keywords للإدخال اليدوي أو المرادفات
+  }
+
+  next();
+});
 
 // ✅ إنشاء النموذج
 const Product = mongoose.model('Product', productSchema);

@@ -71,6 +71,9 @@ export const errorHandler = (err, req, res, next) => {
 
   const isProd = process.env.NODE_ENV === "production";
 
+  // ✅ طباعة الخطأ في console للتشخيص
+  console.error("❌ Error:", err?.message, err?.stack);
+
   // ✅ في الإنتاج: لا تعرض تفاصيل حساسة عند أخطاء السيرفر (5xx)
   const safeMessage =
     isProd && statusCode >= 500

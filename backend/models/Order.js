@@ -88,6 +88,13 @@ const orderItemSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
+    // 🔢 رقم العنصر التسلسلي (مثال: 789546I1)
+    itemNumber: {
+      type: String,
+      unique: true,
+      sparse: true, // للسماح بالقيم null للمستندات القديمة
+    },
   },
   {
     _id: true,
@@ -98,6 +105,13 @@ const orderItemSchema = new mongoose.Schema(
 // 📦 مخطط الطلب (Order Schema)
 const orderSchema = new mongoose.Schema(
   {
+    // 🔢 رقم الطلب الأساسي (مثال: 789546)
+    orderNumber: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+
     // 👤 المشتري
     buyer: {
       type: mongoose.Schema.Types.ObjectId,
@@ -142,6 +156,9 @@ const orderSchema = new mongoose.Schema(
       // الحي / المنطقة
       district: { type: String },
 
+      // الحي
+      neighborhood: { type: String },
+
       street: { type: String, required: true },
 
       // تفاصيل إضافية (مثل رقم العمارة / الشقة ...)
@@ -153,7 +170,7 @@ const orderSchema = new mongoose.Schema(
     // 💳 طريقة الدفع
     paymentMethod: {
       type: String,
-      enum: ["COD", "Online"],
+      enum: ["COD", "Online", "Wallet"],
       default: "COD",
     },
 
@@ -166,8 +183,18 @@ const orderSchema = new mongoose.Schema(
     },
 
     // 🏦 بيانات الحوالة البنكية (تُستخدم فقط إذا paymentSubMethod = BANK_TRANSFER)
-    bankTransferSenderName: { type: String },
-    bankTransferReferenceNumber: { type: String },
+    bankTransferSenderName: { type: String, trim: true },
+    bankTransferReferenceNumber: { type: String, trim: true },
+
+    // ✅ حالة تأكيد الحوالة البنكية (يُحدَّث من الأدمن)
+    // pending   → بانتظار التحقق
+    // confirmed → تم التحقق من الحوالة وقبولها
+    // rejected  → الحوالة مرفوضة
+    bankTransferStatus: {
+      type: String,
+      enum: ["pending", "confirmed", "rejected"],
+      default: "pending",
+    },
 
     // 💰 إجمالي السعر للطلب بالكامل (منتجات + شحن)
     totalPrice: {
@@ -208,6 +235,7 @@ const orderSchema = new mongoose.Schema(
         "on_the_way",
         "delivered",
         "cancelled_shipping",
+        "cancelled_ship",
       ],
       default: "pending_pickup",
     },
@@ -247,6 +275,35 @@ const orderSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// 🔒 توليد أرقام الطلبات والعناصر تلقائياً قبل الحفظ
+orderSchema.pre("save", async function (next) {
+  // 1. توليد رقم الطلب الأساسي إذا لم يكن موجوداً
+  if (!this.orderNumber) {
+    // توليد رقم عشوائي فريد (6 أرقام كمثال)
+    // ملاحظة: في الأنظمة الكبيرة نستخدم عداد تسلسلي أو مكتبة مثل nanoid
+    this.orderNumber = Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  // 2. توليد أرقام العناصر التسلسلية (789546I1, 789546I2...)
+  if (this.orderItems && this.orderItems.length > 0) {
+    this.orderItems.forEach((item, index) => {
+      if (!item.itemNumber) {
+        item.itemNumber = `${this.orderNumber}I${index + 1}`;
+      }
+    });
+  }
+
+  next();
+});
+
+// ✅ Indexes لتسريع الاستعلامات
+// 1. استعلام سجل الحوالات البنكية في لوحة الأدمن
+orderSchema.index({ paymentSubMethod: 1, createdAt: -1 });
+// 2. استعلام طلبات مشتري محدد مرتبة بالتاريخ
+orderSchema.index({ buyer: 1, createdAt: -1 });
+// 3. استعلام طلبات بائع محدد
+orderSchema.index({ seller: 1, createdAt: -1 });
 
 // ✅ إنشاء النموذج
 const Order = mongoose.model("Order", orderSchema);

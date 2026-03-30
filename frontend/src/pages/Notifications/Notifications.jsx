@@ -3,12 +3,13 @@
 import "./Notifications.css";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Package, Truck, Tag, ShieldCheck } from "lucide-react";
+import { Bell, Package, Truck, Tag, ShieldCheck, ArrowRight, MessageSquare, CheckCheck } from "lucide-react";
 import {
   listNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
 } from "@/services/notificationService";
+import { formatDate } from "@/utils/formatters";
 import { useApp } from "@/context/AppContext";
 
 const FILTERS = [
@@ -38,18 +39,7 @@ function mapTypeToCategory(type) {
 }
 
 // 🕒 تنسيق الوقت ليعرض بشكل بسيط للمستخدم
-function buildTimeLabel(createdAt) {
-  if (!createdAt) return "";
-  try {
-    const date = new Date(createdAt);
-    return date.toLocaleString("ar-SA", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return "";
-  }
-}
+
 
 // 🧩 تحويل الإشعار القادم من الباك إند إلى الشكل المستخدم في الواجهة
 function mapNotificationFromApi(n) {
@@ -59,7 +49,7 @@ function mapNotificationFromApi(n) {
     category,
     title: n.title || "",
     message: n.message || "",
-    timeLabel: buildTimeLabel(n.createdAt),
+    timeLabel: formatDate(n.createdAt),
     isRead: !!n.isRead,
     link: n.link || "",
   };
@@ -76,7 +66,7 @@ function getCategoryIcon(category) {
     case "system":
       return ShieldCheck;
     case "support": // ✅ جديد: أيقونة للدعم الفني
-      return ShieldCheck;
+      return MessageSquare;
     default:
       return Bell;
   }
@@ -206,174 +196,138 @@ export default function Notifications() {
   };
 
   return (
-    <div className="page-container notifications-page">
-      {/* هيرو علوي بسيط مع تدرج لوني وأيقونة كبيرة */}
-      <section className="notifications-hero">
-        <div className="notifications-hero-main">
-          <div className="notifications-hero-icon-wrapper">
-            <div className="notifications-hero-icon">
-              <Bell size={24} />
-            </div>
+    <div className="adm-page-root notifications-page">
+      <header className="adm-header">
+        <div className="adm-header-inner">
+          <div className="adm-header-right">
+            <button onClick={() => navigate("/")} className="adm-btn-back" title="العودة للتسوق">
+              <ArrowRight size={20} />
+            </button>
+            <h1 className="adm-page-title buyer-page-title">
+              <Bell size={24} className="notifications-header-icon" />
+              <span>الإشعارات</span>
+            </h1>
           </div>
-          <div className="notifications-hero-text">
-            <h1>الإشعارات</h1>
-            <p>عرض بسيط ومنظم لكل ما يحدث لحسابك وطلباتك في طلبية.</p>
-          </div>
-        </div>
-
-        <div className="notifications-hero-meta">
-          <div className="notifications-hero-badge">
-            <span className="notifications-hero-badge-dot" />
-            <span>
+          <div className="notifications-unread-banner">
+            <span className="pulse-dot-orange"></span>
+            <span className="unread-text">
               {isLoading
-                ? "جاري تحميل الإشعارات..."
+                ? "جاري التحميل..."
                 : unreadCount > 0
-                ? `${unreadCount} إشعار جديد في انتظارك`
-                : "كل الإشعارات مقروءة"}
+                  ? `لديك ${unreadCount} إشعارات غير مقروءة`
+                  : "كل الإشعارات مقروءة"}
             </span>
           </div>
-
-          {!isLoading && unreadCount > 0 && (
-            <button
-              type="button"
-              className="notifications-hero-btn"
-              onClick={handleMarkAllAsRead}
-            >
-              وضع الكل كمقروء
-            </button>
-          )}
+          <div className="adm-header-left">
+            {!isLoading && unreadCount > 0 && (
+              <button
+                type="button"
+                className="header-action-btn mark-read-btn"
+                onClick={handleMarkAllAsRead}
+              >
+                <CheckCheck size={18} />
+                <span>وضع المقروء</span>
+              </button>
+            )}
+          </div>
         </div>
-      </section>
+      </header>
 
-      {/* كرت الفلاتر + قائمة الإشعارات */}
-      <section className="notifications-surface">
-        {/* شريط الفلاتر داخل كرت خفيف */}
-        <div className="notifications-filters-row">
-          {FILTERS.map((filter) => (
-            <button
-              key={filter.id}
-              type="button"
-              className={
-                "notifications-filter-chip" +
-                (activeFilter === filter.id ? " is-active" : "")
-              }
-              onClick={() => setActiveFilter(filter.id)}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
+      <div className="adm-main-container">
+        <main className="adm-details-grid">
+          {/* Filters Card */}
+          <section className="adm-card span-12">
+            <div className="adm-card-header">
+              <Tag size={20} />
+              <h2>خيارات العرض والفلترة</h2>
+            </div>
+            <div className="adm-card-body">
+              <div className="buyer-filter-row">
+                <span className="filter-label">فلتر النوع:</span>
+                <select
+                  className="adm-form-select"
+                  value={activeFilter}
+                  onChange={(e) => setActiveFilter(e.target.value)}
+                >
+                  {FILTERS.map((f) => (
+                    <option key={f.id} value={f.id}>{f.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </section>
 
-        {/* حالات التحميل / الخطأ / الفارغ / القائمة */}
-        {isLoading ? (
-          <div className="notifications-empty">
-            <div className="notifications-empty-icon">
-              <Bell size={26} />
-            </div>
-            <h2 className="notifications-empty-title">
-              جاري تحميل الإشعارات...
-            </h2>
-            <p className="notifications-empty-text">
-              يرجى الانتظار لحظات حتى يتم جلب أحدث التحديثات لحسابك.
-            </p>
-          </div>
-        ) : error ? (
-          <div className="notifications-empty">
-            <div className="notifications-empty-icon">
-              <Bell size={26} />
-            </div>
-            <h2 className="notifications-empty-title">
-              حدث خطأ أثناء تحميل الإشعارات
-            </h2>
-            <p className="notifications-empty-text">{error}</p>
-          </div>
-        ) : filteredNotifications.length === 0 ? (
-          <div className="notifications-empty">
-            <div className="notifications-empty-icon">
-              <Bell size={26} />
-            </div>
-            <h2 className="notifications-empty-title">
-              لا توجد إشعارات في هذا القسم
-            </h2>
-            <p className="notifications-empty-text">
-              سيتم عرض أي تحديث جديد يخص طلباتك أو حسابك هنا بشكل تلقائي.
-            </p>
-          </div>
-        ) : (
-          <div className="notifications-list">
-            {filteredNotifications.map((notification, index) => {
-              const Icon = getCategoryIcon(notification.category);
-              const categoryLabel = getCategoryLabel(notification.category);
-              const isLast = index === filteredNotifications.length - 1;
+          <div className="span-12">
+            {/* حالات التحميل / الخطأ / الفارغ / القائمة */}
+            {isLoading ? (
+              <div className="adm-empty-center notifications-empty">
+                <div className="empty-icon-wrap">
+                  <Bell size={48} className="spin" />
+                </div>
+                <h3>جاري التحميل...</h3>
+                <p>يرجى الانتظار لحظات حتى يتم جلب أحدث التحديثات لحسابك.</p>
+              </div>
+            ) : error ? (
+              <div className="adm-empty-center notifications-empty">
+                <div className="empty-icon-wrap">
+                  <Bell size={48} />
+                </div>
+                <h3>حدث خطأ</h3>
+                <p>{error}</p>
+              </div>
+            ) : filteredNotifications.length === 0 ? (
+              <div className="adm-empty-center notifications-empty">
+                <div className="empty-icon-wrap">
+                  <Bell size={48} />
+                </div>
+                <h3>لا توجد إشعارات</h3>
+                <p>سيتم عرض أي تحديث جديد يخص طلباتك أو حسابك هنا بشكل تلقائي.</p>
+              </div>
+            ) : (
+              <div className="notifications-grid-flow">
+                {filteredNotifications.map((notification) => {
+                  const Icon = getCategoryIcon(notification.category);
+                  const categoryLabel = getCategoryLabel(notification.category);
 
-              return (
-                <div key={notification.id} className="notifications-row">
-                  {/* خط زمني رأسي بسيط */}
-                  <div className="notifications-timeline">
-                    <span
+                  return (
+                    <article
+                      key={notification.id}
                       className={
-                        "notifications-timeline-dot" +
+                        "adm-card notification-card" +
                         (notification.isRead ? " is-read" : " is-unread")
                       }
-                    />
-                    {!isLast && (
-                      <span className="notifications-timeline-line" />
-                    )}
-                  </div>
-
-                  {/* بطاقة الإشعار */}
-                  <article
-                    className={
-                      "notification-card" +
-                      (notification.isRead ? " is-read" : " is-unread")
-                    }
-                    onClick={() => handleCardClick(notification)}
-                  >
-                    <div
-                      className={
-                        "notification-icon-wrapper notification-icon-" +
-                        notification.category
-                      }
+                      onClick={() => handleCardClick(notification)}
                     >
-                      <Icon size={18} />
-                    </div>
-
-                    <div className="notification-content">
-                      <div className="notification-row-top">
-                        <h3 className="notification-title">
-                          {notification.title}
-                        </h3>
-                        <span className="notification-time">
-                          {notification.timeLabel}
-                        </span>
+                      {/* Column 1: Icon Box */}
+                      <div className="notification-col-icon">
+                        <div className={`notification-icon-wrapper notification-icon-${notification.category}`}>
+                          <Icon size={24} />
+                          {!notification.isRead && <span className="unread-dot-fixed"></span>}
+                        </div>
                       </div>
 
-                      <p className="notification-message">
-                        {notification.message}
-                      </p>
+                      {/* Column 2: Content */}
+                      <div className="notification-col-content">
+                        <h3 className="notification-title">{notification.title}</h3>
+                        <p className="notification-message">{notification.message}</p>
+                      </div>
 
-                      <div className="notification-row-bottom">
-                        <span
-                          className={
-                            "notification-pill notification-pill-" +
-                            notification.category
-                          }
-                        >
+                      {/* Column 3: Meta Info */}
+                      <div className="notification-col-meta">
+                        <div className="notification-time-display">{notification.timeLabel}</div>
+                        <div className={`notification-pill-display notification-pill-${notification.category}`}>
                           {categoryLabel}
-                        </span>
-
-                        {!notification.isRead && (
-                          <span className="notification-new-dot">جديد</span>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                </div>
-              );
-            })}
+
+                    </article>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </section>
+        </main>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,130 @@
+/* AdminReportsSection.css — Refined for adm-* Design System */
+@import "../adm-shared.css";
+
+/* ── Reports Statistics ───────────────────────────── */
+.adm-reports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--sp-4);
+    margin-top: var(--sp-4);
+}
+
+/* ── Custom Chart Styling ──────────────────────────── */
+.adm-chart-container {
+    height: 300px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 30px 10px 10px;
+    background: linear-gradient(to bottom, var(--adm-bg) 0%, transparent 100%);
+    border-radius: var(--rad-md);
+    position: relative;
+    border-bottom: 2px solid var(--adm-border);
+}
+
+.adm-chart-bar-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    position: relative;
+}
+
+.adm-chart-bar {
+    width: 100%;
+    background: var(--adm-primary);
+    border-radius: var(--rad-sm) var(--rad-sm) 0 0;
+    transition: var(--transition-standard);
+    position: relative;
+    cursor: pointer;
+    opacity: 0.85;
+}
+
+.adm-chart-bar:hover {
+    opacity: 1;
+    filter: brightness(1.1);
+}
+
+.adm-chart-tooltip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--adm-text-main);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: var(--rad-md);
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition-fast);
+    pointer-events: none;
+    z-index: 10;
+    box-shadow: var(--shd-standard);
+}
+
+.adm-chart-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--adm-text-main);
+}
+
+.adm-chart-bar:hover .adm-chart-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.adm-chart-label {
+    margin-top: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--adm-text-muted);
+    transform: rotate(-30deg);
+    white-space: nowrap;
+}
+
+/* ── Section Grid ─────────────────────────────────── */
+.adm-section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--sp-3);
+}
+
+@media (max-width: 768px) {
+    .adm-section-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .adm-chart-container {
+        height: 200px;
+        gap: 4px;
+    }
+
+    .adm-chart-label {
+        display: none;
+    }
+
+    /* 🛡️ Edge-to-Edge Safety Check Override */
+    .adm-section-panel {
+        padding: 0 !important;
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+    }
+
+    .adm-section-inner-header {
+        padding: var(--sp-2) !important;
+    }
+
+    .adm-toolbar {
+        padding: var(--sp-2) !important;
+    }
+}

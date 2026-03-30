@@ -2,22 +2,29 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <title>طلبية | Talabia</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#ffffff" />
+    <title>طلبية | متجر تسوق متعدد البائعين بأمان وسهولة وبأسعار تنافسية</title>
+    <meta name="description" content="متجر طلبية للتسوق من متاجر كثيرة ومتنوعة، بأمان، وسهولة، وبأسعار تنافسية، المنصة الرائدة للتجارة الإلكترونية متعدد البائعين، توفر لك تشكيلة كثيرة من المتاجر التي تعرض منتجات متميزة. استمتع بتجربة تسوق فريدة، دفع آمن، وخدمة توصيل سريعة." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    
+    <!-- Favicons for Browsers & Search Engines -->
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <meta name="theme-color" content="#a30000" />
+
+    <!-- Google Site Name & Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "طلبية | Talabia",
+        "alternateName": ["Talabia", "طلبية"],
+        "url": "https://talabia.net"
+      }
+    </script>
   </head>
   <body class="bg-slate-50">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", function () {
-          navigator.serviceWorker.register("/sw.js").catch(function () {});
-        });
-      }
-    </script>
   </body>
 </html>
 

@@ -24,9 +24,18 @@ import mongoose from "mongoose";
 import connectDB from "./config/db.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import { runUploadsCleanup } from "./utils/uploadsCleanup.js";
+import { protect } from "./middleware/authMiddleware.js";
+import { allowRoles } from "./middleware/roleMiddleware.js";
 
 // تحميل env (في الإنتاج ستأتي من Environment Variables، ووجود .env محلي فقط)
 dotenv.config();
+
+console.log("📂 Current Working Directory:", process.cwd());
+console.log("🔑 MONGO_URI Loaded:", process.env.MONGO_URI ? "✅ YES" : "❌ NO");
+if (process.env.MONGO_URI) {
+  console.log("ℹ️  MONGO_URI Length:", process.env.MONGO_URI.length);
+}
+
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -74,11 +83,32 @@ app.use(compression());
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000, // 15 دقيقة
-    max: 300, // 300 طلب لكل IP في 15 دقيقة
+    max: 3000, // 3000 طلب لكل IP في 15 دقيقة (لتجنب حظر المستخدمين المتفاعلين)
     standardHeaders: true,
     legacyHeaders: false,
+    // الحل الاحترافي: تخطي الحد للطلبات الموثوقة أو في بيئة التطوير المحلية
+    skip: (req) => {
+      if (!isProd && process.env.SKIP_RATE_LIMIT === "true") return true;
+      // يمكن إضافة استثناءات أخرى هنا (مثل IDs معينة)
+      return false;
+    },
+    message: {
+      status: 429,
+      message: "لقد تجاوزت حد الطلبات المسموح به. يرجى المحاولة لاحقاً بعد 15 دقيقة.",
+    },
   })
 );
+
+// 🔒 Rate Limit مخصص: إنشاء الطلبات فقط (منع spam)
+// يُطبَّق لاحقاً على: POST /api/orders فقط
+// ملاحظة: لا نستخدم keyGenerator مخصص — express-rate-limit يتعامل مع IPv6 تلقائياً
+const ordersCreateRateLimit = rateLimit({
+  windowMs: 60 * 1000,   // 1 دقيقة
+  max: 10,               // 10 طلبات كحد أقصى لكل IP في الدقيقة
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "طلبات كثيرة جداً. انتظر دقيقة ثم أعد المحاولة." },
+});
 
 // ────────────────────────────────────────────────
 // ⚙️ Body Parsers
@@ -110,10 +140,28 @@ if (isProd && allowedOrigins.length === 0) {
 app.use(
   cors({
     origin: (origin, callback) => {
-      // طلبات بدون Origin (مثل Postman / Server-to-server) نسمح بها
+      // 1. Allow non-browser requests (Postman, etc)
       if (!origin) return callback(null, true);
 
+      // 2. Strict whitelist check
       if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      // 3. Capacitor/Mobile App Support
+      const isCapacitor = origin === "capacitor://localhost" || origin === "http://localhost";
+      if (isCapacitor) return callback(null, true);
+
+      // 4. Dynamic Dev logic (Only if NOT in production)
+      if (!isProd) {
+        // Allow anything from localhost or common local IPs in dev mode for multi-device testing
+        const isLocalhost = origin.startsWith("http://localhost:");
+        const isLocalIp = /^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin);
+        const isLocalIpAlt = /^http:\/\/172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+(:\d+)?$/.test(origin);
+        const isLocalIpAlt2 = /^http:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/.test(origin);
+
+        if (isLocalhost || isLocalIp || isLocalIpAlt || isLocalIpAlt2) {
+          return callback(null, true);
+        }
+      }
 
       const err = new Error("Not allowed by CORS");
       err.statusCode = 403;
@@ -150,10 +198,13 @@ const __dirname = path.dirname(__filename);
 const uploadsRoot = path.join(__dirname, "uploads");
 const idsDir = path.join(uploadsRoot, "ids");
 
-// ✅ حماية حرجة: منع الوصول العام لوثائق الهوية
-app.use("/uploads/ids", (req, res) => {
-  return res.status(404).json({ message: "Not found" });
-});
+// ✅ حماية وثائق الهوية: السماح فقط للأدمن بالوصول (حماية خصوصية البائعين)
+app.use(
+  "/uploads/ids",
+  protect,
+  allowRoles("admin"),
+  express.static(idsDir)
+);
 
 // ✅ خدمة بقية الملفات المرفوعة مع Header يمنع حجب الصور عبر المتصفح
 app.use(
@@ -245,9 +296,28 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 // ✅ NEW: Reviews routes
 import reviewRoutes from "./routes/reviewRoutes.js";
 
+// ✅ NEW: Privacy Policy routes
+import privacyPolicyRoutes from "./routes/privacyPolicyRoutes.js";
+
+// ✅ NEW: Synonym routes (Search System)
+import synonymRoutes from "./routes/synonymRoutes.js";
+
+// ✅ NEW: System Settings
+import systemSettingsRoutes from "./routes/systemSettingsRoutes.js";
+
+// ✅ NEW: Payment Settings (public route — no auth required)
+import { getPaymentSettings } from "./controllers/admin/adminPaymentController.js";
+
+// ✅ NEW: Wallet routes (محفظتي)
+import walletRoutes from "./routes/walletRoutes.js";
+import adminWalletRoutes from "./routes/adminWalletRoutes.js";
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/products", productRoutes);
+// ✅ Orders — Rate Limit مخصص على إنشاء الطلبات فقط
+// GET /api/orders/* بدون قيد إضافي
+app.post("/api/orders", ordersCreateRateLimit, orderRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/stores", storeRoutes);
 app.use("/api/shipping", shippingRoutes);
@@ -260,6 +330,24 @@ app.use("/api/uploads", uploadRoutes);
 
 // ✅ NEW: mount reviews API
 app.use("/api/reviews", reviewRoutes);
+
+// ✅ NEW: mount privacy policy API
+app.use("/api/privacy-policy", privacyPolicyRoutes);
+
+// ✅ NEW: mount synonym API
+app.use("/api/synonyms", synonymRoutes);
+
+// ✅ NEW: mount wallet API (محفظتي — دور المشتري)
+app.use("/api/wallet", walletRoutes);
+
+// ✅ NEW: mount admin wallet management API (إدارة المحافظ — دور المدير)
+app.use("/api/admin/wallets", adminWalletRoutes);
+
+// ✅ NEW: System Settings (إعدادات عامة ومنها الحد الأدنى للطلب)
+app.use("/api/settings", systemSettingsRoutes);
+
+// ✅ NEW: إعدادات الدفع العامة (بدون توثيق — للمشترين في صفحة الدفع)
+app.get("/api/settings/payment", getPaymentSettings);
 
 // ────────────────────────────────────────────────
 // 🧪 Health
@@ -293,9 +381,9 @@ app.use(errorHandler);
 // ────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, "127.0.0.1", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ Server running on port ${PORT} (${process.env.NODE_ENV})`);
-  console.log(`📡 Version: 1.0.0 | ${new Date().toISOString()}`);
+  console.log(`📡 Accessible on all network interfaces (e.g., http://localhost:${PORT})`);
 });
 
 // ✅ Graceful shutdown

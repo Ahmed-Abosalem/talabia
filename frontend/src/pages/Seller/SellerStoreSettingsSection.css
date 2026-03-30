@@ -1,180 +1,251 @@
-/* frontend/src/pages/Seller/SellerStoreSettingsSection.css */
-/* تنسيقات تبويب "إعدادات المتجر" في لوحة البائع */
+/* Seller Store Settings - Modern Card Panel Layout */
 
-/* توسيط هيدر هذا التبويب فقط */
-.seller-section-header.seller-section-header--center {
+.seller-settings-panels {
   display: flex;
-  justify-content: center;
-  text-align: center;
-  margin-bottom: 1.1rem;
+  flex-direction: column;
+  gap: 2rem;
 }
 
-.seller-section-header.seller-section-header--center > div {
-  max-width: 520px;
-  margin: 0 auto;
-}
-
-.seller-section-header.seller-section-header--center h2 {
-  font-size: 1.08rem;
-}
-
-.seller-section-header.seller-section-header--center p {
-  margin-top: 0.3rem;
-  font-size: 0.8rem;
-  color: #6b7280;
-}
-
-/* الشبكة الأساسية للكروت */
 .seller-settings-grid {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1.3fr);
-  gap: 0.9rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
 }
 
-/* كروت عصرية بخلفية بيضاء وظل خفيف مشابه لأسلوب نظرة عامة */
-.seller-card {
-  border-radius: 0.9rem;
-  border: 1px solid #e5e7eb;
+/* Modern Card Style */
+.seller-modern-card {
   background: #ffffff;
-  padding: 0.9rem;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.03);
-  transition:
-    border-color 0.16s ease,
-    box-shadow 0.16s ease,
-    transform 0.12s ease;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--rad-md, 8px);
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
-.seller-card:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
-  transform: translateY(-1px);
+.seller-modern-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
 }
 
-/* توسيط عناوين البطاقات في هذا التبويب */
+.seller-modern-card.seller-card-full {
+  grid-column: span 2;
+}
+
 .seller-card-header {
-  text-align: center;
-  margin-bottom: 0.4rem;
+  padding: 1.5rem;
+  /* Artistic Background: Faded Brand Olive */
+  background: linear-gradient(to right, #f1f3e8, #fafbf7);
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.card-header-icon {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border-radius: var(--rad-md, 8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b502a;
+  box-shadow: 0 2px 8px rgba(75, 80, 42, 0.15);
+}
+
+/* Artistic Colors */
+.card-header-icon.identity {
+  background: #f1f3e8;
+  color: #4b502a;
+  box-shadow: 0 4px 12px rgba(75, 80, 42, 0.1);
+}
+
+.card-header-icon.contact {
+  background: #f1f3e8;
+  color: #4b502a;
+  box-shadow: 0 4px 12px rgba(75, 80, 42, 0.1);
+}
+
+.card-header-icon.location {
+  background: #fff7ed;
+  color: #ff7f00;
+  box-shadow: 0 4px 12px rgba(255, 127, 0, 0.15);
 }
 
 .seller-card-header h3 {
-  margin: 0 0 0.1rem;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #111827;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #4b502a;
+  /* Primary Color for Title */
+  margin: 0;
+}
+
+.seller-card-header p {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0.25rem 0 0 0;
 }
 
 .seller-card-body {
-  font-size: 0.8rem;
-  color: #4b5563;
+  padding: 1.5rem;
 }
 
-/* الحقول داخل الإعدادات */
-
-.seller-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.78rem;
-  margin-bottom: 0.6rem;
+/* Modern Fields */
+.seller-modern-field {
+  margin-bottom: 1.5rem;
 }
 
-.seller-field label {
-  font-weight: 600;
-  color: #374151;
-}
-
-.seller-field input,
-.seller-field select,
-.seller-field textarea {
-  border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
-  padding: 0.55rem 0.75rem;
-  font-size: 0.8rem;
-  outline: none;
-  background: #ffffff;
-  color: #111827;
-  transition:
-    border-color 0.16s ease,
-    box-shadow 0.16s ease,
-    background-color 0.16s ease;
-}
-
-.seller-field input:focus,
-.seller-field select:focus,
-.seller-field textarea:focus {
-  border-color: #0ea5e9;
-  box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.25);
-}
-
-/* ✅ شبكة العنوان داخل بطاقة البيانات الأساسية */
-.seller-address-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.6rem;
-  margin-top: 0.35rem;
-}
-
-.seller-field--compact {
-  margin-bottom: 0; /* داخل الشبكة */
-}
-
-.seller-field--full {
-  grid-column: span 2;
+.seller-modern-field:last-child {
   margin-bottom: 0;
 }
 
-/* قائمة الملاحظات */
-
-.seller-hint-list {
-  margin: 0.3rem 0 0;
-  padding-inline-start: 1rem;
-  font-size: 0.78rem;
-  color: #4b5563;
+.seller-modern-field label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
 }
 
-.seller-hint-list li {
-  margin-bottom: 0.15rem;
+.seller-modern-field input,
+.seller-modern-field textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: var(--rad-md, 8px);
+  font-size: 0.95rem;
+  color: #1e293b;
+  transition: all 0.2s ease;
 }
 
-/* كرت الملاحظة */
-
-.seller-card-info {
-  background: #f9fafb;
+.seller-modern-field input:focus,
+.seller-modern-field textarea:focus {
+  outline: none;
+  border-color: #4b502a;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(75, 80, 42, 0.1);
 }
 
-.seller-info-row {
+/* Address Grid */
+.seller-address-modern-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.seller-modern-field.field-full {
+  grid-column: span 2;
+}
+
+/* Info Box & Inline Footer */
+.seller-settings-form-footer {
   display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-  color: #4b5563;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1rem;
 }
 
-.seller-info-row svg {
-  margin-top: 0.1rem;
-  color: #0ea5e9;
-}
 
-/* زر الحفظ */
-
-.seller-settings-footer {
-  margin-top: 0.4rem;
+.seller-settings-info-box {
+  background: #f1f3e8;
+  border: 1px solid #d8dbbf;
+  border-radius: var(--rad-md, 8px);
+  padding: 1.25rem;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 1.25rem;
+  color: #4b502a;
 }
 
-/* Responsive */
+.seller-settings-info-box p {
+  font-size: 0.95rem;
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.5;
+}
 
-@media (max-width: 900px) {
+.seller-save-btn {
+  background: linear-gradient(135deg, #ff7f00, #ff9500);
+  color: white;
+  border: none;
+  padding: 1rem 3rem;
+  border-radius: var(--rad-md, 8px);
+  font-weight: 800;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(255, 127, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  align-self: flex-end;
+}
+
+.seller-save-btn:hover {
+  background: linear-gradient(135deg, #e67300, #ff7f00);
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(255, 127, 0, 0.35);
+}
+
+.seller-save-btn:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.seller-save-btn:disabled {
+  opacity: 0.6;
+  background: #cbd5e1;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 768px) {
+  .seller-settings-panels {
+    gap: 1rem;
+    padding-bottom: 2rem;
+  }
+
+  .seller-modern-card {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    margin-inline: 0 !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
   .seller-settings-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 
-  .seller-address-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .seller-field--full {
+  .seller-modern-card.seller-card-full {
     grid-column: span 1;
+  }
+
+  .seller-address-modern-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .seller-modern-field.field-full {
+    grid-column: span 1;
+  }
+
+  .seller-settings-form-footer {
+    padding: 0 1rem;
+  }
+
+  .seller-settings-info-box {
+    padding: 1rem;
+    gap: 1rem;
+    border-radius: var(--rad-md, 8px);
+  }
+
+  .seller-settings-info-box p {
+    font-size: 0.85rem;
+  }
+
+  .seller-save-btn {
+    width: 100%;
+    align-self: center;
+    border-radius: var(--rad-md, 8px);
   }
 }

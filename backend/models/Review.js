@@ -23,6 +23,18 @@ const reviewSchema = new mongoose.Schema(
       ref: 'Store',
       required: true,
     },
+
+    // 🔗 ربط التقييم بالطلب ومصدره العنصر المحدد
+    order: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Order',
+      required: true,
+    },
+    orderItem: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+
     rating: {
       type: Number,
       required: [true, 'التقييم مطلوب'],
@@ -32,7 +44,7 @@ const reviewSchema = new mongoose.Schema(
     comment: {
       type: String,
       trim: true,
-      maxlength: 500,
+      maxlength: 1000,
     },
     images: [
       {
@@ -43,6 +55,11 @@ const reviewSchema = new mongoose.Schema(
     isApproved: {
       type: Boolean,
       default: true,
+    },
+    // ✅ التحقق صارم: لا قيمة افتراضية True
+    isVerifiedPurchase: {
+      type: Boolean,
+      default: false,
     },
   },
   {

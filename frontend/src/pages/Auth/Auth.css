@@ -1,7 +1,93 @@
+/* s:\Talabia_new\frontend\src\pages\Auth\Auth.css */
+
+:root {
+  --primary-olive: #4b502a;
+  --secondary-orange: #ff7f00;
+  --error-red: #a30000;
+  --bg-light: #f8f9fa;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.4);
+}
+
 .auth-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-top: 3.5rem;
+  background: var(--bg-light);
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Glassmorphism Utility */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+/* Animations */
+@keyframes fadeInSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes meshGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeInSlideUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Typography Enhancements */
+.auth-title {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--primary-olive);
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+
+.auth-subtitle {
+  font-size: 1.1rem;
+  color: #6b7280;
+  line-height: 1.6;
 }

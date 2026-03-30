@@ -1,0 +1,185 @@
+/* AdminShippingScopePage.css */
+
+.admin-shipping-scope-page {
+    --rad-md: 8px;
+    /* Standard rect radius */
+    --rad-lg: 12px;
+    padding-bottom: 2rem;
+}
+
+.scope-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .scope-toolbar {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.scope-bulk-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* 💠 Seller Grid System */
+.shipping-scope-grid-container {
+    min-height: 400px;
+    background: #f8fafc;
+    border-radius: var(--rad-md);
+    border: 1px solid var(--adm-border);
+    padding: 1.5rem;
+}
+
+.shipping-scope-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+/* 🧊 Seller Card Design (Rectangle 8px) */
+.shipping-scope-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: white;
+    border: 1px solid var(--adm-border);
+    border-radius: var(--rad-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    user-select: none;
+}
+
+.shipping-scope-card:hover {
+    border-color: #4b502a;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.shipping-scope-card.active {
+    background: #f1f2ef;
+    border-color: #4b502a;
+}
+
+.card-check {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+    /* Rectangular check */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.shipping-scope-card.active .card-check {
+    background: #4b502a;
+    border-color: #4b502a;
+}
+
+.card-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.card-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--adm-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-owner {
+    font-size: 0.7rem;
+    color: var(--adm-text-muted);
+}
+
+/* ⌛ Loading & Empty States */
+.shipping-scope-loading,
+.shipping-scope-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    color: var(--adm-text-muted);
+    gap: 1rem;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 🦶 Footer Actions */
+.scope-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--adm-border);
+    margin-top: 1rem;
+}
+
+/* Search Input Tweaks for Admin Standard */
+.adm-search-wrapper {
+    position: relative;
+    flex: 1;
+    max-width: 400px;
+}
+
+.adm-search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--adm-text-muted);
+}
+
+.adm-search-input {
+    width: 100%;
+    padding: 10px 40px 10px 12px;
+    border: 1.5px solid var(--adm-border);
+    border-radius: var(--rad-md);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.adm-search-input:focus {
+    border-color: #ff7f00;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 127, 0, 0.1);
+}
+
+.clear-search-btn {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--adm-text-muted);
+    cursor: pointer;
+    padding: 4px;
+}

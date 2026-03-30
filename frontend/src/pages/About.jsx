@@ -1,103 +1,116 @@
-// frontend/src/pages/About.jsx
-
-import { ShieldCheck, Sparkles, TrendingUp, Store, ShoppingBag } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Shield, MousePointer2, TrendingUp, Store, User, Quote, ArrowRight, PhoneCall, Mail, Send } from "lucide-react";
 import "./About.css";
+import PremiumInput from "@/components/Auth/PremiumInput";
+import { useState } from "react";
 
 export default function AboutPage() {
+  const navigate = useNavigate();
+  const [newsletter, setNewsletter] = useState({ name: "", email: "" });
+
+  const handleNewsletterChange = (e) => {
+    const { name, value } = e.target;
+    setNewsletter(prev => ({ ...prev, [name]: value }));
+  };
+
   return (
-    <div className="page-container about-page">
-      {/* العنوان الرئيسي في أعلى الصفحة */}
-      <h1 className="about-page-title">من نحن</h1>
-
-      {/* قسم المقدمة (Intro) */}
-      <section className="about-section about-intro">
-        <h2 className="about-intro-title">
-          طلبية – سوق إلكتروني متعدد البائعين في مكان واحد
-        </h2>
-        <p className="about-intro-text">
-          منصة عربية حديثة تجمع البائعين والمشترين وشركات الشحن في تجربة واحدة
-          واضحة وبسيطة.
-        </p>
-      </section>
-
-      {/* قسم المزايا (Features) */}
-      <section className="about-section about-features">
-        <h2 className="about-section-heading">مزايا طلبية</h2>
-
-        <div className="about-features-row">
-          {/* ثقة ووضوح */}
-          <div className="about-feature-card">
-            <div className="about-feature-icon">
-              <ShieldCheck />
-            </div>
-            <div className="about-feature-content">
-              <h3 className="about-feature-title">ثقة ووضوح</h3>
-              <p className="about-feature-text">
-                سياسات واضحة، تتبع دقيق للطلبات، ونظام دفع آمن يضمن تجربة مريحة
-                وموثوقة للطرفين.
-              </p>
-            </div>
-          </div>
-
-          {/* سهولة الاستخدام */}
-          <div className="about-feature-card">
-            <div className="about-feature-icon">
-              <Sparkles />
-            </div>
-            <div className="about-feature-content">
-              <h3 className="about-feature-title">سهولة الاستخدام</h3>
-              <p className="about-feature-text">
-                واجهة عربية نظيفة وبسيطة، بدون خطوات معقدة، لتتمكن من إدارة متجرك
-                أو التسوق خلال دقائق.
-              </p>
-            </div>
-          </div>
-
-          {/* دعم النمو */}
-          <div className="about-feature-card">
-            <div className="about-feature-icon">
-              <TrendingUp />
-            </div>
-            <div className="about-feature-content">
-              <h3 className="about-feature-title">دعم النمو</h3>
-              <p className="about-feature-text">
-                تمكين البائعين للوصول إلى عملاء أكثر، وتوفير تنوّع أكبر من
-                المنتجات للمشترين في مكان واحد.
-              </p>
-            </div>
+    <div className="adm-page-root about-page">
+      <header className="adm-header">
+        <div className="adm-header-inner">
+          <div className="adm-header-right">
+            <button onClick={() => navigate("/")} className="adm-btn-back" title="العودة">
+              <ArrowRight size={20} />
+            </button>
+            <h1 className="adm-page-title">
+              <Store size={24} />
+              <span>من نحن</span>
+            </h1>
           </div>
         </div>
-      </section>
+      </header>
 
-      {/* قسم الرسالة (Mission) */}
-      <section className="about-mission">
-        <h2 className="about-section-heading">رسالتنا</h2>
-        <p className="about-mission-text">
-          تمكين التجارة الإلكترونية للجميع عبر منصة عصرية تربط المشتري والبائع
-          وشركات الشحن في تجربة متوازنة تهتم بالتفاصيل.
-        </p>
-      </section>
+      <div className="adm-main-container">
+        <main className="adm-details-grid">
+          {/* القسم الافتتاحي (Hero) */}
+          <section className="about-hero adm-card span-12">
+            <div className="about-hero-content">
+              <h2 className="about-hero-title">سوق إلكتروني مبتكر</h2>
+              <p className="about-hero-text">
+                نظام متكامل يجمع التاجر والمشتري وشركات الشحن في منصة واحدة تضمن السهولة والأمان والنمو للجميع.
+              </p>
+            </div>
+          </section>
 
-      {/* قسم الدعوة للانضمام (Call to Action) */}
-      <section className="about-cta">
-        <h2 className="about-cta-title">انضم إلى مجتمع طلبية اليوم</h2>
-        <p className="about-cta-text">
-          كن جزءًا من منظومة رقمية حديثة؛ كبائع توسّع من خلالها أعمالك، أو كمشتري
-          تحصل عبرها على تجربة تسوّق بسيطة وموثوقة.
-        </p>
+          {/* قسم المزايا (Features) */}
+          <section className="about-features-section span-12">
+            <div className="about-features-grid">
+              <article className="adm-card about-feature-card">
+                <div className="about-feature-icon-wrapper">
+                  <Shield size={32} />
+                </div>
+                <h3 className="about-feature-title">ثقة ووضوح</h3>
+                <p className="about-feature-text">
+                  سياسات واضحة، تتبع دقيق للطلبات، ونظام دفع آمن يضمن حقوق جميع الأطراف.
+                </p>
+              </article>
 
-        <div className="about-cta-actions">
-          <a href="/register?role=seller" className="about-btn about-btn-primary">
-            <Store className="about-btn-icon" />
-            <span>تسجيل بائع</span>
-          </a>
+              <article className="adm-card about-feature-card">
+                <div className="about-feature-icon-wrapper">
+                  <MousePointer2 size={32} />
+                </div>
+                <h3 className="about-feature-title">سهولة الاستخدام</h3>
+                <p className="about-feature-text">
+                  واجهة عربية عصرية تمكنك من إدارة متجرك أو التسوق بكل انسيابية وبدون تعقيدات.
+                </p>
+              </article>
 
-          <a href="/register?role=buyer" className="about-btn about-btn-secondary">
-            <ShoppingBag className="about-btn-icon" />
-            <span>تسجيل مشتري</span>
-          </a>
-        </div>
-      </section>
+              <article className="adm-card about-feature-card">
+                <div className="about-feature-icon-wrapper">
+                  <TrendingUp size={32} />
+                </div>
+                <h3 className="about-feature-title">دعم النمو</h3>
+                <p className="about-feature-text">
+                  نمكن البائعين من الوصول لجمهور أوسع، ونوفر للمشترين تنوعاً هائلاً بجودة عالية.
+                </p>
+              </article>
+            </div>
+          </section>
+
+          {/* قسم الرسالة (Mission) */}
+          <section className="adm-card about-mission-card span-12">
+            <div className="mission-quote-icon">
+              <Quote size={48} />
+            </div>
+            <h2 className="mission-title">رسالتنا</h2>
+            <p className="mission-text">
+              تمكين التجارة الإلكترونية عبر منصة عصرية تربط المشتري والبائع وشركات الشحن في تجربة
+              متكاملة تهتم بأدق التفاصيل لضمان التميز والرضا.
+            </p>
+          </section>
+
+          {/* قسم الدعوة للانضمام (Call to Action) */}
+          <section className="about-cta-section span-12">
+            <div className="about-cta-card">
+              <h2 className="cta-title">جاهز للبدء معنا؟</h2>
+              <p className="cta-text">
+                سواء كنت بائعاً طموحاً أو مشترياً يبحث عن الأفضل، مكانك هنا.
+              </p>
+
+              <div className="cta-actions">
+                <a href="/register?role=seller" className="adm-btn-mgmt primary">
+                  <Store size={18} />
+                  <span>ابدأ كبائع</span>
+                </a>
+
+                <a href="/register?role=buyer" className="adm-btn-mgmt outline">
+                  <User size={18} />
+                  <span>تسجيل مشتري</span>
+                </a>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

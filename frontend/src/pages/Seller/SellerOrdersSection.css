@@ -11,7 +11,7 @@
   font-size: 0.76rem;
   color: #4b5563;
   background: #f9fafb;
-  border-radius: 0.75rem;
+  border-radius: var(--rad-md, 8px);
   padding: 0.4rem 0.7rem;
   border: 1px dashed #e5e7eb;
 }
@@ -20,7 +20,7 @@
   border: none;
   background: none;
   font-size: 0.75rem;
-  color: #0ea5e9;
+  color: #ff7f00;
   cursor: pointer;
 }
 
@@ -33,19 +33,66 @@
 
 /* الكرت الخارجي */
 .seller-order-card {
-  border-radius: 1.4rem;
-  border: 1px solid #1d4ed8;
-  background: #edf4ff;
-  padding: 0.75rem 0.9rem 0.85rem;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--rad-md, 8px);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  transition: all 0.4s var(--platinum-ease);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.seller-order-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.12);
+  border-color: var(--brand-olive);
+}
+
+.seller-order-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 0;
+  background: var(--brand-olive, #4b502a);
+  transition: height 0.4s var(--platinum-ease);
+}
+
+.seller-order-card:hover::before {
+  height: 100%;
+}
+
+
+.seller-order-card:hover {
+  transform: translateY(-4px) scale(1.005);
+  box-shadow: 0 16px 32px rgba(75, 80, 42, 0.1);
+  border-color: #4b502a;
 }
 
 /* الشريط العلوي */
 .seller-order-header-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   gap: 0.6rem;
+  flex-wrap: wrap;
+  /* Mobile Default */
+  align-items: flex-start;
+  /* Mobile Default */
+  row-gap: 0.35rem;
+  /* Mobile Default */
+}
+
+@media (min-width: 640px) {
+  .seller-order-header-row {
+    flex-wrap: nowrap;
+    align-items: center;
+    row-gap: 0;
+  }
 }
 
 .seller-order-pill {
@@ -53,7 +100,8 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.24rem 0.75rem;
-  border-radius: 0.5rem; /* مستطيل بحواف ناعمة */
+  border-radius: var(--rad-md, 8px);
+  /* مستطيل بحواف ناعمة الموحد */
   font-size: 0.78rem;
   white-space: nowrap;
 }
@@ -65,10 +113,10 @@
 }
 
 .seller-order-pill--code {
-  background: #dcfce7;
-  border: 1px solid #6ee7b7;
-  color: #166534;
-  font-weight: 600;
+  background: #f1f3e8;
+  border: 1px solid #d8dbbf;
+  color: #4b502a;
+  font-weight: 700;
 }
 
 .seller-order-pill--brand {
@@ -82,7 +130,7 @@
 .seller-order-card-inner {
   margin-top: 0.7rem;
   background: #ffffff;
-  border-radius: 1.1rem;
+  border-radius: var(--rad-md, 8px);
   border: 1px solid #e5e7eb;
   padding: 0.9rem 0.95rem 0.8rem;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
@@ -124,15 +172,16 @@
   gap: 0.4rem;
   font-size: 0.85rem;
   font-weight: 800;
-  color: #1d4ed8;
+  color: #4b502a;
 }
 
 /* خط صغير جانبي لتفاصيل المنتج */
-.seller-header-stick {
-  width: 3px;
-  height: 16px;
-  border-radius: 999px;
-  background: #1d4ed8;
+.seller-order-item-img {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--rad-md, 8px);
+  object-fit: cover;
+  background: #f1f5f9;
 }
 
 /* نص "المنتج رقم X من هذا الطلب" بجانب عنوان تفاصيل المنتج */
@@ -140,7 +189,8 @@
   font-size: 0.74rem;
   color: #6b7280;
   margin-top: 0.1rem;
-  margin-inline-start: 8ch; /* مسافة تعادل تقريباً ٨ حروف بين العنوانين */
+  margin-inline-start: 8ch;
+  /* مسافة تعادل تقريباً ٨ حروف بين العنوانين */
 }
 
 /* تفاصيل المنتج */
@@ -171,7 +221,7 @@
 }
 
 /* فراغ صغير بين "اسم المنتج:" واسم المنتج الحقيقي */
-.seller-order-product-name span + span {
+.seller-order-product-name span+span {
   margin-inline-start: 0.25rem;
 }
 
@@ -186,12 +236,13 @@
 /* ✅ (محدث) مستطيلات ناعمة + (الأهم) سطر واحد "الحجم: 89" */
 .seller-order-variant-chip {
   display: inline-flex;
-  flex-direction: row; /* ✅ بدل عمودي */
+  flex-direction: row;
+  /* ✅ بدل عمودي */
   align-items: center;
   justify-content: flex-start;
   gap: 0.45rem;
 
-  border-radius: 0.85rem;
+  border-radius: var(--rad-md, 8px);
   border: 1px solid #e5e7eb;
   background: #ffffff;
 
@@ -206,7 +257,8 @@
   color: #64748b;
   font-weight: 800;
   line-height: 1;
-  white-space: nowrap; /* ✅ لا يكسر السطر */
+  white-space: nowrap;
+  /* ✅ لا يكسر السطر */
 }
 
 .seller-order-variant-value {
@@ -214,7 +266,8 @@
   color: #0f172a;
   font-weight: 900;
   line-height: 1;
-  white-space: nowrap; /* ✅ لا يكسر السطر */
+  white-space: nowrap;
+  /* ✅ لا يكسر السطر */
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -226,10 +279,11 @@
   flex-wrap: wrap;
   gap: 0.7rem;
   padding: 0.55rem 0.75rem;
-  border-radius: 0.9rem;
+  border-radius: var(--rad-md, 8px);
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  justify-content: center; /* توسيط محتوى الكادر (كمية/سعر/إجمالي) */
+  justify-content: center;
+  /* توسيط محتوى الكادر (كمية/سعر/إجمالي) */
 }
 
 /* العناصر داخل الكادر – متوسّطة */
@@ -255,20 +309,75 @@
   text-align: center;
 }
 
-/* طريقة الدفع في سطر واحد */
-.seller-order-payment {
-  margin-top: 0.35rem;
+/* سطر بيانات الدفع (الميزة المطلوبة) */
+.seller-order-payment-row {
+  margin-top: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.seller-order-payment-info {
   display: inline-flex;
   align-items: baseline;
   gap: 0.35rem;
   font-size: 0.8rem;
 }
 
+/* كبسولة حالة الدفع الموحدة للبائع */
+.seller-payment-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.65rem;
+  border-radius: var(--rad-md, 8px);
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.seller-order-status-chip {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--rad-md, 8px);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.seller-payment-status-badge--paid {
+  background: rgba(34, 197, 94, 0.85);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.seller-payment-status-badge--pending {
+  background: rgba(234, 179, 8, 0.85);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.seller-payment-status-badge--cod {
+  background: rgba(100, 116, 139, 0.85);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.seller-payment-status-badge--rejected,
+.seller-payment-status-badge--cancelled {
+  background: rgba(239, 68, 68, 0.85);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
 /* صورة المنتج */
 .seller-order-product-media {
   width: 96px;
-  height: 96px;
-  border-radius: 1rem;
+  height: 120px;
+  /* Optimized for 4:5 ratio */
+  aspect-ratio: 4 / 5;
+  border-radius: var(--rad-md, 8px);
   background: #f5f5f5;
   display: flex;
   align-items: center;
@@ -279,7 +388,8 @@
 .seller-order-product-media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: fill;
+  /* No-Crop Policy */
 }
 
 .seller-order-product-placeholder {
@@ -293,8 +403,20 @@
   border-top: 1px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 0.8rem;
+  flex-direction: column;
+  /* Mobile Default */
+  align-items: stretch;
+  /* Mobile Default */
+  gap: 0.6rem;
+  /* Mobile Default */
+}
+
+@media (min-width: 640px) {
+  .seller-order-bottom-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.8rem;
+  }
 }
 
 /* مجموعة الأزرار/العناصر في يسار الشريط (حالة الطلب + القائمة المنسدلة) */
@@ -319,7 +441,7 @@
   justify-content: center;
   gap: 0.4rem;
   padding: 0.28rem 1rem;
-  border-radius: 0.7rem;
+  border-radius: var(--rad-md, 8px);
   font-size: 0.78rem;
   font-weight: 600;
   border: 1px solid #e5e7eb;
@@ -341,7 +463,7 @@
 .seller-order-status-select {
   width: 100%;
   padding: 0.4rem 0.9rem;
-  border-radius: 0.7rem;
+  border-radius: var(--rad-md, 8px);
   border: 1px solid #d1d5db;
   background: #f9fafb;
   font-size: 0.8rem;
@@ -352,8 +474,8 @@
 }
 
 .seller-order-status-select:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.35);
+  border-color: #4b502a;
+  box-shadow: 0 0 0 1px rgba(75, 80, 42, 0.35);
   background: #ffffff;
 }
 
@@ -366,104 +488,121 @@
 .seller-order-print-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  /* Ensures centering */
   gap: 0.4rem;
   padding: 0.45rem 1.4rem;
-  border-radius: 0.6rem;
-  border: 1px solid #020617;
-  background: #020617;
+  border-radius: var(--rad-md, 8px);
+  border: 1px solid #4b502a;
+  background: #4b502a;
   font-size: 0.78rem;
   color: #f9fafb;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease,
-    transform 0.1s ease;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  /* Optional: ensures proportional rectangle */
 }
 
 .seller-order-print-btn:hover {
-  background: #111827;
-  border-color: #111827;
-  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.25);
+  background: #3d4122;
+  border-color: #3d4122;
+  box-shadow: 0 4px 12px rgba(75, 80, 42, 0.2);
   transform: translateY(-1px);
 }
 
 /* ========== Responsive – تحسين نسخة الهاتف ========== */
 
-@media (max-width: 900px) {
-  .seller-order-card {
-    padding: 0.7rem 0.75rem 0.8rem;
+/* Mobile First Overrides - Merged */
+@media (max-width: 768px) {
+  .seller-orders-list {
+    gap: 0.75rem !important;
+    /* Restore breathing gap between cards */
   }
 
-  .seller-order-main-row {
-    gap: 0.9rem;
+  /* 🛡️ Smart Fluid Law: 100% Background, Protected Content */
+  .seller-order-card {
+    border-radius: 0 !important;
+    /* Sharp Edge for Full-Width Fluid Immersion */
+    margin: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    background: #ffffff;
+    transform: none !important;
+    /* Disable hover lift on mobile */
   }
+
 }
 
-@media (max-width: 640px) {
-  .seller-order-card-inner {
-    padding: 0.8rem 0.8rem 0.75rem;
-  }
+/* Platinum Empty State Repair */
+.seller-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 2rem;
+  text-align: center;
+  background: #fdfdfd;
+  border-radius: var(--rad-md, 8px);
+  border: 2px dashed #e5e7eb;
+  margin: 2rem 0;
+  animation: seller-fade-in 0.6s var(--platinum-ease);
+}
 
-  /* الهيدر العلوي يلتف بشكل أنيق */
-  .seller-order-header-row {
-    flex-wrap: wrap;
-    align-items: flex-start;
-    row-gap: 0.35rem;
-  }
+.seller-empty-icon-box {
+  width: 100px;
+  height: 100px;
+  background: #f1f3e8;
+  color: #4b502a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 20px rgba(75, 80, 42, 0.08);
+  transition: all 0.4s var(--platinum-ease);
+}
 
-  .seller-order-pill {
-    font-size: 0.75rem;
-    padding: 0.22rem 0.65rem;
-  }
+.seller-empty-state:hover .seller-empty-icon-box {
+  transform: scale(1.1) rotate(5deg);
+  background: #ebefd9;
+}
 
-  /* صف المنتج يبقى واضح */
-  .seller-order-product-main {
-    grid-template-columns: 80px minmax(0, 1fr);
-    gap: 0.7rem;
-  }
+.seller-empty-state h3 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 0.75rem;
+}
 
-  .seller-order-product-media {
-    width: 80px;
-    height: 80px;
-  }
+.seller-empty-state p {
+  font-size: 0.95rem;
+  color: #6b7280;
+  max-width: 400px;
+  line-height: 1.6;
+}
 
-  /* ✅ مستطيلات اللون/الحجم تتمدد بشكل أجمل على الهاتف */
-  .seller-order-variant-chip {
-    min-width: 0;
-    flex: 1;
-  }
+.seller-empty-reset-btn {
+  margin-top: 1.5rem;
+  background: #4b502a;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: var(--rad-md, 8px);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
 
-  /* صندوق الكمية/السعر/الإجمالي يبقى متوسّط كما هو */
-  .seller-order-product-meta-row {
-    gap: 0.5rem;
-    padding: 0.5rem 0.6rem;
-  }
+.seller-empty-reset-btn:hover {
+  background: #3d4122;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(75, 80, 42, 0.2);
+}
 
-  .seller-order-meta-item {
-    min-width: 90px;
-  }
-
-  /* الشريط السفلي يصبح عموديًا أنيقًا */
-  .seller-order-bottom-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.6rem;
-  }
-
-  .seller-order-bottom-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .seller-order-status-pill {
-    width: 100%;
-  }
-
-  .seller-order-status-select {
-    width: 100%;
-  }
-
-  .seller-order-print-btn {
-    width: 100%;
-    justify-content: center;
-    padding-inline: 1.1rem;
-  }
+@keyframes seller-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

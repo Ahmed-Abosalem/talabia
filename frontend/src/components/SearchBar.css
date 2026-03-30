@@ -2,24 +2,63 @@
 
 .search-wrapper {
   width: 100%;
-  max-width: 420px;
+  max-width: 100%;
   margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.55rem 0.9rem;
+  padding: 0.55rem 0.75rem;
 
-  /* ✅ بدل الكبسولة */
-  border-radius: 12px;
+  /* ✅ Harmonized with Golden Standard (adm-form-input) */
+  border-radius: var(--rad-md);
 
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+  color: var(--adm-primary);
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  box-shadow: var(--shd-standard);
+  overflow: hidden;
+  transition: all var(--transition-fast);
 }
 
-.search-wrapper svg {
+.search-wrapper:focus-within {
+  border-color: var(--adm-primary);
+  background: var(--adm-surface);
+  box-shadow: 0 0 0 4px rgba(75, 80, 42, 0.08);
+  /* Clean system glow */
+}
+
+.search-icon-toggle {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
+  color: #4b502a;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  outline: none;
+}
+
+.search-icon-toggle.is-search {
+  pointer-events: none;
   opacity: 0.8;
+}
+
+.search-icon-toggle.is-clear {
+  cursor: pointer;
+  opacity: 1;
+}
+
+.search-icon-toggle.is-clear:hover {
+  color: #3f4223;
+  transform: scale(1.1);
+}
+
+.search-icon-toggle.is-clear:active {
+  transform: scale(0.9);
 }
 
 .search-input {
@@ -27,21 +66,34 @@
   outline: none;
   background: transparent;
   flex: 1;
-  font-size: 0.9rem;
+  min-width: 0;
+  /* Allow input to shrink/contain within flex */
+  font-size: 0.85rem;
+  /* Mobile Default */
   font-family: inherit;
+  padding: 0;
+  margin: 0;
 }
 
 .search-input::placeholder {
   color: #9ca3af;
 }
 
-@media (max-width: 768px) {
+/* Hide native clear button */
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-decoration,
+.search-input::-webkit-search-results-button,
+.search-input::-webkit-search-results-decoration {
+  display: none;
+}
+
+@media (min-width: 768px) {
   .search-wrapper {
-    max-width: 100%;
-    padding-inline: 0.75rem;
+    max-width: 420px;
+    padding: 0.55rem 0.9rem;
   }
 
   .search-input {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
   }
 }

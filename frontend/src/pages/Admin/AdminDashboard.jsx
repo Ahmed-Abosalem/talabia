@@ -1,6 +1,6 @@
 import "./AdminDashboard.css";
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useState, useRef, lazy, Suspense } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -15,32 +15,34 @@ import {
   MessageSquare,
   ShieldCheck,
   User,
+  Shield,
+  Wallet,
+  ShoppingBag,
+  ClipboardList,
 } from "lucide-react";
 
-import AdminOverviewSection from "./sections/AdminOverviewSection";
-import AdminUsersSection from "./sections/AdminUsersSection";
-import AdminSellersSection from "./sections/AdminSellersSection";
-import AdminProductsSection from "./sections/AdminProductsSection";
-import AdminOrdersSection from "./sections/AdminOrdersSection";
-import AdminShippingSection from "./sections/AdminShippingSection";
-import AdminAdsSection from "./sections/AdminAdsSection";
-import AdminCategoriesSection from "./sections/AdminCategoriesSection";
-import AdminFinancialSection from "./sections/AdminFinancialSection";
-import AdminReportsSection from "./sections/AdminReportsSection";
-import AdminNotificationsSection from "./sections/AdminNotificationsSection";
-import AdminSupportSection from "./sections/AdminSupportSection";
-import AdminSecuritySection from "./sections/AdminSecuritySection";
+// ⚡ Lazy-loaded sections — each loads independently on demand
+const AdminOverviewSection = lazy(() => import("./sections/AdminOverviewSection"));
+const AdminUsersSection = lazy(() => import("./sections/AdminUsersSection"));
+const AdminSellersSection = lazy(() => import("./sections/AdminSellersSection"));
+const AdminProductsSection = lazy(() => import("./sections/AdminProductsSection"));
+const AdminOrdersSection = lazy(() => import("./sections/AdminOrdersSection"));
+const AdminShippingSection = lazy(() => import("./sections/AdminShippingSection"));
+const AdminAdsSection = lazy(() => import("./sections/AdminAdsSection"));
+const AdminCategoriesSection = lazy(() => import("./sections/AdminCategoriesSection"));
+const AdminFinancialSection = lazy(() => import("./sections/AdminFinancialSection"));
+const AdminReportsSection = lazy(() => import("./sections/AdminReportsSection"));
+const AdminNotificationsSection = lazy(() => import("./sections/AdminNotificationsSection"));
+const AdminSupportSection = lazy(() => import("./sections/AdminSupportSection"));
+const AdminSecuritySection = lazy(() => import("./sections/AdminSecuritySection"));
+const AdminPrivacyPolicySection = lazy(() => import("./sections/AdminPrivacyPolicySection"));
+const AdminSynonymsSection = lazy(() => import("./sections/AdminSynonymsSection"));
+const AdminPaymentSection = lazy(() => import("./sections/AdminPaymentSection"));
+const AdminWalletSection = lazy(() => import("./sections/AdminWalletSection"));
 
-import {
-  AdminAddStaffModal,
-  AdminAddAdModal,
-  AdminAddShippingCompanyModal,
-  AdminAddCategoryModal,
-  AdminPayoutModal,
-  AdminSendNotificationModal,
-} from "./AdminModals";
+// النوافذ المنبثقة استُبدلت بصفحات مستقلة — يتم التنقل إليها عبر useNavigate()
 
-import AdminProfile from "./AdminProfile";
+const AdminProfile = lazy(() => import("./AdminProfile"));
 import { useAuth } from "@/context/AuthContext";
 
 const SECTION_DEFINITIONS = [
@@ -54,16 +56,19 @@ const SECTION_DEFINITIONS = [
       { id: "users", label: "إدارة المستخدمين", icon: Users },
       { id: "sellers", label: "إدارة البائعين", icon: Store },
       { id: "products", label: "إدارة المنتجات", icon: Package },
-      { id: "orders", label: "إدارة الطلبات", icon: Package },
+      { id: "orders", label: "إدارة الطلبات", icon: ClipboardList },
       { id: "shipping", label: "إدارة شركات الشحن", icon: Truck },
+      { id: "payment", label: "إدارة خيارات الدفع", icon: CreditCard }, // ✅ NEW
       { id: "ads", label: "إدارة الإعلانات", icon: Megaphone },
       { id: "categories", label: "إدارة الأقسام", icon: Grid3X3 },
+      { id: "synonyms", label: "إدارة المرادفات", icon: MessageSquare },
     ],
   },
   {
     group: "الماليات والتقارير",
     items: [
       { id: "financial", label: "الإدارة المالية", icon: CreditCard },
+      { id: "wallets", label: "إدارة المحافظ", icon: Wallet },
       { id: "reports", label: "التقارير والإحصاءات", icon: BarChart3 },
     ],
   },
@@ -72,6 +77,7 @@ const SECTION_DEFINITIONS = [
     items: [
       { id: "notifications", label: "إدارة التنبيهات", icon: Bell },
       { id: "support", label: "إدارة التواصل", icon: MessageSquare },
+      { id: "privacy", label: "سياسة الخصوصية", icon: Shield },
       {
         id: "security",
         label: "إدارة الموظفين",
@@ -100,19 +106,102 @@ function getInitialSection(searchParams) {
 export default function AdminDashboard() {
   const { user, role } = useAuth();
   const isOwner = role === "admin" && user?.isOwner;
+  const navigate = useNavigate();
 
   // صلاحيات الموظف الإداري (كائن permissions القادم من الـ backend)
   const rawPermissions = (user && user.permissions) || {};
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const [section, setSection] = useState(getInitialSection(searchParams));
+  const [section, setSection] = useState(() => getInitialSection(searchParams));
+  const [isLocked, setIsLocked] = useState(true); // 🛡️ Ghost Click Lock
 
-  const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
-  const [isAddAdOpen, setIsAddAdOpen] = useState(false);
-  const [isAddShippingOpen, setIsAddShippingOpen] = useState(false);
-  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
-  const [isPayoutOpen, setIsPayoutOpen] = useState(false);
-  const [isSendNotificationOpen, setIsSendNotificationOpen] = useState(false);
+  // 🔓 Unlock interaction after a brief delay on mount
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLocked(false), 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 🛡️ Proactive Selection Clearing
+
+  // 🛡️ Proactive Selection Clearing
+  useEffect(() => {
+    const clear = () => {
+      if (window.getSelection) {
+        window.getSelection().removeAllRanges();
+      }
+    };
+    clear();
+    // Also clear on a slight delay to catch late renders
+    const timer = setTimeout(clear, 100);
+    return () => clearTimeout(timer);
+  }, [section]);
+
+  // 🔄 Reset scroll to top when changing sections
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [section]);
+  const scrollRef = useRef(null);
+  const dragInfo = useRef({
+    isDragging: false,
+    startX: 0,
+    scrollLeft: 0,
+    dragMoved: false,
+    velocity: 0,
+    lastX: 0,
+    rafId: null,
+  });
+
+  const handleMouseDown = (e) => {
+    if (window.innerWidth < 900) return;
+    // 🛡️ Prevent selection trigger
+    if (e.detail > 1) e.preventDefault();
+
+    cancelAnimationFrame(dragInfo.current.rafId);
+    dragInfo.current.isDragging = true;
+    dragInfo.current.startX = e.pageX - scrollRef.current.offsetLeft;
+    dragInfo.current.lastX = e.pageX;
+    dragInfo.current.scrollLeft = scrollRef.current.scrollLeft;
+    dragInfo.current.dragMoved = false;
+    dragInfo.current.velocity = 0;
+  };
+
+  const handleMouseMove = (e) => {
+    if (!dragInfo.current.isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+
+    // Momentum tracking: Calculate instantaneous velocity
+    const currentX = e.pageX;
+    dragInfo.current.velocity = currentX - dragInfo.current.lastX;
+    dragInfo.current.lastX = currentX;
+
+    const walk = (x - dragInfo.current.startX) * 1.2;
+    scrollRef.current.scrollLeft = dragInfo.current.scrollLeft - walk;
+
+    if (Math.abs(walk) > 5) {
+      dragInfo.current.dragMoved = true;
+    }
+  };
+
+  const handleMouseUpOrLeave = () => {
+    if (!dragInfo.current.isDragging) return;
+    dragInfo.current.isDragging = false;
+
+    // Momentum Engine: Inertial Scroll loop
+    let velocity = dragInfo.current.velocity;
+    const friction = 0.95; // Industry standard friction coefficient
+
+    const applyMomentum = () => {
+      if (Math.abs(velocity) < 0.5) return;
+      scrollRef.current.scrollLeft -= velocity;
+      velocity *= friction;
+      dragInfo.current.rafId = requestAnimationFrame(applyMomentum);
+    };
+
+    if (Math.abs(velocity) > 1) {
+      dragInfo.current.rafId = requestAnimationFrame(applyMomentum);
+    }
+  };
 
   // helper بسيط لفحص مستوى الصلاحية (none / view / partial / full)
   const hasViewPermission = (permKey) => {
@@ -144,6 +233,12 @@ export default function AdminDashboard() {
         return "ads";
       case "categories":
         return "categories";
+      case "synonyms":
+        return "products"; // Share permission with products
+      case "payment":
+        return "payment"; // صلاحية إدارة الدفع
+      case "wallets":
+        return "wallets"; // صلاحية إدارة المحافظ
       case "financial":
         return "financial";
       case "reports":
@@ -194,14 +289,20 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (!searchParams.get("section")) {
+    const fromUrl = searchParams.get("section");
+    if (!fromUrl) {
       const params = new URLSearchParams(searchParams);
       params.set("section", "dashboard");
       setSearchParams(params, { replace: true });
+      setSection("dashboard");
+    } else if (fromUrl !== section) {
+      setSection(fromUrl);
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, section]);
 
   const handleNavigateSection = (id) => {
+    if (isLocked) return; // 🛡️ Ignore interaction if locked (ghost click)
+    if (dragInfo.current.dragMoved) return; // Prevent click if we were dragging
     setSection(id);
     const params = new URLSearchParams(searchParams);
     params.set("section", id);
@@ -229,10 +330,10 @@ export default function AdminDashboard() {
     // لو المستخدم حاول يفتح قسم ليس له صلاحية عليه (من رابط مباشر مثلاً)
     if (!canAccessSection(section)) {
       return (
-        <section className="admin-section-card">
-          <div className="admin-empty-state">
-            لا تملك صلاحية الوصول إلى هذا القسم في لوحة التحكم. إذا كنت ترى
-            أن هذا خطأ، تواصل مع مدير النظام.
+        <section className="adm-section-panel">
+          <div className="adm-empty-state">
+            <p>لا تملك صلاحية الوصول إلى هذا القسم في لوحة التحكم. إذا كنت ترى
+              أن هذا خطأ، تواصل مع مدير النظام.</p>
           </div>
         </section>
       );
@@ -250,27 +351,33 @@ export default function AdminDashboard() {
       case "shipping":
         return (
           <AdminShippingSection
-            onAddCompany={() => setIsAddShippingOpen(true)}
+            onAddCompany={() => navigate("/admin/shipping/add")}
           />
         );
       case "ads":
-        return <AdminAdsSection onAddAd={() => setIsAddAdOpen(true)} />;
+        return <AdminAdsSection onAddAd={() => navigate("/admin/ads/add")} />;
       case "categories":
         return (
           <AdminCategoriesSection
-            onAddCategory={() => setIsAddCategoryOpen(true)}
+            onAddCategory={() => navigate("/admin/categories/add")}
           />
         );
+      case "synonyms":
+        return <AdminSynonymsSection />;
+      case "payment":
+        return <AdminPaymentSection />;
+      case "wallets":
+        return <AdminWalletSection />;
       case "financial":
         return (
-          <AdminFinancialSection onOpenPayout={() => setIsPayoutOpen(true)} />
+          <AdminFinancialSection onOpenPayout={() => navigate("/admin/financial/payout")} />
         );
       case "reports":
         return <AdminReportsSection />;
       case "notifications":
         return (
           <AdminNotificationsSection
-            onSendNotification={() => setIsSendNotificationOpen(true)}
+            onSendNotification={() => navigate("/admin/notify-all")}
           />
         );
       case "support":
@@ -278,29 +385,31 @@ export default function AdminDashboard() {
       case "security":
         if (!isOwner) {
           return (
-            <section className="admin-section-card">
-              <div className="admin-empty-state">
-                هذا القسم متاح لمدير النظام فقط.
+            <section className="adm-section-panel">
+              <div className="adm-empty-state">
+                <p>هذا القسم متاح لمدير النظام فقط.</p>
               </div>
             </section>
           );
         }
         return (
-          <AdminSecuritySection onAddStaff={() => setIsAddStaffOpen(true)} />
+          <AdminSecuritySection onAddStaff={() => navigate("/admin/staff/add")} />
         );
       case "adminProfile":
         if (!isOwner) {
           return (
-            <section className="admin-section-card">
-              <div className="admin-empty-state">
-                هذا القسم (بيانات حساب الأدمن) متاح لمدير النظام فقط، ولا يمكن
-                للموظفين تعديله. إذا كنت ترى أن هناك مشكلة في بيانات حسابك،
-                يرجى التواصل مع مدير النظام.
+            <section className="adm-section-panel">
+              <div className="adm-empty-state">
+                <p>هذا القسم (بيانات حساب الأدمن) متاح لمدير النظام فقط، ولا يمكن
+                  للموظفين تعديله. إذا كنت ترى أن هناك مشكلة في بيانات حسابك،
+                  يرجى التواصل مع مدير النظام.</p>
               </div>
             </section>
           );
         }
         return <AdminProfile />;
+      case "privacy":
+        return <AdminPrivacyPolicySection />;
       case "dashboard":
       default:
         return (
@@ -310,11 +419,18 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="admin-page">
+    <div className="adm-page-root adm-page-root--top-tabs">
       {/* شريط الإدارات العلوي الثابت */}
       <div className="admin-top-tabs-sticky">
         <div className="admin-top-tabs-container">
-          <div className="admin-top-tabs-scroll">
+          <div
+            className="admin-top-tabs-scroll"
+            ref={scrollRef}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUpOrLeave}
+            onMouseLeave={handleMouseUpOrLeave}
+          >
             {filteredSectionDefinitions.map((group) => (
               <div key={group.group} className="admin-top-tabs-group">
                 <div className="admin-top-tabs-items">
@@ -348,34 +464,10 @@ export default function AdminDashboard() {
       </div>
 
       <main className="admin-main admin-main-with-top-tabs">
-        {renderSection()}
+        <Suspense fallback={<div className="adm-section-panel" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200 }}><span className="adm-loading-text">جارٍ التحميل...</span></div>}>
+          {renderSection()}
+        </Suspense>
       </main>
-
-      {/* النوافذ المنبثقة العامة للوحة الأدمن */}
-      <AdminAddStaffModal
-        open={isAddStaffOpen}
-        onClose={() => setIsAddStaffOpen(false)}
-      />
-      <AdminAddAdModal
-        open={isAddAdOpen}
-        onClose={() => setIsAddAdOpen(false)}
-      />
-      <AdminAddShippingCompanyModal
-        open={isAddShippingOpen}
-        onClose={() => setIsAddShippingOpen(false)}
-      />
-      <AdminAddCategoryModal
-        open={isAddCategoryOpen}
-        onClose={() => setIsAddCategoryOpen(false)}
-      />
-      <AdminPayoutModal
-        open={isPayoutOpen}
-        onClose={() => setIsPayoutOpen(false)}
-      />
-      <AdminSendNotificationModal
-        open={isSendNotificationOpen}
-        onClose={() => setIsSendNotificationOpen(false)}
-      />
     </div>
   );
 }

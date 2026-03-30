@@ -3,16 +3,18 @@
 import "./ProductDetails.css";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Heart, Share2, ShoppingCart, Store, Check, ChevronRight } from "lucide-react";
+import { Heart, Share2, ShoppingCart, Store, Check, ChevronRight, XCircle, Star } from "lucide-react";
 
 import { useApp } from "@/context/AppContext";
 import ProductCard from "@/components/ProductCard/ProductCard";
-import { getProductById, listProducts } from "@/services/productService";
+import { getProductById, listProducts, getProductRecommendations } from "@/services/productService";
 import { getCategories } from "@/services/categoryService";
 import userService from "@/services/userService";
+import HScrollWrap from "@/components/HScrollWrap/HScrollWrap";
 
 // ✅ NEW: Reviews service (ملف جديد)
 import { getProductReviews, createProductReview } from "@/services/reviewService";
+import ReviewModal from "@/components/ReviewModal";
 
 // عنوان الباك إند لبناء روابط الصور القادمة من قاعدة البيانات
 const API_BASE_URL =
@@ -97,6 +99,9 @@ function normalizeCardProduct(rawProduct, categoryIdToSlug) {
     description: rawProduct.shortDescription || rawProduct.description || "",
     price: rawProduct.price || rawProduct.currentPrice || 0,
     image: imageUrl,
+    stock: rawProduct.stock ?? 0,
+    isActive: rawProduct.isActive ?? true,
+    status: rawProduct.status || "active",
   };
 }
 
@@ -158,6 +163,9 @@ function normalizeDetailsProduct(raw) {
     images,
     shortDescription,
     description,
+    stock: raw.stock ?? 0,
+    isActive: raw.isActive ?? true,
+    status: raw.status || "active",
     raw,
   };
 }
@@ -220,10 +228,11 @@ function parseVariantsToUiOptions(variantsRaw) {
       const key = String(
         (c && typeof c === "object" && c.key) || safeKey(label, `color-${idx + 1}`)
       );
+      // ✅ Fix: Only use real hex value, no default gray
       out.colors.push({
         key,
         label,
-        hex: hex || "#e5e7eb",
+        hex: hex || "",
       });
     });
   }
@@ -283,6 +292,11 @@ export default function ProductDetailsPage() {
   const [qty, setQty] = useState(1);
   const [qtyText, setQtyText] = useState("1");
 
+  // 🚀 FORCE SCROLL TO TOP: Triggers whenever product ID changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [id]);
+
   useEffect(() => {
     setQtyText(String(qty));
   }, [qty]);
@@ -305,9 +319,6 @@ export default function ProductDetailsPage() {
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState("");
-  const [myRating, setMyRating] = useState(5);
-  const [myComment, setMyComment] = useState("");
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   // تثبيت اختيار افتراضي عند توفر الخيارات
   useEffect(() => {
@@ -394,6 +405,10 @@ export default function ProductDetailsPage() {
     };
   }, [product?.id]);
 
+
+
+
+
   // تحميل المنتجات المقترحة
   useEffect(() => {
     if (!product?.id) return;
@@ -405,67 +420,35 @@ export default function ProductDetailsPage() {
         setIsRelatedLoading(true);
         setRelatedError("");
 
-        const [catRes, productsRes] = await Promise.all([getCategories(), listProducts()]);
+        // 🧠 جلب التوصيات من الباك إند الجديد
+        const data = await getProductRecommendations(product.id);
 
         if (!isMounted) return;
 
+        const { similar = [], seller = [], trending = [] } = data;
+
+        // نحتاج لـ categoryIdToSlug فقط لتطبيع المنتجات للواجهة
+        // جلب التصنيفات هنا (كاش أو سريع) للتطبيع
+        const catRes = await getCategories();
         const rawCategories = catRes?.categories || [];
-        const { categoryIdToSlug, categoriesForRows } = buildCategoryMaps(rawCategories);
+        const { categoryIdToSlug } = buildCategoryMaps(rawCategories);
 
-        const allRawProducts = Array.isArray(productsRes) ? productsRes : productsRes?.products || [];
+        const normalize = (list) =>
+          list.map(p => normalizeCardProduct(p, categoryIdToSlug)).filter(Boolean);
 
-        const allCardProducts = allRawProducts
-          .map((p) => normalizeCardProduct(p, categoryIdToSlug))
-          .filter(Boolean);
+        setRelatedByName(normalize(similar));
+        setRelatedByCategory(normalize(seller)); // عرض منتجات البائع في هذا السلوت
 
-        const currentId = product.id;
-        const currentName = product.name || "";
-        const currentCategoryKey = getCategoryKey(product.raw?.category, categoryIdToSlug);
+        // تحويل صف "Trending" إلى هيكل Extra Rows
+        const trendingRow = {
+          id: "trending",
+          title: "الأكثر مبيعاً في هذا القسم",
+          products: normalize(trending)
+        };
 
-        let restProducts = allCardProducts.filter((p) => p.id !== currentId);
-
-        const nameWords = currentName.split(/\s+/).filter(Boolean).map((w) => w.toLowerCase());
-
-        const byName = restProducts.filter((p) => {
-          const n = (p.name || "").toLowerCase();
-          return nameWords.some((w) => n.includes(w));
-        });
-
-        const byNameIds = new Set(byName.map((p) => p.id));
-        restProducts = restProducts.filter((p) => !byNameIds.has(p.id));
-
-        const byCategory = restProducts.filter(
-          (p) => currentCategoryKey && p.category && p.category === currentCategoryKey
-        );
-
-        const byCategoryIds = new Set(byCategory.map((p) => p.id));
-        const remaining = restProducts.filter((p) => !byCategoryIds.has(p.id));
-
-        const rows = [];
-
-        if (remaining.length > 0) {
-          rows.push({
-            id: "all",
-            title: "اكتشف المزيد من طلبية",
-            products: remaining.slice(0, 20),
-          });
-        }
-
-        categoriesForRows.forEach((cat) => {
-          const rowProducts = remaining.filter((p) => p.category === cat.id);
-          if (rowProducts.length > 0) {
-            rows.push({
-              id: cat.id,
-              title: `منتجات من قسم ${cat.name}`,
-              products: rowProducts.slice(0, 20),
-            });
-          }
-        });
-
-        setRelatedByName(byName.slice(0, 12));
-        setRelatedByCategory(byCategory.slice(0, 12));
-        setExtraRows(rows);
-      } catch {
+        setExtraRows([trendingRow]);
+      } catch (error) {
+        console.error("Recommendations UI Error:", error);
         if (isMounted) setRelatedError("تعذّر تحميل المنتجات المقترحة.");
       } finally {
         if (isMounted) setIsRelatedLoading(false);
@@ -481,6 +464,11 @@ export default function ProductDetailsPage() {
 
   const inCart = product?.id ? isInCart(product.id) : false;
   const inWishlist = product?.id ? isInWishlist(product.id) : false;
+
+  const isOutOfStock = useMemo(() => {
+    if (!product) return false;
+    return (product.stock <= 0) || (product.isActive === false) || (product.status === "inactive");
+  }, [product]);
 
   // ✅ إذا كان المنتج موجودًا في السلة: اعرض نفس الكمية المحفوظة
   useEffect(() => {
@@ -635,53 +623,6 @@ export default function ProductDetailsPage() {
     showToast("دليل المقاسات سيتم إضافته قريبًا", "success");
   };
 
-  const handleSubmitReview = async (e) => {
-    e.preventDefault();
-    if (!product?.id) return;
-
-    const ratingValue = Number(myRating);
-    if (!Number.isFinite(ratingValue) || ratingValue < 1 || ratingValue > 5) {
-      showToast("اختر تقييمًا من 1 إلى 5", "error");
-      return;
-    }
-
-    try {
-      setIsSubmittingReview(true);
-      setReviewsError("");
-
-      const payload = {
-        rating: ratingValue,
-        comment: String(myComment || "").trim(),
-      };
-
-      const data = await createProductReview(product.id, payload);
-      showToast(data?.message || "تم إرسال تقييمك بنجاح", "success");
-
-      try {
-        const refreshed = await getProductReviews(product.id);
-        setReviews(Array.isArray(refreshed?.reviews) ? refreshed.reviews : []);
-      } catch {
-        // ignore
-      }
-
-      setMyRating(5);
-      setMyComment("");
-    } catch (err) {
-      const status = err?.response?.status;
-      const backendMessage = err?.response?.data?.message;
-
-      if (status === 401) {
-        showToast("الرجاء تسجيل الدخول لإضافة تقييم", "error");
-        navigate("/login");
-      } else if (status === 403) {
-        showToast(backendMessage || "لا يمكنك تقييم هذا المنتج قبل استلامه", "error");
-      } else {
-        showToast(backendMessage || "تعذر إرسال التقييم، حاول مرة أخرى", "error");
-      }
-    } finally {
-      setIsSubmittingReview(false);
-    }
-  };
 
   const shortText = useMemo(() => {
     const full = (product?.description || product?.shortDescription || "").trim();
@@ -697,7 +638,7 @@ export default function ProductDetailsPage() {
   const shownText = descExpanded ? fullText : shortText;
 
   return (
-    <div className="page-container product-page pd-has-bottom-bar">
+    <div className="product-page pd-has-bottom-bar">
       {isLoading && (
         <section className="pd-hero">
           <div className="pd-gallery pd-skeleton">
@@ -728,7 +669,7 @@ export default function ProductDetailsPage() {
         <>
           <section className="pd-hero">
             <div className="pd-gallery">
-              <div style={{ position: "absolute", right: 12, top: 12, zIndex: 4 }} aria-label="رجوع">
+              <div className="pd-back-action" aria-label="رجوع">
                 <button type="button" className="pd-fab-btn" onClick={() => navigate(-1)} aria-label="رجوع">
                   <ChevronRight />
                 </button>
@@ -750,8 +691,33 @@ export default function ProductDetailsPage() {
               </div>
 
               <div className="pd-main-image-wrapper">
-                <img src={mainImage} alt={productName} className="pd-main-image" />
+                {/* Main Image - Fills container completely */}
+                <img
+                  src={mainImage}
+                  alt={productName}
+                  className="pd-main-image"
+                />
               </div>
+
+              {/* Thumbnails repositioned under main image */}
+              {product.images && product.images.length > 1 && (
+                <div className="pd-thumbnails-container">
+                  <div className="pd-thumbnails-row">
+                    {product.images.slice(0, 6).map((img, idx) => (
+                      <button
+                        key={img + idx}
+                        type="button"
+                        className={"pd-thumb-btn" + (img === mainImage ? " is-active" : "")}
+                        onClick={() => setSelectedImage(img)}
+                        aria-label={`صورة ${idx + 1}`}
+                      >
+                        <img src={img} alt={`صورة ${idx + 1}`} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
 
               {product.images && product.images.length > 1 && (
                 <div className="pd-dots" aria-label="مؤشرات الصور">
@@ -760,226 +726,259 @@ export default function ProductDetailsPage() {
                   ))}
                 </div>
               )}
-
-              {product.images && product.images.length > 1 && (
-                <div className="pd-thumbnails-row">
-                  {product.images.slice(0, 6).map((img, idx) => (
-                    <button
-                      key={img + idx}
-                      type="button"
-                      className={"pd-thumb-btn" + (img === mainImage ? " is-active" : "")}
-                      onClick={() => setSelectedImage(img)}
-                      aria-label={`صورة ${idx + 1}`}
-                    >
-                      <img src={img} alt={`صورة ${idx + 1}`} />
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div className="pd-content">
-              {/* ✅ منع ظهور 0.0 نهائيًا (لا يُعرض الرقم إلا إذا كان >= 1 فعلاً) */}
-              <div className="pd-rating-badge">
-                {effectiveNumReviews > 0 &&
-                typeof effectiveAvgRating === "number" &&
-                effectiveAvgRating >= 1 ? (
-                  <>
-                    <span className="pd-rating-number">{effectiveAvgRating.toFixed(1)}</span>
-                    <span className="pd-rating-star">★</span>
-                    <span style={{ marginInlineStart: 8, opacity: 0.85, fontSize: 12 }}>
-                      ({effectiveNumReviews})
-                    </span>
-                  </>
-                ) : (
-                  <span style={{ opacity: 0.85, fontSize: 12 }}>لا توجد تقييمات بعد</span>
-                )}
-              </div>
+              {/* 1. Main Info Wrapper: Groups all scannable data */}
+              <div className="pd-main-info-wrapper pd-fade-in">
 
-              <h1 className="pd-title">{productName}</h1>
-
-              <div className="pd-section">
-                <div className="pd-section-title">الوصف</div>
-
-                {shownText ? (
-                  <>
-                    <p className="pd-desc-text">{shownText}</p>
-
-                    {fullText && fullText.length > 140 && (
-                      <button
-                        type="button"
-                        className="pd-link"
-                        onClick={() => setDescExpanded((v) => !v)}
-                      >
-                        {descExpanded ? "إخفاء" : "المزيد"}
-                      </button>
+                {/* A. Identity Block */}
+                <div className="pd-refined-block pd-identity-group">
+                  <div className="pd-rating-badge">
+                    {effectiveNumReviews > 0 &&
+                      typeof effectiveAvgRating === "number" &&
+                      effectiveAvgRating >= 1 ? (
+                      <>
+                        <span className="pd-rating-number">{effectiveAvgRating.toFixed(1)}</span>
+                        <span style={{ color: "#fbbf24" }}>★</span>
+                        <span className="pd-rating-count">
+                          ({effectiveNumReviews} تقييم)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="pd-rating-empty">لا توجد تقييمات بعد</span>
                     )}
-                  </>
-                ) : (
-                  <p className="pd-desc-empty">لا يوجد وصف متاح لهذا المنتج حالياً.</p>
-                )}
+                  </div>
+                  <h1 className="pd-title">{productName}</h1>
+                </div>
+
+                {/* B. Narrative Block (Promoted below Identity) */}
+                <div className="pd-refined-block pd-narrative-group">
+                  <div className="pd-section-title">
+                    وصف المنتج
+                  </div>
+                  {shownText ? (
+                    <div className="pd-desc-content">
+                      <p className="pd-desc-text">{shownText}</p>
+                      {fullText && fullText.length > 140 && (
+                        <button
+                          type="button"
+                          className="pd-link"
+                          onClick={() => setDescExpanded((v) => !v)}
+                        >
+                          {descExpanded ? "عرض أقل" : "اقرأ المزيد"}
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="pd-desc-empty">لا يوجد وصف متاح لهذا المنتج حالياً.</p>
+                  )}
+                </div>
+
+                {/* D. Specs & Selection Block */}
+                <div className="pd-refined-block pd-selection-group">
+                  {colorOptions.length > 0 && (
+                    <div className="pd-option-block">
+                      <div className="pd-section-title">
+                        اختر اللون المناسب
+                      </div>
+                      <div className="pd-swatches">
+                        {colorOptions.map((c) => {
+                          const active = c.key === selectedColor;
+                          return (
+                            <button
+                              key={c.key}
+                              type="button"
+                              className={"pd-color-option" + (active ? " is-active" : "")}
+                              onClick={() => setSelectedColor(c.key)}
+                              aria-label={c.label}
+                              title={c.label}
+                            >
+                              <span
+                                className="pd-color-circle"
+                                style={{ backgroundColor: c.hex }}
+                              />
+                              <span className="pd-color-label">{c.label}</span>
+                              {active && <span className="pd-color-check">✓</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {sizeOptions.length > 0 && (
+                    <div className="pd-option-block">
+                      <div className="pd-section-title">
+                        اختر المقاس المناسب
+                      </div>
+                      <div className="pd-size-pills">
+                        {sizeOptions.map((s) => {
+                          const active = s.key === selectedSize;
+                          return (
+                            <button
+                              key={s.key}
+                              type="button"
+                              className={"pd-pill" + (active ? " is-active" : "")}
+                              onClick={() => setSelectedSize(s.key)}
+                            >
+                              {s.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* E. Origin Block */}
+                  {storeName && (
+                    <div className="pd-seller-badge-container">
+                      <div className="pd-seller-row" aria-label="المتجر" onClick={() => navigate(`/stores/${product?.raw?.store?._id || product?.raw?.seller?._id}`)}>
+                        <span className="pd-seller-name">
+                          <Store className="pd-seller-icon" size={18} color="#ff7f00" />
+                          {storeName}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {colorOptions.length > 0 && (
-                <div className="pd-section">
-                  <div className="pd-row">
-                    <div className="pd-section-title">اللون</div>
-                    <div className="pd-section-sub">
-                      {colorOptions.find((c) => c.key === selectedColor)?.label || ""}
-                    </div>
-                  </div>
-
-                  <div className="pd-swatches">
-                    {colorOptions.map((c) => {
-                      const active = c.key === selectedColor;
-                      return (
-                        <button
-                          key={c.key}
-                          type="button"
-                          className={"pd-swatch" + (active ? " is-active" : "")}
-                          onClick={() => setSelectedColor(c.key)}
-                          aria-label={c.label}
-                          title={c.label}
-                        >
-                          <span className="pd-swatch-dot" style={{ backgroundColor: c.hex }} />
-                          {active && <span className="pd-swatch-check">✓</span>}
-                        </button>
-                      );
-                    })}
+              {/* 2. Transactional Core: Purchase Bar */}
+              <div className="pd-action-block" aria-label="وحدة الشراء">
+                <div className="pd-total">
+                  <div className="pd-total-label">المجموع الكلي</div>
+                  <div className="pd-total-value">
+                    {totalPrice} <span className="pd-currency">ر.ي</span>
                   </div>
                 </div>
-              )}
 
-              {sizeOptions.length > 0 && (
-                <div className="pd-section">
-                  <div className="pd-section-title">الحجم</div>
+                {isOutOfStock && (
+                  <div className="pd-out-of-stock-label">نعتذر، نفذت الكمية حالياً</div>
+                )}
 
-                  <div className="pd-size-pills">
-                    {sizeOptions.map((s) => {
-                      const active = s.key === selectedSize;
-                      return (
-                        <button
-                          key={s.key}
-                          type="button"
-                          className={"pd-pill" + (active ? " is-active" : "")}
-                          onClick={() => setSelectedSize(s.key)}
-                        >
-                          {s.label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div className="pd-qty" aria-label="الكمية">
+                  <button
+                    type="button"
+                    className="pd-qty-btn"
+                    onClick={() => {
+                      const max = typeof product.stock === "number" ? product.stock : 99;
+                      if (qty >= max) {
+                        showToast(`الكمية المتاحة هي فقط (${max})`, "error");
+                        return;
+                      }
+                      setQty((q) => Math.min(max, q + 1));
+                    }}
+                    aria-label="زيادة الكمية"
+                    disabled={isOutOfStock}
+                  >
+                    +
+                  </button>
 
-                  <button type="button" className="pd-link" onClick={handleSizeGuide}>
-                    دليل المقاسات
+                  <input
+                    className="pd-qty-input"
+                    value={qtyText}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "") {
+                        setQtyText("");
+                        return;
+                      }
+                      if (!/^\d{1,3}$/.test(v)) return;
+
+                      const max = typeof product.stock === "number" ? product.stock : 99;
+                      let n = parseInt(v, 10) || 1;
+
+                      if (n > max) {
+                        showToast(`الكمية المتاحة هي فقط (${max})`, "error");
+                        n = max;
+                      }
+
+                      setQty(n);
+                      setQtyText(String(n));
+                    }}
+                    onBlur={() => {
+                      if (qtyText === "") setQtyText(String(qty));
+                    }}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    aria-label="رقم الكمية"
+                    disabled={isOutOfStock}
+                  />
+
+                  <button
+                    type="button"
+                    className="pd-qty-btn"
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    aria-label="إنقاص الكمية"
+                    disabled={isOutOfStock}
+                  >
+                    −
                   </button>
                 </div>
-              )}
 
-              {storeName && (
-                <div className="pd-seller-row" aria-label="المتجر">
-                  <span className="pd-seller-name">
-                    <Store className="pd-seller-icon" />
-                    {storeName}
-                  </span>
-                </div>
-              )}
-
-              <div className="pd-section" style={{ marginTop: 14 }}>
-                <div className="pd-section-title">التقييمات</div>
-
-                {reviewsLoading && <div style={{ opacity: 0.85 }}>جارٍ تحميل التقييمات...</div>}
-                {!reviewsLoading && reviewsError && <div style={{ opacity: 0.85 }}>{reviewsError}</div>}
-
-                {!reviewsLoading && !reviewsError && (
-                  <>
-                    {validReviews.length === 0 ? (
-                      <div style={{ opacity: 0.85 }}>لا توجد تقييمات بعد.</div>
-                    ) : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
-                        {validReviews.slice(0, 10).map((r) => (
-                          <div
-                            key={r._id}
-                            style={{
-                              padding: 12,
-                              borderRadius: 12,
-                              border: "1px solid rgba(0,0,0,0.06)",
-                              background: "rgba(255,255,255,0.6)",
-                            }}
-                          >
-                            <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                              <div style={{ fontWeight: 700 }}>{r?.user?.name || "مستخدم"}</div>
-                              <div style={{ opacity: 0.9 }}>
-                                <span style={{ fontWeight: 800 }}>{Number(r.rating).toFixed(1)}</span>
-                                <span style={{ marginInlineStart: 4 }}>★</span>
-                              </div>
-                            </div>
-
-                            {r?.comment ? (
-                              <div style={{ marginTop: 6, opacity: 0.9, lineHeight: 1.6 }}>{r.comment}</div>
-                            ) : (
-                              <div style={{ marginTop: 6, opacity: 0.6 }}>بدون تعليق</div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <form onSubmit={handleSubmitReview} style={{ marginTop: 14 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                        <label style={{ fontWeight: 700 }}>قيّم المنتج:</label>
-                        <select
-                          value={myRating}
-                          onChange={(e) => setMyRating(Number(e.target.value))}
-                          disabled={isSubmittingReview}
-                          style={{
-                            padding: "10px 12px",
-                            borderRadius: 12,
-                            border: "1px solid rgba(0,0,0,0.12)",
-                            background: "white",
-                          }}
-                        >
-                          <option value={5}>5</option>
-                          <option value={4}>4</option>
-                          <option value={3}>3</option>
-                          <option value={2}>2</option>
-                          <option value={1}>1</option>
-                        </select>
-                      </div>
-
-                      <textarea
-                        value={myComment}
-                        onChange={(e) => setMyComment(e.target.value)}
-                        disabled={isSubmittingReview}
-                        placeholder="اكتب تعليقك (اختياري)"
-                        rows={3}
-                        style={{
-                          width: "100%",
-                          marginTop: 10,
-                          padding: 12,
-                          borderRadius: 12,
-                          border: "1px solid rgba(0,0,0,0.12)",
-                          resize: "vertical",
-                          background: "white",
-                        }}
-                      />
-
-                      <button
-                        type="submit"
-                        className="pd-primary-pill"
-                        disabled={isSubmittingReview}
-                        style={{ marginTop: 10 }}
-                      >
-                        {isSubmittingReview ? "جارٍ الإرسال..." : "إرسال التقييم"}
-                      </button>
-
-                      <div style={{ marginTop: 8, opacity: 0.75, fontSize: 12, lineHeight: 1.6 }}>
-                        ملاحظة: لا يمكنك تقييم المنتج إلا بعد استلامه (DELIVERED).
-                      </div>
-                    </form>
-                  </>
-                )}
+                <button
+                  type="button"
+                  className={"pd-add-btn" + (inCart ? " is-active" : "") + (isOutOfStock ? " is-disabled" : "")}
+                  onClick={handleAddToCart}
+                  disabled={isOutOfStock}
+                  aria-label={isOutOfStock ? "نفذت الكمية" : inCart ? "إزالة من السلة" : "إضافة إلى السلة"}
+                >
+                  {isOutOfStock ? (
+                    <>
+                      <XCircle size={20} />
+                      <span>نفذت الكمية</span>
+                    </>
+                  ) : inCart ? (
+                    <>
+                      <Check size={20} />
+                      <span>تمت الإضافة</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart size={20} />
+                      <span>أضف إلى السلة</span>
+                    </>
+                  )}
+                </button>
               </div>
+
+            </div>
+          </section>
+
+          <section className="pd-refined-block pd-reviews-wrapper">
+            <div className="pd-section-title">
+              آراء العملاء ({effectiveNumReviews})
+            </div>
+
+            {reviewsLoading && <div className="pd-loading">جاري تحميل التقييمات...</div>}
+            {!reviewsLoading && validReviews.length === 0 && (
+              <div className="pd-empty-reviews">لا توجد تقييمات لهذا المنتج بعد. كن أول من يقيمه!</div>
+            )}
+
+            <div className="pd-reviews-list">
+              {validReviews.map((review) => (
+                <div key={review._id || Math.random()} className="pd-review-card-refined">
+                  <div className="pd-review-header">
+                    <span className="pd-review-user">{review.user?.firstName || "مستخدم متجر طلبية"}</span>
+                    <div className="pd-review-stars">
+                      {[1, 2, 3, 4, 5].map(s => (
+                        <Star key={s} size={12} fill={s <= review.rating ? "#fbbf24" : "none"} stroke={s <= review.rating ? "#fbbf24" : "#e5e7eb"} />
+                      ))}
+                    </div>
+                  </div>
+                  {review.comment && <p className="pd-review-comment">{review.comment}</p>}
+                  <div className="pd-review-meta">
+                    <span>{new Date(review.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    {review.isVerifiedPurchase && (
+                      <span className="pd-verified-purchase">
+                        <Check size={14} />
+                        شراء مؤكد
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -991,104 +990,40 @@ export default function ProductDetailsPage() {
               <>
                 {relatedByName.length > 0 && (
                   <section className="pd-related-section">
-                    <h2 className="pd-related-title">منتجات مشابهة قد تعجبك</h2>
-                    <div className="products-row pd-related-row">
+                    <HScrollWrap key={`similar-${relatedByName.length}`} className="pd-related-row">
                       {relatedByName.map((p) => (
                         <ProductCard key={p.id} product={p} />
                       ))}
-                    </div>
+                    </HScrollWrap>
                   </section>
                 )}
 
                 {relatedByCategory.length > 0 && (
                   <section className="pd-related-section">
-                    <h2 className="pd-related-title">منتجات أخرى من نفس القسم</h2>
-                    <div className="products-row pd-related-row">
+                    <HScrollWrap key={`category-${relatedByCategory.length}`} className="pd-related-row">
                       {relatedByCategory.map((p) => (
                         <ProductCard key={p.id} product={p} />
                       ))}
-                    </div>
+                    </HScrollWrap>
                   </section>
                 )}
 
                 {extraRows.map((row) => (
                   <section key={row.id} className="pd-related-section">
-                    <h2 className="pd-related-title">{row.title}</h2>
-                    <div className="products-row pd-related-row">
+                    <HScrollWrap key={`${row.id}-${row.products.length}`} className="pd-related-row">
                       {row.products.map((p) => (
                         <ProductCard key={p.id} product={p} />
                       ))}
-                    </div>
+                    </HScrollWrap>
                   </section>
                 ))}
               </>
             )}
           </section>
 
-          <div className="pd-bottom-bar" role="region" aria-label="شريط الشراء">
-            <button
-              type="button"
-              className={"pd-cart-fab" + (inCart ? " is-active" : "")}
-              onClick={handleAddToCart}
-              aria-label={inCart ? "إزالة من السلة" : "إضافة إلى السلة"}
-            >
-              {inCart ? <Check /> : <ShoppingCart />}
-            </button>
-
-            <div className="pd-qty" aria-label="الكمية">
-              <button
-                type="button"
-                className="pd-qty-btn"
-                onClick={() => setQty((q) => Math.min(99, q + 1))}
-                aria-label="زيادة الكمية"
-              >
-                +
-              </button>
-
-              <input
-                className="pd-qty-input"
-                value={qtyText}
-                onChange={(e) => {
-                  const v = e.target.value;
-
-                  if (v === "") {
-                    setQtyText("");
-                    return;
-                  }
-
-                  if (!/^\d{1,2}$/.test(v)) return;
-
-                  const n = Math.max(1, Math.min(99, parseInt(v, 10) || 1));
-                  setQty(n);
-                  setQtyText(String(n));
-                }}
-                onBlur={() => {
-                  if (qtyText === "") setQtyText(String(qty));
-                }}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                aria-label="رقم الكمية"
-              />
-
-              <button
-                type="button"
-                className="pd-qty-btn"
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                aria-label="إنقاص الكمية"
-              >
-                −
-              </button>
-            </div>
-
-            <div className="pd-total">
-              <div className="pd-total-label">المجموع الكلي</div>
-              <div className="pd-total-value">
-                {totalPrice} <span className="pd-currency">ر.ي</span>
-              </div>
-            </div>
-          </div>
         </>
       )}
+
     </div>
   );
 }

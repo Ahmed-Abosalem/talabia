@@ -40,10 +40,15 @@ export async function getAdminUserDetails(id) {
   return res.data; // { user, addresses, store, stores, shippingCompany, stats }
 }
 
-// 🔹 جديد: تحديث حالة المستخدم (نشط / غير نشط)
 export async function updateUserStatus(id, isActive) {
   const res = await api.put(`/admin/users/${id}/status`, { isActive });
   return res.data; // { message, user }
+}
+
+// 🔹 جديد: حذف المستخدم نهائياً
+export async function deleteUser(id) {
+  const res = await api.delete(`/admin/users/${id}`);
+  return res.data; // { message }
 }
 
 /**
@@ -136,6 +141,18 @@ export async function rejectSeller(id, reason = "") {
   return res.data; // { store }
 }
 
+// ✅ جديد: جلب بيانات بائع واحد بالتفصيل
+export async function getAdminSellerById(id) {
+  const res = await api.get(`/admin/sellers/${id}`);
+  return res.data; // { seller: { ... } }
+}
+
+// ✅ جديد: جلب إحصائيات بائع معيّن (منتجات + طلبات)
+export async function getAdminSellerStats(id) {
+  const res = await api.get(`/admin/sellers/${id}/stats`);
+  return res.data; // { products: {}, orders: {} }
+}
+
 /**
  * 🟪 إدارة المنتجات (Products)
  *  GET    /api/admin/products
@@ -157,6 +174,13 @@ export async function getAdminProductDetails(id) {
 export async function updateProductStatus(id, status) {
   const res = await api.put(`/admin/products/${id}/status`, { status });
   return res.data; // { product }
+}
+
+// ✅ جديد: تحديث حالة التميز للمنتج
+export async function updateProductFeatureStatus(id, payload) {
+  // payload: { isFeatured: boolean, featuredOrder?: number }
+  const res = await api.put(`/admin/products/${id}/feature-status`, payload);
+  return res.data; // { _id, isFeatured, featuredOrder, message }
 }
 
 export async function deleteProductAsAdmin(id) {
@@ -225,6 +249,16 @@ export async function cancelOrderItemAsAdmin(orderId, itemId, reason = "") {
     { reason }
   );
   return res.data; // { order }
+}
+
+/**
+ * 🚨 حذف الطلب نهائياً من النظام (Super Admin فقط)
+ *  DELETE /api/admin/orders/:id
+ *  ⚠️ تحذير: هذه العملية خطيرة ولا يمكن التراجع عنها
+ */
+export async function deleteOrderPermanently(orderId) {
+  const res = await api.delete(`/admin/orders/${orderId}`);
+  return res.data; // { success, message, deletedOrder }
 }
 
 /**
@@ -525,3 +559,51 @@ export async function deleteSupportTicket(id) {
   const res = await api.delete(`/admin/support-tickets/${id}`);
   return res.data; // { message }
 }
+
+/**
+ * 💳 إدارة خيارات الدفع (Payment Settings)
+ *  GET  /api/admin/payment-settings
+ *  PUT  /api/admin/payment-settings   { cod, card, transfer }
+ *  GET  /api/admin/bank-transfers
+ */
+
+// جلب إعدادات الدفع الحالية للأدمن
+export async function getAdminPaymentSettings(params = "") {
+  const res = await api.get(`/admin/payment-settings${params}`);
+  return res.data; // { settings, updatedAt, updatedBy }
+}
+
+// تحديث إعدادات الدفع (استخدام POST للتوافق الأقصى)
+export async function updateAdminPaymentSettings(payload) {
+  const res = await api.post("/admin/payment-settings", payload);
+  return res.data; // { message, settings }
+}
+
+// جلب قائمة الطلبات المدفوعة بالحوالة البنكية (مع بيانات المرسل)
+export async function getAdminBankTransfers(params = {}) {
+  const res = await api.get("/admin/bank-transfers", { params });
+  return res.data; // { data: [], pagination: {} }
+}
+
+// ✅ تحديث حالة تأكيد الحوالة (pending | confirmed | rejected)
+export async function updateAdminBankTransferStatus(orderId, status) {
+  // نستخدم POST لضمان التوافق مع البيئات المحلية التي قد تمنع PATCH
+  const res = await api.post(`/admin/bank-transfers/${orderId}/status`, { status });
+  return res.data; // { message, orderId, bankTransferStatus }
+}
+
+/**
+ * ⚙️ إعدادات النظام العامة (System Settings)
+ * GET /api/settings/min-order
+ * PUT /api/settings/min-order    { active, value }
+ */
+export async function getMinOrderSettings() {
+  const res = await api.get("/settings/min-order");
+  return res.data; // { active (boolean), value (number) }
+}
+
+export async function updateMinOrderSettings(payload) {
+  const res = await api.put("/settings/min-order", payload);
+  return res.data; // { message, active, value }
+}
+
