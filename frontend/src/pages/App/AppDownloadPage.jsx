@@ -8,9 +8,15 @@ import './AppDownloadPage.css';
 
 const AppDownloadPage = () => {
   const navigate = useNavigate();
-  const { deferredPrompt, isAppInstalled, setDeferredPrompt, showToast } = useApp();
+  const { deferredPrompt, isAppInstalled, pwaReady, setDeferredPrompt, showToast } = useApp();
 
   const handleInstallClick = async () => {
+    // التحقق من الجاهزية
+    if (!pwaReady) {
+      showToast("جاري التحقق من حالة النظام، يرجى المحاولة بعد لحظات...", "info");
+      return;
+    }
+
     // 1. التحقق إذا كان التطبيق مثبتاً بالفعل (Standalone Mode)
     if (isAppInstalled) {
       showToast("التطبيق مثبت بالفعل على جهازك. استمتع بالتجربة!", "success");
@@ -23,6 +29,7 @@ const AppDownloadPage = () => {
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
         setDeferredPrompt(null);
+        showToast("بدء عملية التثبيت... ستظهر أيقونة التطبيق على شاشة هاتفك قريباً.", "success");
       }
       return;
     }
@@ -33,7 +40,7 @@ const AppDownloadPage = () => {
     if (isIOS) {
       showToast("لمستخدمي الآيفون: استخدم خيار 'إضافة إلى الشاشة الرئيسية' من قائمة المشاركة.", "info");
     } else {
-      showToast("خيار التثبيت المباشر غير متاح حالياً. يرجى التأكد من أنك تستخدم متصفح كروم أو الضغط على 'إضافة للشاشة الرئيسية' من إعدادات المتصفح.", "warning");
+      showToast("خيار التثبيت المباشر غير متاح حالياً. يرجى التأكد من استخدام متصفح 'Chrome' أو استخدامه يدوياً من قائمة المتصفح.", "warning");
     }
   };
 
@@ -103,11 +110,26 @@ const AppDownloadPage = () => {
                   <button 
                     onClick={handleInstallClick} 
                     className="adm-btn-mgmt primary w-full"
-                    style={{ height: '60px', borderRadius: '15px', fontSize: '1.2rem' }}
+                    style={{ 
+                      height: '60px', 
+                      borderRadius: '15px', 
+                      fontSize: '1.2rem',
+                      opacity: pwaReady ? 1 : 0.7,
+                      cursor: pwaReady ? 'pointer' : 'wait'
+                    }}
+                    disabled={!pwaReady}
                   >
-                    تثبيت التطبيق الآن
+                    {!pwaReady ? "جاري التحقق..." : "تثبيت التطبيق الآن"}
                   </button>
                 </div>
+
+                {/* 🔧 Troubleshooting help */}
+                {!deferredPrompt && !isAppInstalled && pwaReady && (
+                  <div style={{ marginTop: '15px', padding: '10px', background: '#fff9f9', borderRadius: '10px', fontSize: '11px', border: '1px dashed #ffa6a6', color: '#a30000' }}>
+                    <strong>تواجه مشكلة في التثبيت؟</strong><br />
+                    قد يتأخر ظهور خيار التثبيت لعدة ثوانٍ. إذا استمرت المشكلة، جرب استخدام خيار "تثبيت التطبيق" أو "إضافة للشاشة الرئيسية" من قائمة إعدادات متصفحك (النقاط الثلاث بالأعلى).
+                  </div>
+                )}
               </section>
             </div>
           </div>

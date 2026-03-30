@@ -77,6 +77,7 @@ export function AppProvider({ children }) {
   // 🌍 PWA Installation State
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isAppInstalled, setIsAppInstalled] = useState(false);
+  const [pwaReady, setPwaReady] = useState(false); // ✅ لتحديد إذا كان النظام جاهزاً للتحقق
 
   // ✅ السلة والمفضلة: التحميل يتم مرة واحدة من localStorage هنا
   const [cartItems, setCartItems] = useState(() =>
@@ -277,9 +278,10 @@ export function AppProvider({ children }) {
     // التحقق الفوري إذا كان يعمل كـ "Standalone" (مثبت بالفعل)
     const checkIsStandalone = () => {
       const isStandalone = window.matchMedia("(display-mode: standalone)").matches || 
-                          window.navigator.standalone || 
-                          document.referrer.includes("android-app://");
+                          window.navigator.standalone;
+      
       setIsAppInstalled(isStandalone);
+      setPwaReady(true); // ✅ النظام اكتمل التحميل وجاهز
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -319,6 +321,7 @@ export function AppProvider({ children }) {
     deferredPrompt,
     setDeferredPrompt,
     isAppInstalled,
+    pwaReady,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
