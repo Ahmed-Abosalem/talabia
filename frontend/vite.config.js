@@ -14,7 +14,7 @@ export default defineConfig({
       },
       manifest: {
         name: "طلبية | Talabia",
-        short_name: "Talabia",
+        short_name: "طلبية",
         description: "متجر طلبية للتسوق من متاجر كثيرة ومتنوعة بأمان وسهولة",
         theme_color: "#a30000",
         background_color: "#ffffff",
@@ -22,17 +22,17 @@ export default defineConfig({
         start_url: "/",
         icons: [
           {
-            src: "/favicon.png",
+            src: "/pwa-icon-512.png",
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "/logo.png",
+            src: "/pwa-icon-512.png",
             sizes: "512x512",
             type: "image/png",
           },
           {
-            src: "/logo.png",
+            src: "/pwa-icon-512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any maskable",
