@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.png", "logo.png", "robots.txt", "apple-touch-icon-v3.png", "icon-512-v3.png", "icon-192-v3.png", "icon-maskable-v3.png"],
+      includeAssets: ["favicon.png", "logo.png", "robots.txt", "apple-touch-icon-v3.png", "brand-icon-v3.png"],
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
         skipWaiting: true, // ✅ طرد النسخة القديمة فوراً
@@ -17,7 +17,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
       },
       manifest: {
-        id: "com.talabia.app.v3", // ✅ الهوية الثابتة لمنع التكرار
+        id: "/v3", // ✅ الهوية الثابتة لمنع التكرار
         name: "طلبية | Talabia",
         short_name: "طلبية",
         description: "متجر طلبية للتسوق من متاجر كثيرة ومتنوعة بأمان وسهولة",
@@ -31,19 +31,19 @@ export default defineConfig({
         orientation: "portrait",
         icons: [
           {
-            src: "/icon-192-v3.png",
+            src: "/brand-icon-v3.png",
             sizes: "192x192",
             type: "image/png",
             purpose: "any",
           },
           {
-            src: "/icon-512-v3.png",
+            src: "/brand-icon-v3.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any",
           },
           {
-            src: "/icon-maskable-v3.png",
+            src: "/brand-icon-v3.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable", // ✅ الأيقونة الآمنة لشاشة الترحيب
