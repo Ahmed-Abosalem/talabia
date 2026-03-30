@@ -216,7 +216,7 @@ export const generateReceiptPrintHTML = (item) => {
       <body>
         <div class="receipt-container">
           <div class="header">
-            <img src="${logoBase64}" alt="Logo" class="logo" />
+            <img src="${makeAbsoluteUrlForPrint("/logo.png")}" onerror="this.src='${logoBase64}'" alt="Logo" class="logo" />
             <div class="store-info">
               <p style="margin: 0; color: #6b7280; font-size: 13px; font-weight: 800; border: 1px solid #e5e7eb; padding: 4px 15px; border-radius: 20px;">سند رسمي للبائع</p>
             </div>
