@@ -40,6 +40,16 @@ cd ../$FRONTEND_DIR
 npm install
 npm run build
 
+# 4. Sync to Nginx Root
+NGINX_ROOT="/var/www/talabia/frontend"
+echo "🚛 4/4 Syncing files to Nginx Root: ${NGINX_ROOT}"
+
+# Ensure it exists
+mkdir -p $NGINX_ROOT
+
+# Copy files (overwrite)
+cp -rv dist/* $NGINX_ROOT/
+
 echo "--------------------------------------------------------"
 echo "✅ Deployment Successful!"
 echo "--------------------------------------------------------"
@@ -47,5 +57,4 @@ echo "🌐 Site: https://talabia.net"
 echo "📊 PM2 Status:"
 pm2 status $PM2_PROCESS_NAME
 echo "--------------------------------------------------------"
-echo "💡 Remember: If this is the first deployment, ensure your .env file"
-echo "   is correctly configured in the backend directory."
+echo "💡 The new UI is now live at ${NGINX_ROOT}"
