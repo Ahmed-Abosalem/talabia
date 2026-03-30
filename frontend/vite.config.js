@@ -64,15 +64,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('lucide-react')) return 'vendor-icons';
-            if (id.includes('react-dom')) return 'vendor-react-dom';
-            if (id.includes('react-router')) return 'vendor-router';
-            if (id.includes('react')) return 'vendor-react';
-            return 'vendor-common';
-          }
-        },
+        manualChunks: {
+          'vendor': ['react', 'react-dom', 'react-router-dom', 'lucide-react', 'axios']
+        }
       },
     },
     chunkSizeWarningLimit: 500,
