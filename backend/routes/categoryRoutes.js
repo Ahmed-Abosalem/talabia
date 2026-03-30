@@ -8,18 +8,23 @@ const router = express.Router();
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const { active, includeInactive } = req.query;
-
-    const filter = {};
-
-    if (includeInactive === "true") {
-      // نعيد كل الأقسام (مفعّلة وغير مفعّلة)
-    } else if (active === "false") {
-      // نعيد الأقسام غير المفعّلة فقط
-      filter.isActive = false;
-    } else {
-      // 🔥 افتراضيًا: نعيد الأقسام المفعّلة فقط
-      filter.isActive = true;
+    // 🛡️ نظام الحماية الذاتي: التأكد من وجود "الكل" وضبطه كأول عنصر دائماً
+    let allCat = await Category.findOne({ $or: [{ slug: 'all' }, { name: 'الكل' }] });
+    if (!allCat) {
+      // إذا اختفى لسبب ما، نعيده فوراً
+      await Category.create({
+        name: "الكل",
+        slug: "all",
+        isActive: true,
+        isProtected: true,
+        sortOrder: -999,
+        image: "/assets/categories/all.jpg"
+      });
+    } else if (!allCat.isProtected || allCat.sortOrder !== -999) {
+      // إصلاح الإعدادات إذا تغيرت يدوياً من قاعدة البيانات
+      allCat.isProtected = true;
+      allCat.sortOrder = -999;
+      await allCat.save();
     }
 
     const categories = await Category.find(filter).sort({

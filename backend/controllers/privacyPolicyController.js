@@ -68,31 +68,26 @@ export const sendPrivacyPolicyNotification = asyncHandler(async (req, res) => {
         throw new Error("يجب تحديد الفئة المستهدفة بشكل صحيح");
     }
 
-    // بناء query للمستخدمين المستهدفين
-    let userQuery = {};
+    // ✅ التحسين الإنتاجي: استخدام نظام البث (Broadcast) بدل التكرار على آلاف المستخدمين
+    // هذا يمنع الـ Timeout ويجعل الإرسال فورياً مهما كان عدد المستخدمين
+    const audienceMap = {
+        all: "all",
+        buyer: "buyers",
+        seller: "sellers",
+        shipping: "shipper",
+        admin: "all", // يمكن للأدمن رؤية التنبيهات العامة أيضاً
+    };
 
-    if (targetAudience !== "all") {
-        userQuery.role = targetAudience;
-    }
-
-    // جلب المستخدمين المستهدفين
-    const targetUsers = await User.find(userQuery).select("_id");
-
-    if (targetUsers.length === 0) {
-        res.status(404);
-        throw new Error("لا يوجد مستخدمون في الفئة المحددة");
-    }
-
-    // إنشاء إشعار لكل مستخدم
-    const notifications = targetUsers.map((user) => ({
-        user: user._id,
+    const notificationData = {
         title: "تحديث سياسة الخصوصية",
         message: "تم تحديث سياسة الخصوصية. يرجى مراجعتها للاطلاع على التغييرات الجديدة.",
-        type: "system", // ✅ تم التعديل من info إلى system ليتوافق مع الـ Enum
+        type: "system",
         link: "/privacy-policy",
-    }));
+        audience: audienceMap[targetAudience],
+    };
 
-    await Notification.insertMany(notifications);
+    // إنشاء إشعار واحد بصيغة Broadcast
+    const notification = await Notification.create(notificationData);
 
     const audienceLabel = {
         all: "جميع المستخدمين",
@@ -103,8 +98,8 @@ export const sendPrivacyPolicyNotification = asyncHandler(async (req, res) => {
     };
 
     res.status(200).json({
-        message: `تم إرسال ${notifications.length} إشعار إلى ${audienceLabel[targetAudience]}`,
-        count: notifications.length,
+        message: `تم إرسال إشعار التحديث بنجاح لمجموعة: ${audienceLabel[targetAudience]}`,
+        success: true,
         targetAudience: audienceLabel[targetAudience],
     });
 });

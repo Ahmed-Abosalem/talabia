@@ -370,7 +370,6 @@ export default function Home() {
 
   // ❌ Removed useMemo for searchedProducts - now using server-side results directly in `products`
 
-  const categoryRows = categories.filter((cat) => cat.id !== "all");
 
   const currentBannerIndex = totalBanners ? activeBanner % totalBanners : 0;
   const currentBannerData = hasDynamicBanners ? bannerAds[currentBannerIndex] : null;
