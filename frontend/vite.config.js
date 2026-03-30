@@ -8,9 +8,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.png", "logo.png", "robots.txt", "apple-touch-icon.png", "pwa-icon-512.png"],
+      includeAssets: ["favicon.png", "logo.png", "robots.txt", "apple-touch-icon.png", "pwa-icon-512.png", "pwa-icon-192.png"],
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
+        skipWaiting: true, // ✅ طرد النسخة القديمة فوراً
+        clientsClaim: true, // ✅ السيطرة الفورية على الصفحة
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
       },
       manifest: {
         name: "طلبية | Talabia",
@@ -21,10 +24,11 @@ export default defineConfig({
         display: "standalone",
         start_url: "/",
         lang: "ar",
+        dir: "rtl",
         scope: "/",
         icons: [
           {
-            src: "/pwa-icon-512.png",
+            src: "/pwa-icon-192.png",
             sizes: "192x192",
             type: "image/png",
           },
