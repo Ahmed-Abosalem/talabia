@@ -142,12 +142,16 @@ export const getProducts = asyncHandler(async (req, res) => {
 
   // 2. للعامة والمشترين والبائعين: نستخدم محرك البحث الذكي الجديد
   try {
+    const parsedLimit = parseInt(limit) || 20;
+    const parsedPage = parseInt(page) || 1;
+    const skip = (parsedPage - 1) * parsedLimit;
+
     const products = await searchProducts({
       query: search,
       category,
       sort,
-      limit: parseInt(limit) || 20,
-      skip: 0
+      limit: parsedLimit,
+      skip: skip
     });
 
     // إضافة لقطة إحصائية (اختياري)

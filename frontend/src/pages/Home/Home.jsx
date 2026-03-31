@@ -176,6 +176,7 @@ export default function Home() {
       const params = {
         category: activeCategory === "all" ? undefined : activeCategory,
         limit: 20,
+        page: Math.floor(products.length / 20) + 1, // 🆕 ارسال رقم الصفحة
         cursor_score: nextCursorScore,
         cursor_id: nextCursorId,
         search: query, // 🆕 تمرير البحث للسيرفر
@@ -208,11 +209,6 @@ export default function Home() {
         setNextCursorId(last._id);
 
         if (newProductsRaw.length < 20) {
-          setHasMore(false);
-        }
-
-        // ⚠️ مؤقتاً: مع البحث والترتيب، نوقف التحميل الإضافي لأن الكيرسر غير مدعوم
-        if (query || sortOption !== 'default') {
           setHasMore(false);
         }
       }
@@ -289,11 +285,6 @@ export default function Home() {
           setNextCursorScore(last.performanceScore || 0);
           setNextCursorId(last._id);
           if (productsRes.length < 20) setHasMore(false);
-
-          // ⚠️ مؤقتاً: مع البحث والترتيب، نوقف التحميل الإضافي
-          if (query || sortOption !== 'default') {
-            setHasMore(false);
-          }
         } else {
           setHasMore(false);
         }

@@ -237,22 +237,6 @@ export async function buildSearchPipeline({
 
     pipeline.push({ $sort: sortStage });
 
-    // 4. Pagination & Projection
-    pipeline.push({ $skip: skip });
-    pipeline.push({ $limit: limit });
-
-    // تنظيف النتيجة من حقول التصنيف الداخلية
-    pipeline.push({
-        $project: {
-            textScore: 0,
-            exactTitleMatch: 0,
-            regexMatch: 0,
-            titleMatch: 0,
-            finalRelevance: 0,
-            search_text: 0
-        }
-    });
-
     return pipeline;
 };
 
@@ -307,13 +291,27 @@ export async function searchProducts(params) {
         }
     });
 
+    // 4. Pagination & Projection (now correctly at the absolute end)
+    pipeline.push({ $skip: params.skip || 0 });
+    pipeline.push({ $limit: params.limit || 20 });
+    pipeline.push({
+        $project: {
+            textScore: 0,
+            exactTitleMatch: 0,
+            regexMatch: 0,
+            titleMatch: 0,
+            finalRelevance: 0,
+            search_text: 0
+        }
+    });
+
     const products = await Product.aggregate(pipeline);
 
     if (params.query && products.length === 0) {
-        // console.log(`🔍 Search for "${params.query}" returned 0. Pipeline:`, JSON.stringify(pipeline, null, 2));
+        // console.log(`🔍 Search for "${params.query}" returned 0.`);
     }
 
-    // Populate Category (Optional, if needed by frontend)
+    // Populate Category
     await Product.populate(products, { path: "category", select: "name slug image" });
 
     return products;
