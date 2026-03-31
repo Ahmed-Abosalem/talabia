@@ -189,8 +189,8 @@ export async function buildSearchPipeline({
                         "$regexMatch",
                         { $cond: ["$isFeatured", 2, 0] }, // بونص بسيط للمميز
                         // تخفيف تأثير المبيعات والتقييم لكي لا يطغى على صلة البحث
-                        { $multiply: [{ $log10: { $add: ["$salesCount", 1] } }, 1] },
-                        { $multiply: ["$rating", 0.5] }
+                        { $multiply: [{ $log10: { $add: [{ $ifNull: ["$salesCount", 0] }, 1] } }, 1] },
+                        { $multiply: [{ $ifNull: ["$rating", 0] }, 0.5] }
                     ]
                 }
             }
@@ -202,9 +202,9 @@ export async function buildSearchPipeline({
                 finalRelevance: {
                     $add: [
                         { $cond: ["$isFeatured", 10, 0] },
-                        { $multiply: ["$featuredOrder", -1] }, // الأقل ترتيباً يظهر أولاً
-                        { $multiply: [{ $log10: { $add: ["$salesCount", 1] } }, 2] },
-                        "$performanceScore"
+                        { $multiply: [{ $ifNull: ["$featuredOrder", 0] }, -1] },
+                        { $multiply: [{ $log10: { $add: [{ $ifNull: ["$salesCount", 0] }, 1] } }, 2] },
+                        { $ifNull: ["$performanceScore", 0] }
                     ] // Note: Removed pending missing values check unless explicitly set
                 }
             }
