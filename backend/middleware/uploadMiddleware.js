@@ -38,14 +38,19 @@ function getSafeExt(originalname) {
 
 // 🧩 إنشاء تخزين DiskStorage لمجلد معيّن تحت backend/uploads
 function createDiskStorage(subfolder) {
-  /**
-   * Multer يكتب الملفات بشكل افتراضي في مسار نسبي من مسار التشغيل الحالي.
-   * لضمان أن جميع الملفات تحفظ تحت backend/uploads/<subfolder> فإننا نحدد المسار نسبة إلى هذا الملف.
-   */
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const uploadPath = path.join(__dirname, "..", "uploads", subfolder);
 
+  // ✅ القالب الذهبي: توحيد مسار الرفع مع مسار العرض في الإنتاج
+  // نفضل المسار المطلق /var/www/talabia/uploads إذا كان موجوداً (سيرفر الإنتاج)
+  let uploadBasePath = path.join(__dirname, "..", "uploads");
+  const productionPath = "/var/www/talabia/uploads";
+
+  if (fs.existsSync(productionPath)) {
+    uploadBasePath = productionPath;
+  }
+
+  const uploadPath = path.join(uploadBasePath, subfolder);
   ensureFolderExists(uploadPath);
 
   return multer.diskStorage({
