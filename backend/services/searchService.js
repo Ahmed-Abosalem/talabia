@@ -107,11 +107,6 @@ export async function buildSearchPipeline({
         matchStage.$and.push({ category: category });
     }
 
-    // 🆕 Fix: If user strictly asks for "Featured Only"
-    if (sort === "featured") {
-        matchStage.$and.push({ isFeatured: true });
-    }
-
     // إذا كان هناك بحث نصي
     if (searchData) {
         // A. تجميع كل الكلمات وتوسيعها بالمرادفات

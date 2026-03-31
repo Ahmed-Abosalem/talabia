@@ -58,7 +58,7 @@ const SORT_OPTIONS = [
   { value: "price_asc", label: "الأقل سعراً" },
   { value: "price_desc", label: "الأعلى سعراً" },
   { value: "best_selling", label: "الأكثر مبيعاً" },
-  { value: "featured", label: "المميزة فقط" },
+  { value: "featured", label: "المميزة أولاً" },
   { value: "newest", label: "الأحدث" },
   { value: "oldest", label: "الأقدم" },
 ];
