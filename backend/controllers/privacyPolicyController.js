@@ -73,20 +73,9 @@ export const sendPrivacyPolicyNotification = asyncHandler(async (req, res) => {
         all: "all",
         buyer: "buyers",
         seller: "sellers",
-        shipping: "shippers", // ✅ تم التصحيح إلى الجمع ليتوافق مع الـ Enum
-        admin: "all", 
+        shipping: "shippers", // ✅ تم التصحيح إلى الجمع ليتوافق مع الـ Enum في سجلات الإدارة
+        admin: "admins", 
     };
-
-    const notificationData = {
-        title: "تحديث سياسة الخصوصية",
-        message: "تم تحديث سياسة الخصوصية. يرجى مراجعتها للاطلاع على التغييرات الجديدة.",
-        type: "system",
-        link: "/privacy-policy",
-        audience: audienceMap[targetAudience],
-    };
-
-    // إنشاء إشعار واحد بصيغة Broadcast
-    const notification = await Notification.create(notificationData);
 
     const audienceLabel = {
         all: "جميع المستخدمين",
@@ -95,6 +84,38 @@ export const sendPrivacyPolicyNotification = asyncHandler(async (req, res) => {
         shipping: "شركات الشحن",
         admin: "المديرين",
     };
+
+    // 1. إنشاء سجل الحملة للإدارة (الـ Log الذي يظهر في لوحة الإشعارات العامة)
+    await Notification.create({
+        title: "تحديث سياسة الخصوصية",
+        message: "تم تحديث سياسة الخصوصية. يرجى مراجعتها للاطلاع على التغييرات الجديدة.",
+        type: "system",
+        audience: audienceMap[targetAudience],
+    });
+
+    // 2. الفلترة لاستهداف المستخدمين الفعليين
+    const userFilter = { isActive: true };
+    if (targetAudience === "buyer") userFilter.role = "buyer";
+    if (targetAudience === "seller") userFilter.role = "seller";
+    if (targetAudience === "shipping") userFilter.role = "shipper";
+    if (targetAudience === "admin") userFilter.role = "admin";
+    // إذا كان all، نرسل للجميع بدون تحديد الـ role
+
+    const targetUsers = await User.find(userFilter).select("_id");
+
+    if (targetUsers.length > 0) {
+        // 3. إنشاء إشعار فردي فعلي لكل مستخدم (لتظهر في حساباتهم)
+        const userNotifications = targetUsers.map((u) => ({
+            user: u._id,
+            title: "تحديث سياسة الخصوصية",
+            message: "تم تحديث سياسة الخصوصية. يرجى مراجعتها للاطلاع على التغييرات الجديدة.",
+            type: "system",
+            link: "/privacy-policy",
+            isRead: false,
+        }));
+
+        await Notification.insertMany(userNotifications);
+    }
 
     res.status(200).json({
         message: `تم إرسال إشعار التحديث بنجاح لمجموعة: ${audienceLabel[targetAudience]}`,
