@@ -216,13 +216,10 @@ export async function buildSearchPipeline({
     let sortStage = {};
 
     if (sort === "default") {
-        // في البحث: نرتب حسب الصلة (finalRelevance)
-        // في التصفح العادي: نرتب حسب المميز والأحدث
-        if (searchData) {
-            sortStage = { finalRelevance: -1, stock: -1 };
-        } else {
-            sortStage = { isFeatured: -1, featuredOrder: 1, createdAt: -1 };
-        }
+        // 🚀 الفلسفة الهجينة الذكية:
+        // نستخدم وزن الصلة التجاري (Relevance Score) كقلب نابض للصفحة الرئيسية وللبحث معاً
+        // يتم حساب الوزن بمراعاة: بونص المميز الضخم + خوارزمية المبيعات اللوغاريتمية + نقطة جودة التاجر
+        sortStage = { finalRelevance: -1, createdAt: -1 };
     } else {
         // الترتيبات الأخرى (السعر، الأحدث...)
         // مع الحفاظ على الفرز الثانوي بالصلة
