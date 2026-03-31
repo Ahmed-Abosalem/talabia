@@ -2,19 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { Shield, Save, Send, Calendar, RefreshCw, CheckCircle, AlertCircle, Info } from "lucide-react";
-import axios from "axios";
-import { useAuth } from "@/context/AuthContext";
-import { formatDate } from "@/utils/formatters";
+import { useApp } from "@/context/AppContext";
+import api from "@/services/api";
+import { formatCurrency, formatDate } from "@/utils/formatters";
 import "./AdminPrivacyPolicySection.css";
 
 export default function AdminPrivacyPolicySection() {
-  const { token } = useAuth();
+  const { showToast } = useApp();
   const [content, setContent] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
-  const [message, setMessage] = useState({ type: "", text: "" });
   const [selectedAudience, setSelectedAudience] = useState("all");
 
   const audiences = [
@@ -32,12 +31,12 @@ export default function AdminPrivacyPolicySection() {
   const fetchPrivacyPolicy = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("/api/privacy-policy");
+      const response = await api.get("/privacy-policy");
       setContent(response.data.content || "");
       setLastUpdated(response.data.lastUpdated || "");
     } catch (error) {
       console.error("Error fetching privacy policy:", error);
-      showMessage("error", "فشل تحميل سياسة الخصوصية");
+      showToast("فشل تحميل سياسة الخصوصية", "error");
     } finally {
       setLoading(false);
     }
@@ -45,29 +44,20 @@ export default function AdminPrivacyPolicySection() {
 
   const handleSave = async () => {
     if (!content.trim()) {
-      showMessage("error", "المحتوى لا يمكن أن يكون فارغاً");
+      showToast("المحتوى لا يمكن أن يكون فارغاً", "error");
       return;
     }
 
     try {
       setSaving(true);
-      const response = await axios.put(
-        "/api/privacy-policy",
-        { content },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await api.put("/privacy-policy", { content });
 
       setLastUpdated(response.data.lastUpdated);
-      showMessage("success", "تم حفظ وتحديث بنود السياسة في قاعدة البيانات بنجاح");
+      showToast("تم حفظ وتحديث بنود السياسة بنجاح", "success");
     } catch (error) {
       console.error("Error saving privacy policy:", error);
-      const status = error.response?.status;
-      const errorMsg = error.response?.data?.message || error.message;
-      showMessage("error", `فشل الحفظ: [${status || 'Network Error'}] ${errorMsg}`);
+      const errorMsg = error.response?.data?.message || "فشل الحفظ، حاول مرة أخرى";
+      showToast(errorMsg, "error");
     } finally {
       setSaving(false);
     }
@@ -76,28 +66,17 @@ export default function AdminPrivacyPolicySection() {
   const handleSendNotifications = async () => {
     try {
       setSending(true);
-      const response = await axios.post(
-        "/api/privacy-policy/notify",
-        { targetAudience: selectedAudience },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await api.post("/privacy-policy/notify", { 
+        targetAudience: selectedAudience 
+      });
 
-      showMessage("success", response.data.message);
+      showToast(response.data.message || "تم إرسال الإشعارات بنجاح", "success");
     } catch (error) {
       console.error("Error sending notifications:", error);
-      showMessage("error", error.response?.data?.message || "فشل إرسال الإشعارات");
+      showToast(error.response?.data?.message || "فشل إرسال الإشعارات", "error");
     } finally {
       setSending(false);
     }
-  };
-
-  const showMessage = (type, text) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage({ type: "", text: "" }), 5000);
   };
 
   if (loading) {
@@ -206,13 +185,7 @@ export default function AdminPrivacyPolicySection() {
         </button>
       </div>
 
-      {message.text && (
-        <div className={`adm-toast ${message.type === 'success' ? 'success' : 'error'}`}
-          style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 1000 }}>
-          {message.type === "success" ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-          <span>{message.text}</span>
-        </div>
-      )}
+      {/* تم استبدال الـ Toast المحلي بنظام useApp.showToast الموحد */}
     </section>
   );
 }

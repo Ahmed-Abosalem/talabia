@@ -101,11 +101,15 @@ export const createAdminNotification = asyncHandler(async (req, res) => {
     return res.status(201).json({ notification: userNotification });
   }
 
-  // 3️⃣ في غير ذلك → حملة عامة كما كان المنطق سابقًا
-  const allowedAudiences = ['all', 'buyers', 'sellers', 'shipper'];
-  const normalizedAudience = allowedAudiences.includes(audience)
-    ? audience
-    : 'all';
+  // 3️⃣ في غير ذلك → حملة عامة
+  const audienceMap = {
+    all: 'all',
+    buyers: 'buyers',
+    sellers: 'sellers',
+    shipping: 'shippers',
+  };
+
+  const normalizedAudience = audienceMap[audience] || 'all';
 
   // 3-أ: إنشاء سجل الحملة (يظهر في جدول AdminNotificationsSection)
   const notificationLog = await Notification.create({
@@ -122,7 +126,8 @@ export const createAdminNotification = asyncHandler(async (req, res) => {
     userFilter.role = 'buyer';
   } else if (normalizedAudience === 'sellers') {
     userFilter.role = 'seller';
-  } else if (normalizedAudience === 'shipper') {
+  } else if (normalizedAudience === 'shippers') {
+    // السائقون بجمهور (shippers) يطابقون رتبة المستخدم (shipper) في قاعدة البيانات
     userFilter.role = 'shipper';
   }
 

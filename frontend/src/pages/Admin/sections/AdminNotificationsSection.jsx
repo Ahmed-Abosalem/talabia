@@ -22,7 +22,7 @@ const AUDIENCE_MAP = {
   all: { label: "كل المستخدمين", icon: Users },
   buyers: { label: "المشترون", icon: Users },
   sellers: { label: "البائعون", icon: Store },
-  shipping: { label: "شركات الشحن", icon: Truck },
+  shippers: { label: "شركات الشحن", icon: Truck },
 };
 
 export default function AdminNotificationsSection({ onSendNotification }) {
