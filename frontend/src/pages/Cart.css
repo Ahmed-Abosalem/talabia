@@ -368,14 +368,14 @@
 
   .cart-page .buyer-item-card {
     grid-template-columns: 130px 1fr !important;
-    /* Stable 2-column layout to prevent image explosion */
+    height: 162.5px !important; /* Total Stable Height Lock (4:5) */
     margin-bottom: 0 !important;
     border-radius: 0 !important;
     border-inline: none !important;
     border: none !important;
-    /* Reset all borders first */
     border-top: 1px solid var(--adm-primary) !important;
     box-shadow: none !important;
+    overflow: hidden !important;
   }
 
   /* Add bottom border only to the last card to close the list */
@@ -417,16 +417,48 @@
   }
 
   .cart-page .item-card-col-info {
-    padding: 12px 15px !important;
+    padding: 10px 12px !important;
+    height: 162.5px !important; /* Match Visual Column */
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    min-width: 0 !important; /* Critical for Text Clamping */
+    overflow: hidden !important;
+  }
+
+  .cart-page .info-header {
+    margin-bottom: 4px !important;
   }
 
   .cart-page .item-name {
-    font-size: 1.05rem !important;
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+    height: 1.2rem !important; /* Exact Single Line Lock */
+    margin-bottom: 2px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important;
+    line-clamp: 1 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
+  .cart-page .item-store {
+    font-size: 0.75rem !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important;
+    line-clamp: 1 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
+  .cart-page .info-controls {
+    margin-top: 0 !important;
   }
 
   .cart-page .qty-rect-group {
-    scale: 0.9;
-    transform-origin: right;
+    scale: 0.85;
+    transform-origin: bottom left;
+    margin-top: auto;
   }
 }
 
