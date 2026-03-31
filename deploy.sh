@@ -58,3 +58,7 @@ echo "📊 PM2 Status:"
 pm2 status $PM2_PROCESS_NAME
 echo "--------------------------------------------------------"
 echo "💡 The new UI is now live at ${NGINX_ROOT}"
+echo "--------------------------------------------------------"
+echo "🔍 Running Automated Parity Check (Backend vs Frontend Sync)"
+cd $BACKEND_DIR
+node scripts/verify-deployment.js || { echo "❌ Parity Check Failed! Immediate intervention required."; exit 1; }
