@@ -10,7 +10,7 @@
 PROJECT_NAME="Talabia Platform"
 BACKEND_DIR="./backend"
 FRONTEND_DIR="./frontend"
-PM2_PROCESS_NAME="talabia-api"
+PM2_PROCESS_NAME="talabia-prod-backend"
 
 echo "--------------------------------------------------------"
 echo "  Starting Deployment for ${PROJECT_NAME}..."
