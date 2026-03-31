@@ -16,7 +16,10 @@ import {
   getProductRecommendations,
 } from "../controllers/productController.js";
 import { protect, optionalProtect } from "../middleware/authMiddleware.js";
-import { allowRoles } from "../middleware/roleMiddleware.js";
+import {
+  uploadProductImage,
+  handleMulterError,
+} from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
@@ -33,10 +36,24 @@ router.get("/:id/recommendations", getProductRecommendations);
 
 // ➕ إنشاء منتج جديد (فقط للبائع أو الأدمن)
 // يستخدمه SellerDashboard عبر productService / sellerService
-router.post("/", protect, allowRoles("seller", "admin"), createProduct);
+router.post(
+  "/",
+  protect,
+  allowRoles("seller", "admin"),
+  uploadProductImage.array("images", 10),
+  handleMulterError,
+  createProduct
+);
 
 // ✏️ تحديث منتج كامل (اسم، وصف، سعر، صور، ...)
-router.put("/:id", protect, allowRoles("seller", "admin"), updateProduct);
+router.put(
+  "/:id",
+  protect,
+  allowRoles("seller", "admin"),
+  uploadProductImage.array("images", 10),
+  handleMulterError,
+  updateProduct
+);
 
 // 🔁 تحديث حالة المنتج (نشط / غير نشط)
 // يُستدعى من الواجهة:

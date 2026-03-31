@@ -312,8 +312,19 @@ export const createProduct = asyncHandler(async (req, res) => {
     throw new Error("نفدت الكمية، تم التعطيل آلياً. لتنشيط المنتج مجدداً يرجى تحديث المخزون أولاً.");
   }
 
-  // تطبيع الصور لتوافق مخطط Product (images: [{ url, alt }])
-  const normalizedImages = normalizeImages(images);
+  // ✅ معالجة الصور المرفوعة حديثاً عبر Multer
+  let finalImages = [];
+  if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+    // تحويل الملفات المرفوعة لمسارات URLs متوافقة مع Nginx
+    const uploadedImages = req.files.map((file) => ({
+      url: `/uploads/products/${file.filename}`,
+      alt: name || "منتج طلبية",
+    }));
+    finalImages = uploadedImages;
+  } else if (images) {
+    // في حال تم إرسال روابط جاهزة (مثل روابط الصور القديمة أو روابط خارجية)
+    finalImages = normalizeImages(images);
+  }
 
   const product = new Product({
     store: storeId,
@@ -323,7 +334,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     price,
     stock,
     category: finalCategory,
-    images: normalizedImages,
+    images: finalImages,
     unitLabel,
     brand,
     variants,
@@ -441,8 +452,37 @@ export const updateProduct = asyncHandler(async (req, res) => {
     product.lowStockThreshold = Number(lowStockThreshold);
   }
 
-  // ✅ صور المنتج: احذف الصور التي تمت إزالتها فعلياً من المنتج
-  if (images !== undefined) {
+  // ✅ صور المنتج: دعم الرفع الجديد + الحفاظ على الصور القديمة + حذف الملفات المزالة
+  if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+    // 1. استخراج الروابط المرفوعة حديثاً
+    const uploadedImages = req.files.map((file) => ({
+      url: `/uploads/products/${file.filename}`,
+      alt: name || product.name,
+    }));
+
+    // 2. إذا كانت هناك صور قديمة نريد الاحتفاظ بها (تصل كـ JSON string أو Array في req.body.images)
+    let existingImages = [];
+    if (images) {
+      existingImages = normalizeImages(images);
+    }
+
+    // 🥇 الأولوية للرفع الجديد، مع الحفاظ على القديم إذا لم يتم إرسال "صور كاملة" بديلة
+    const combinedImages = [...existingImages, ...uploadedImages];
+
+    // 3. إدارة الحذف (اختياري هنا، كود الحذف الأصلي بالأسفل سيتعامل معه)
+    const oldUrls = Array.isArray(product.images)
+      ? product.images.map((x) => x?.url).filter(Boolean)
+      : [];
+    const newUrls = combinedImages.map((x) => x?.url).filter(Boolean);
+    const removed = oldUrls.filter((u) => !newUrls.includes(u));
+
+    product.images = combinedImages;
+
+    if (removed.length > 0) {
+      safeDeleteLocalProductImages(removed);
+    }
+  } else if (images !== undefined) {
+    // المنطق التقليدي عند تحديث الصور بدون رفع ملفات جديدة (مثلاً إعادة ترتيب أو حذف فقط)
     const oldUrls = Array.isArray(product.images)
       ? product.images.map((x) => x?.url).filter(Boolean)
       : [];
@@ -450,13 +490,10 @@ export const updateProduct = asyncHandler(async (req, res) => {
     const normalized = normalizeImages(images);
     const newUrls = normalized.map((x) => x?.url).filter(Boolean);
 
-    // الصور المحذوفة = القديمة - الجديدة
     const removed = oldUrls.filter((u) => !newUrls.includes(u));
 
-    // نحدّث DB أولاً
     product.images = normalized;
 
-    // ثم نحذف الملفات غير المستخدمة (داخل uploads/products فقط)
     if (removed.length > 0) {
       safeDeleteLocalProductImages(removed);
     }
