@@ -16,6 +16,7 @@ import {
   getProductRecommendations,
 } from "../controllers/productController.js";
 import { protect, optionalProtect } from "../middleware/authMiddleware.js";
+import { allowRoles } from "../middleware/roleMiddleware.js";
 import {
   uploadProductImage,
   handleMulterError,
