@@ -13,6 +13,7 @@ import cors from "cors";
 import morgan from "morgan";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -276,6 +277,22 @@ if (mongoose.connection.readyState === 1) {
     scheduleUploadsCleanup();
   });
 }
+
+// ────────────────────────────────────────────────
+// 🛡️ Enterprise Parity Health Check
+// ────────────────────────────────────────────────
+app.get("/api/health/parity", (req, res) => {
+  try {
+    const hashPath = path.join(process.cwd(), ".deploy_hash");
+    let hash = "DEVELOPMENT_MODE";
+    if (fs.existsSync(hashPath)) {
+      hash = fs.readFileSync(hashPath, "utf-8").trim();
+    }
+    res.status(200).json({ status: "alive", parityHash: hash });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: "Failed to read hash" });
+  }
+});
 
 // ────────────────────────────────────────────────
 // 📁 Routes

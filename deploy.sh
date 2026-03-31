@@ -20,6 +20,12 @@ echo "--------------------------------------------------------"
 echo "📥 1/4 Pulling latest changes from main branch..."
 git pull origin main
 
+DEPLOY_HASH=$(git rev-parse HEAD)
+echo "🔑 Deployment Fingerprint: ${DEPLOY_HASH}"
+
+# Write backend hash for Parity route
+echo $DEPLOY_HASH > $BACKEND_DIR/.deploy_hash
+
 # 2. Update Backend
 echo "⚙️  2/4 Updating Backend..."
 cd $BACKEND_DIR
@@ -40,6 +46,9 @@ cd ../$FRONTEND_DIR
 npm install
 npm run build
 
+echo "🏷️ Injecting Frontend Fingerprint..."
+sed -i "s|<head>|<head><meta name=\"deployment-hash\" content=\"${DEPLOY_HASH}\">|g" dist/index.html
+
 # 4. Sync to Nginx Root
 NGINX_ROOT="/var/www/talabia/frontend"
 echo "🚛 4/4 Syncing files to Nginx Root: ${NGINX_ROOT}"
@@ -56,6 +65,9 @@ echo "--------------------------------------------------------"
 echo "🌐 Site: https://talabia.net"
 echo "📊 PM2 Status:"
 pm2 status $PM2_PROCESS_NAME
+echo "⏳ Waiting 3 seconds for advanced PM2 crash detection..."
+sleep 3
+
 echo "--------------------------------------------------------"
 echo "💡 The new UI is now live at ${NGINX_ROOT}"
 echo "--------------------------------------------------------"

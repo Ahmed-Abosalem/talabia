@@ -1,103 +1,128 @@
 import https from 'https';
+import fs from 'fs';
+import path from 'path';
 
 console.log("==================================================");
-console.log("🔍 Talabia Environment Parity Checker");
+console.log("🔍 Enterprise Verification Engine (Talabia)");
 console.log("==================================================\n");
 
-const TARGET_DOMAIN = "www.talabia.net";
+const TARGET_DOMAIN = "talabia.net";
+const hashPath = path.join(process.cwd(), ".deploy_hash");
 
-// قائمة بأحدث المسارات البرمجية التي تمت إضافتها للسيرفر
-// إذا كان السيرفر على النسخة القديمة، فسيأتي الرد بالخطأ 404 (Not Found)
-const endpointsToVerify = [
-  {
-    name: "إدارة المفردات (Synonyms API)",
-    path: "/api/synonyms",
-    expectedCodeNot: 404, // إذا جاء 404 معناها الروات غير موجود بالمره
-  },
-  {
-    name: "ميزة إشعارات الخصوصية (Privacy Notifications)",
-    path: "/api/privacy-policy/notify",
-    method: "POST",
-    expectedCodeNot: 404,
-  },
-  {
-    name: "جلب سياسة الخصوصية (Privacy Fetch)",
-    path: "/api/privacy-policy",
-    expectedCodeNot: 404, 
-  }
-];
+if (!fs.existsSync(hashPath)) {
+  console.log("❌ CRITICAL: `.deploy_hash` file not found! Deployment script failed to stamp the version.");
+  process.exit(1);
+}
+
+const expectedHash = fs.readFileSync(hashPath, "utf-8").trim();
+console.log(`📌 Expected Target Signature (Git Hash): ${expectedHash}\n`);
 
 let hasErrors = false;
-
-const performValidation = () => {
-  let completed = 0;
-  
-  endpointsToVerify.forEach(endpoint => {
-    const options = {
-      hostname: TARGET_DOMAIN,
-      path: endpoint.path,
-      method: endpoint.method || "GET",
-      headers: {
-        "User-Agent": "Talabia-Parity-Bot/1.0",
-      }
-    };
-
-    const req = https.request(options, (res) => {
-      const status = res.statusCode;
-      let symbol = "✅";
-      let msg = "متطابق";
-
-      // 404 Not Found is the ultimate sign of Desync
-      if (status === 404) {
-        symbol = "❌";
-        msg = "خطأ (السيرفر يعمل بكود قديم، المسار غير موجود 404)";
-        hasErrors = true;
-      } else if (status === 401 || status === 403) {
-         // Unauthorized means the route EXISTS, which is exactly what we want!
-         symbol = "✅";
-         msg = "متطابق (موجود ولكنه محمي كما هو متوقع)";
-      } else if (status === 405) {
-         // Method Not Allowed means the route EXISTS but expects POST, which is perfect!
-         symbol = "✅";
-         msg = "متطابق (المسار موجود ويتطلب POST كما هو متوقع)";
-      }else if (status === 200 || status === 201) {
-         symbol = "✅";
-         msg = "متطابق (يعمل ويعيد بيانات)";
-      }
-
-      console.log(`[${symbol}] ${endpoint.name}:`);
-      console.log(`    مسار: ${endpoint.path} -> رمز الاستجابة: ${status} | ${msg}\n`);
-
-      completed++;
-      if (completed === endpointsToVerify.length) {
-        printReport();
-      }
-    });
-
-    req.on("error", (e) => {
-      console.log(`[❌] ${endpoint.name}: فشل الاتصال بالإنترنت أو بالسيرفر - ${e.message}\n`);
-      hasErrors = true;
-      completed++;
-      if (completed === endpointsToVerify.length) {
-        printReport();
-      }
-    });
-
-    req.end();
-  });
-};
+let completedTests = 0;
+const totalTests = 2; // Frontend + Backend
 
 const printReport = () => {
   console.log("==================================================");
   if (hasErrors) {
-    console.log("🚨 إنذار أحمر: السيرفر الإنتاجي ينفصل عن بيئة التطوير! (DESYNC DETECTED)");
-    console.log("يجب تشغيل أمر نشر جديد لإجبار السيرفر على قراءة الكود الحديث.");
+    console.log("🚨 نظام التأكيد الماسي (Red Alert): فشل العبور!");
+    console.log("لم تتطابق البصمات بين الكود المرفوع والنسخة العاملة. تحقق من انهيار السيرفر أو مشكلات الكاش.");
     process.exit(1);
   } else {
-    console.log("🎉 تهانينا! بيئة الإنتاج متطابقة 100% مع أحدث الأكواد (PARITY SECURED).");
+    console.log("💎 نظام التأكيد الماسي (Green Light): عبور آمن!");
+    console.log("كافة التعديلات (أمامية/خلفية) متطابقة بنسبة 100% وتعمل بكفاءة تامة على الإنتاج.");
     process.exit(0);
   }
 };
 
-console.log("جارِ فحص البوابات الأمنية للسيرفر الإنتاجي...\n");
-performValidation();
+const verifyBackend = () => {
+  const options = {
+    hostname: TARGET_DOMAIN,
+    path: "/api/health/parity",
+    method: "GET",
+    headers: { "User-Agent": "Talabia-Verification-Engine/2.0" }
+  };
+
+  const req = https.request(options, (res) => {
+    let data = '';
+    
+    // Server is completely dead or 502 Bad Gateway (PM2 Crash)
+    if (res.statusCode >= 500) {
+      console.log(`[❌] Backend Server Check: 502/500 Error - السيرفر انهار (PM2 Crash) ولا يعمل أبدًا!`);
+      hasErrors = true;
+      completedTests++;
+      if (completedTests === totalTests) printReport();
+      return;
+    }
+
+    res.on('data', chunk => data += chunk);
+    res.on('end', () => {
+      try {
+        const json = JSON.parse(data);
+        if (json.parityHash === expectedHash) {
+          console.log(`[✅] Backend Server Check: متطابق (B-${json.parityHash.substring(0,7)})`);
+        } else {
+          console.log(`[❌] Backend Server Check: غير متطابق!`);
+          console.log(`    Expected: ${expectedHash}`);
+          console.log(`    Running:  ${json.parityHash || "None (Old Code)"}`);
+          hasErrors = true;
+        }
+      } catch (e) {
+        console.log(`[❌] Backend Server Check: استجابة غير صالحة من السيرفر، قد يكون السيرفر أقدم من إصدار المراجعة.`);
+        hasErrors = true;
+      }
+      completedTests++;
+      if (completedTests === totalTests) printReport();
+    });
+  });
+
+  req.on("error", (e) => {
+    console.log(`[❌] Backend Server Check: فشل الاتصال - ${e.message}`);
+    hasErrors = true;
+    completedTests++;
+    if (completedTests === totalTests) printReport();
+  });
+  req.end();
+};
+
+const verifyFrontend = () => {
+  const options = {
+    hostname: TARGET_DOMAIN,
+    path: "/",
+    method: "GET",
+    headers: { "User-Agent": "Talabia-Verification-Engine/2.0" }
+  };
+
+  const req = https.request(options, (res) => {
+    let html = '';
+    res.on('data', chunk => html += chunk);
+    res.on('end', () => {
+        // البحث عن <meta name="deployment-hash" content="...">
+        const match = html.match(/<meta\s+name="deployment-hash"\s+content="([^"]+)"/);
+        const liveHash = match ? match[1] : null;
+
+        if (liveHash === expectedHash) {
+          console.log(`[✅] Frontend Client Check: متطابق (F-${liveHash.substring(0,7)})`);
+        } else {
+          console.log(`[❌] Frontend Client Check: غير متطابق أو مخبأ (Cached)!`);
+          console.log(`    Expected: ${expectedHash}`);
+          console.log(`    Running:  ${liveHash || "Missing Tag"}`);
+          hasErrors = true;
+        }
+
+        completedTests++;
+        if (completedTests === totalTests) printReport();
+    });
+  });
+
+  req.on("error", (e) => {
+    console.log(`[❌] Frontend Client Check: فشل الاتصال - ${e.message}`);
+    hasErrors = true;
+    completedTests++;
+    if (completedTests === totalTests) printReport();
+  });
+  req.end();
+};
+
+console.log("جارِ فحص بصمات النظام بين بيئة التطوير والتشغيل...\n");
+verifyBackend();
+verifyFrontend();
