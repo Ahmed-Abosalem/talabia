@@ -107,6 +107,11 @@ export async function buildSearchPipeline({
         matchStage.$and.push({ category: category });
     }
 
+    // 🆕 Fix: If user strictly asks for "Featured Only"
+    if (sort === "featured") {
+        matchStage.$and.push({ isFeatured: true });
+    }
+
     // إذا كان هناك بحث نصي
     if (searchData) {
         // A. تجميع كل الكلمات وتوسيعها بالمرادفات
@@ -232,7 +237,8 @@ export async function buildSearchPipeline({
             case "best_selling": sortStage = { salesCount: -1 }; break;
             case "newest": sortStage = { createdAt: -1 }; break;
             case "oldest": sortStage = { createdAt: 1 }; break;
-            case "featured": sortStage = { featuredOrder: 1 }; break;
+            // 🆕 Fix: Also set sort for featured
+            case "featured": sortStage = { featuredOrder: 1, createdAt: -1 }; break;
             default: sortStage = { finalRelevance: -1 };
         }
     }
