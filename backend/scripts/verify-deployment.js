@@ -17,6 +17,7 @@ const endpointsToVerify = [
   {
     name: "ميزة إشعارات الخصوصية (Privacy Notifications)",
     path: "/api/privacy-policy/notify",
+    method: "POST",
     expectedCodeNot: 404,
   },
   {
@@ -35,7 +36,7 @@ const performValidation = () => {
     const options = {
       hostname: TARGET_DOMAIN,
       path: endpoint.path,
-      method: "GET", // يمكن للـ GET أن يجلب 405 (Method Not Allowed) وهذا جيد يعني الراوت موجود
+      method: endpoint.method || "GET",
       headers: {
         "User-Agent": "Talabia-Parity-Bot/1.0",
       }
