@@ -233,7 +233,7 @@ export async function buildSearchPipeline({
             case "newest": sortStage = { createdAt: -1 }; break;
             case "oldest": sortStage = { createdAt: 1 }; break;
             // 🆕 Fix: Also set sort for featured
-            case "featured": sortStage = { featuredOrder: 1, createdAt: -1 }; break;
+            case "featured": sortStage = { isFeatured: -1, featuredOrder: 1, createdAt: -1 }; break;
             default: sortStage = { finalRelevance: -1 };
         }
     }
