@@ -401,15 +401,19 @@
     flex-direction: column !important;
   }
 
-  /* Force image to fill entire container without gaps */
-  .cart-page .item-card-col-visual .item-image-container,
+  /* Force image to adhere to strict 4:5 aspect ratio without stretching */
+  .cart-page .item-card-col-visual .item-image-container {
+    height: 162.5px !important; /* Sharp 4:5 lock (130 * 1.25) */
+    width: 130px !important;
+    overflow: hidden !important;
+  }
+
   .cart-page .item-card-col-visual .item-card-img {
     height: 100% !important;
     width: 100% !important;
     object-fit: cover !important;
     object-position: center !important;
     display: block !important;
-    flex: 1 !important;
   }
 
   .cart-page .item-card-col-info {
