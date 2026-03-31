@@ -251,7 +251,12 @@ export async function searchProducts(params) {
     // and use populate logic from controller if possible, 
     // but aggregate returns POJOs (Plain Objects).
 
-    pipeline.splice(pipeline.length - 1, 0, {
+    // 1. Pagination BEFORE heavy Joins (CRITICAL PERFORMANCE BOOST)
+    pipeline.push({ $skip: params.skip || 0 });
+    pipeline.push({ $limit: params.limit || 20 });
+
+    // 2. Heavy Operations (Lookups) ONLY on the limited 20 items
+    pipeline.push({
         $lookup: {
             from: "stores",
             localField: "store",
@@ -259,15 +264,14 @@ export async function searchProducts(params) {
             as: "store_info"
         }
     });
-    pipeline.splice(pipeline.length - 1, 0, {
+    pipeline.push({
         $unwind: {
             path: "$store_info",
             preserveNullAndEmptyArrays: true
         }
     });
 
-    // جلب بيانات البائع (User) للتأكد من حالة حسابه
-    pipeline.splice(pipeline.length - 1, 0, {
+    pipeline.push({
         $lookup: {
             from: "users",
             localField: "seller",
@@ -275,15 +279,15 @@ export async function searchProducts(params) {
             as: "seller_info"
         }
     });
-    pipeline.splice(pipeline.length - 1, 0, {
+    pipeline.push({
         $unwind: {
             path: "$seller_info",
             preserveNullAndEmptyArrays: true
         }
     });
 
-    // فلترة متاجر وبائعين موقوفين
-    pipeline.splice(pipeline.length - 1, 0, {
+    // 3. Filter out suspended sellers from this 20-chunk
+    pipeline.push({
         $match: {
             "store_info.status": { $in: ["approved", null] },
             "store_info.visibility": { $ne: "hidden" },
@@ -291,9 +295,7 @@ export async function searchProducts(params) {
         }
     });
 
-    // 4. Pagination & Projection (now correctly at the absolute end)
-    pipeline.push({ $skip: params.skip || 0 });
-    pipeline.push({ $limit: params.limit || 20 });
+    // 4. Clean projection
     pipeline.push({
         $project: {
             textScore: 0,

@@ -121,6 +121,9 @@ export default function Home() {
   const dragEndX = useRef(null);
   const minSwipeDistance = 50;
 
+  // حالة الصفحة للسحب اللانهائي المستقر
+  const [currentPage, setCurrentPage] = useState(1);
+
   const onDragStart = (clientX) => {
     dragStartX.current = clientX;
     dragEndX.current = null;
@@ -173,28 +176,16 @@ export default function Home() {
     if (isFetchingNextPage || !hasMore) return;
     try {
       setIsFetchingNextPage(true);
+      const nextPage = currentPage + 1;
       const params = {
         category: activeCategory === "all" ? undefined : activeCategory,
         limit: 20,
-        page: Math.floor(products.length / 20) + 1, // 🆕 ارسال رقم الصفحة
+        page: nextPage,
         cursor_score: nextCursorScore,
         cursor_id: nextCursorId,
         search: query, // 🆕 تمرير البحث للسيرفر
         sort: sortOption, // 🆕 تمرير الترتيب للسيرفر
       };
-
-      // في حالة البحث أو الترتيب المخصص، قد لا نستخدم الكيرسر بنفس الطريقة
-      // لكن سأبقيه كما هو لأن الباك اند سيتجاهله إذا وجد search/sort وسيعتمد على limit/skip إذا طورناه، 
-      // أو سيعيد الصفحة الأولى فقط حالياً. (حسب اتفاقنا، سنعتمد حالياً على ما يرجع)
-      // ملاحظة: الباك اند المعدل يتجاهل الكيرسر في وجود search/sort ويعيد أول 20 نتيجة فقط.
-      // وهذا مقبول للمرحلة الحالية، ويمكن تطوير Pagination كلاسيكي لاحقاً.
-      if (query || sortOption !== 'default') {
-        // إذا كان هناك بحث أو ترتيب، نعطل السكرول اللانهائي مؤقتاً بعد أول صفحة
-        // إلا إذا طورنا الباك اند لدعم skip.
-        // في الكود الحالي للباك اند، هو يعيد limit 20 دائماً مع search/sort.
-        // لذا لكي لا نكرر المنتجات، سنوقف hasMore مؤقتاً في هذه الحالات بعد أول تحميل.
-        // *تحسين مستقبلي: دعم skip/page في الباك اند*
-      }
 
       const newProductsRaw = await listProducts(params);
 
@@ -203,6 +194,7 @@ export default function Home() {
       } else {
         const processed = processProducts(newProductsRaw);
         setProducts((prev) => [...prev, ...processed]);
+        setCurrentPage(nextPage);
 
         const last = newProductsRaw[newProductsRaw.length - 1];
         setNextCursorScore(last.performanceScore || 0);
@@ -248,6 +240,7 @@ export default function Home() {
         setIsLoading(true);
         setErrorMessage("");
         setHasMore(true);
+        setCurrentPage(1);
         setNextCursorScore(null);
         setNextCursorId(null);
         setProducts([]); // تصفية القائمة القديمة
