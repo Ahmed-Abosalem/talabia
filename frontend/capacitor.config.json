@@ -1,9 +1,13 @@
 {
   "appId": "com.talabia.app",
-  "appName": "Talabia",
+  "appName": "طلبية",
   "webDir": "dist",
   "server": {
-    "androidScheme": "https"
+    "url": "https://www.talabia.net/",
+    "androidScheme": "https",
+    "allowNavigation": [
+      "www.talabia.net"
+    ]
   },
   "plugins": {
     "SplashScreen": {

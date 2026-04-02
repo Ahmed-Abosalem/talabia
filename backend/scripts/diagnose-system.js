@@ -45,7 +45,7 @@ async function diagnose() {
     // 2. ADMIN LOGIN CHECK
     try {
         const email = "admin@talabia.com";
-        const password = "Admin12345";
+        const password = "Admin123456";
 
         const user = await User.findOne({ email }).select("+password");
         if (!user) {

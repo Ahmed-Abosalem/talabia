@@ -2,6 +2,4 @@
 <resources>
     <string name="app_name">طلبية</string>
     <string name="title_activity_main">طلبية</string>
-    <string name="package_name">com.talabia.app</string>
-    <string name="custom_url_scheme">com.talabia.app</string>
 </resources>

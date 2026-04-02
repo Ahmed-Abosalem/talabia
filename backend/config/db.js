@@ -15,7 +15,10 @@ const connectDB = async () => {
     }
 
     // ✅ Mongoose 7+ لا يحتاج useNewUrlParser/useUnifiedTopology
-    const conn = await mongoose.connect(uri);
+    // ✅ إضافة serverSelectionTimeoutMS لزيادة استقرار النظام
+    const conn = await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000,
+    });
 
     console.log(`✅ تم الاتصال بقاعدة البيانات: ${conn.connection.host}`);
   } catch (error) {

@@ -15,7 +15,7 @@ Follow these steps precisely to avoid the "White Screen" initialization error an
 
 3. **Remote Execution**:
    Run the following command in your terminal:
-   `ssh root@165.232.127.15 "cd /root/talabia_source && git fetch origin main && git reset --hard origin/main && chmod +x deploy.sh && ./deploy.sh"`
+   `ssh root@165.232.127.15 "cd /root/talabia-app && git fetch origin main && git reset --hard origin/main && chmod +x deploy.sh && ./deploy.sh"`
 
 4. **Verify Live Site**:
    - Visit https://talabia.net

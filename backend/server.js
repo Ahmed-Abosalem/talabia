@@ -387,6 +387,21 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// ✅ مسار مراقبة حالة قاعدة البيانات الفعلي
+app.get("/api/health/db", (req, res) => {
+  const states = {
+    0: "Disconnected",
+    1: "Connected",
+    2: "Connecting",
+    3: "Disconnecting",
+  };
+  const code = mongoose.connection.readyState;
+  res.status(code === 1 ? 200 : 503).json({
+    status: states[code] || "Unknown",
+    dbHost: mongoose.connection.host || "None",
+  });
+});
+
 // ────────────────────────────────────────────────
 // ❌ Errors
 // ────────────────────────────────────────────────
