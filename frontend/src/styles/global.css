@@ -4,13 +4,10 @@ html,
 body {
   margin: 0;
   padding: 0;
-  /* 🏗️ APP SHELL LOCK: Prevent body from scrolling — only <main> scrolls */
+  /* 🏗️ APP SHELL LOCK: Prevent top-level overflow */
   height: 100%;
-  overflow: hidden;
-  position: fixed;
   width: 100%;
-  top: 0;
-  left: 0;
+  overflow: hidden;
 }
 
 *,

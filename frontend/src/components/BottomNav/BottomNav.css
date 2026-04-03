@@ -6,8 +6,7 @@
     left: 0;
     right: 0;
     height: calc(var(--bottomnav-height, 70px) + var(--safe-inset-bottom, 0px));
-    background-color: transparent;
-    /* Background is handled by the SVG */
+    background-color: #4b502a; /* 🟢 FIX: Olive background to cover safe area gaps */
     display: flex;
     justify-content: space-around;
     align-items: stretch;
