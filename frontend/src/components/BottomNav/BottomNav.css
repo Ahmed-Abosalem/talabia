@@ -5,15 +5,14 @@
     bottom: 0 !important;
     left: 0;
     right: 0;
-    /* 👗 SLENDER BASE: Smaller height + safe area extension */
-    height: calc(var(--bottomnav-height, 60px) + var(--safe-inset-bottom, 0px));
+    /* 👗 SLIM-PRO: Slender base + intelligent safe-area handling */
+    height: calc(var(--bottomnav-height, 60px) + (var(--safe-inset-bottom, 0px) * 0.4));
     background-color: #4b502a; /* 🟢 Olive base for edge-to-edge */
     display: flex;
     justify-content: space-around;
-    align-items: flex-start; /* Start from top to keep icons consistent */
-    padding-top: 2px;
+    align-items: center; /* Center icons vertically for perfect balance */
     z-index: 10000;
-    padding-bottom: var(--safe-inset-bottom, 0px);
+    padding-bottom: calc(var(--safe-inset-bottom, 0px) * 0.4);
     direction: rtl;
     filter: drop-shadow(0 -4px 12px rgba(0, 0, 0, 0.25));
     /* 🏗️ APP SHELL: GPU Layer Lock — prevents floating on Android WebView */
