@@ -2,16 +2,24 @@
 
 import axios from "axios";
 
-/* ------------------------------------------------
-   📌 تحديد عنوان الخادم (Backend Base URL)
-   ------------------------------------------------
-   ✅ الخيار الاحترافي:
-   - في المتصفح: يمكننا استخدام "/api" (Same-origin).
-   - في التطبيق (Capacitor): يجب استخدام رابط كامل (Absolute URL) لأن التطبيق لا يملك same-origin.
----------------------------------------------------- */
-const isCapacitor = window.Capacitor?.isNativePlatform || window.location.protocol === 'capacitor:';
-const defaultBaseURL = isCapacitor ? "http://192.168.1.10:5000/api" : "/api"; // Default for local network testing
+// 📌 تحديد عنوان الخادم (Backend Base URL)
+// ✅ Note: capacitor.config.json has server.url = "https://www.talabia.net/"
+// This means the Android WebView loads from the production domain directly.
+// So "/api" (relative) resolves to https://www.talabia.net/api — which is correct.
+// We keep Capacitor detection as a safety net for future local-dev scenarios.
+const isNative = (() => {
+  try {
+    return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  } catch {
+    return false;
+  }
+})();
+
+const productionAPI = "https://www.talabia.net/api";
+const defaultBaseURL = isNative ? productionAPI : "/api";
 const baseURL = import.meta.env.VITE_API_BASE_URL || defaultBaseURL;
+console.log(`[Talabia API] isNative=${isNative}, baseURL=${baseURL}`);
+
 
 /* ------------------------------------------------
    📌 إنشاء Instance ثابت للتعامل مع الخادم

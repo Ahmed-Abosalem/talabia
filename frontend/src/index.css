@@ -10,3 +10,15 @@ html[dir="rtl"] {
 body {
   @apply font-sans bg-slate-50 text-slate-900;
 }
+
+/* 📱 Mobile Layout Utilities */
+.has-bottom-nav {
+  padding-bottom: calc(80px + var(--safe-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+  .has-bottom-nav {
+    padding-bottom: 0;
+  }
+}
+

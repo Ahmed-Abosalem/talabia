@@ -8,12 +8,19 @@ import AppRouter from "./router";
 import { useApp } from "@/context/AppContext";
 import BottomNav from "@/components/BottomNav/BottomNav";
 import ScrollToTop from "@/components/ScrollToTop";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { App as CapApp } from "@capacitor/app";
+import SplashScreen from "@/components/pwa/SplashScreen";
 
 export default function App() {
   const { isLoading, toast } = useApp();
+  
+  // 🎯 SplashScreen only on mobile/native, never on desktop
+  const isMobileOrNative = typeof window !== 'undefined' && (
+    window.Capacitor?.isNativePlatform?.() || window.innerWidth < 1024
+  );
+  const [showSplash, setShowSplash] = useState(isMobileOrNative);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -61,15 +68,18 @@ export default function App() {
 
   return (
     <div className={`app-root ${isFluidPage ? "is-fluid-layout" : ""}`}>
+      {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
+      
       <ScrollToTop />
       <Navbar />
-      <main>
+      <main className={!hideBottomNav ? "has-bottom-nav" : ""}>
         <AppContainer fluid={isFluidPage}>
           <AppRouter />
         </AppContainer>
+        <Footer />
       </main>
       {!hideBottomNav && <BottomNav />}
-      <Footer />
+
       {isLoading && <Loader />}
       {toast && <Notification type={toast.type} message={toast.message} />}
     </div>
