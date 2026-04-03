@@ -4,6 +4,13 @@ html,
 body {
   margin: 0;
   padding: 0;
+  /* 🏗️ APP SHELL LOCK: Prevent body from scrolling — only <main> scrolls */
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  left: 0;
 }
 
 *,
@@ -32,6 +39,8 @@ body,
 :root {
   /* ✅ مصدر واحد لارتفاع الشريط العلوي */
   --navbar-height: 60px;
+  /* 📱 ارتفاع الشريط السفلي */
+  --bottomnav-height: 70px;
 
   /* 🛡️ Smart Fluid Architecture: Protected Rail System */
   /* These variables ensure content NEVER touches system notches while backgrounds remain edge-to-edge */
@@ -61,10 +70,35 @@ body,
   --sp-5: 40px;
 }
 
-/* 🏗️ Centralized Layout Compensation: Ensures content sits below the fixed navbar */
-.app-root>main {
+/* =============================================
+   🏗️ APP SHELL ARCHITECTURE (Google Play Standard)
+   =============================================
+   Structure: .app-root (Flex Column, full height)
+     ├── Navbar  (fixed, top)
+     ├── <main>  (flex: 1, scrollable — THE ONLY SCROLL AREA)
+     │    ├── AppContainer + Router content
+     │    └── Footer
+     ├── BottomNav (fixed, bottom)
+     ├── Loader / Notifications (overlays)
+   ============================================= */
+
+.app-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height — respects Android system bars */
+  overflow: hidden;
+  position: relative;
+}
+
+/* <main> is the SOLE scroll container */
+.app-root > main {
+  flex: 1 1 0%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Smooth iOS/Android momentum scrolling */
+  overscroll-behavior-y: contain; /* Prevent pull-to-refresh & elastic bounce */
   padding-top: calc(var(--navbar-height) + var(--safe-inset-top));
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }

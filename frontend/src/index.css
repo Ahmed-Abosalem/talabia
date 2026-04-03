@@ -11,9 +11,9 @@ body {
   @apply font-sans bg-slate-50 text-slate-900;
 }
 
-/* 📱 Mobile Layout Utilities */
+/* 📱 App Shell: Bottom padding to prevent content from hiding behind BottomNav */
 .has-bottom-nav {
-  padding-bottom: calc(80px + var(--safe-inset-bottom, 0px));
+  padding-bottom: calc(var(--bottomnav-height, 70px) + var(--safe-inset-bottom, 0px) + 10px);
 }
 
 @media (min-width: 1024px) {
