@@ -5,11 +5,13 @@
     bottom: 0 !important;
     left: 0;
     right: 0;
-    height: calc(var(--bottomnav-height, 70px) + var(--safe-inset-bottom, 0px));
-    background-color: #4b502a; /* 🟢 FIX: Olive background to cover safe area gaps */
+    /* 👗 SLENDER BASE: Smaller height + safe area extension */
+    height: calc(var(--bottomnav-height, 60px) + var(--safe-inset-bottom, 0px));
+    background-color: #4b502a; /* 🟢 Olive base for edge-to-edge */
     display: flex;
     justify-content: space-around;
-    align-items: stretch;
+    align-items: flex-start; /* Start from top to keep icons consistent */
+    padding-top: 2px;
     z-index: 10000;
     padding-bottom: var(--safe-inset-bottom, 0px);
     direction: rtl;
