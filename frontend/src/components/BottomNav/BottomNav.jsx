@@ -95,22 +95,40 @@ const BottomNav = () => {
         }
     };
 
-    const config = navConfigs[effectiveRole] || navConfigs.guest;
+    const rawConfig = navConfigs[effectiveRole] || navConfigs.guest;
+    
+    // 🏗️ Symmetrical 5-Slot Normalization
+    // If a role has only 3 items, we place them in slots 1, 3 (center), and 5.
+    let displayItems = [...rawConfig.items];
+    if (displayItems.length === 3) {
+        // [Item1, Center, Item2] -> [Item1, null, Center, null, Item2]
+        displayItems = [
+            displayItems[0],
+            { id: "spacer1", type: "spacer" },
+            displayItems[1],
+            { id: "spacer2", type: "spacer" },
+            displayItems[2]
+        ];
+    }
 
     return (
         <nav className="buyer-bottom-nav-root">
-            {/* SVG Organic Plateau - Full Body & Hill Design */}
-            {config.items.some(item => item.type === "center") && (
+            {/* SVG Organic Plateau - Full Body & Concave Cradle Design */}
+            {displayItems.some(item => item?.type === "center") && (
                 <svg
                     className="nav-notch-svg"
                     viewBox="0 0 100 90"
                     preserveAspectRatio="none"
                 >
-                    <path d="M 0 20 H 10 C 25 20, 32 20, 38 12 C 43 5, 46 0, 50 0 C 54 0, 57 5, 62 12 C 68 20, 75 20, 90 20 H 100 V 90 H 0 Z" />
+                    <path d="M 0 0 H 35 C 41 0, 44 40, 50 40 C 56 40, 59 0, 65 0 H 100 V 90 H 0 Z" />
                 </svg>
             )}
 
-            {config.items.map((item) => {
+            {displayItems.map((item) => {
+                if (!item || item.type === "spacer") {
+                    return <div key={item?.id || Math.random()} className="nav-item-spacer-only" />;
+                }
+
                 const isActive = item.path
                     ? (item.path.includes("?")
                         ? (location.pathname + location.search === item.path)

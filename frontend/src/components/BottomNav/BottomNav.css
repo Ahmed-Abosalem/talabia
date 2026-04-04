@@ -5,14 +5,14 @@
     bottom: 0 !important;
     left: 0;
     right: 0;
-    /* 👗 GOLD STANDARD: Precise horizontal baseline synchronization */
-    height: calc(var(--bottomnav-height, 64px) + (var(--safe-inset-bottom, 0px) * 0.3));
-    background-color: #4b502a; /* 🟢 Olive base for edge-to-edge */
-    display: flex;
-    justify-content: space-around;
-    align-items: stretch; /* All children occupy full height for bottom alignment */
+    /* 📏 HIGH-FIDELITY CONCAVE: Grid Architecture + Baseline Lock */
+    height: calc(var(--bottomnav-height, 72px) + (var(--safe-inset-bottom, 0px) * 0.3));
+    background-color: #4B5320; /* 🟢 Precision Dark Olive */
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 🏗️ Accurate 20% segments */
+    align-items: stretch;
     z-index: 10000;
-    padding-bottom: calc(max(6px, var(--safe-inset-bottom, 0px) * 0.3));
+    padding-bottom: calc(max(8px, var(--safe-inset-bottom, 0px) * 0.3));
     direction: rtl;
     filter: drop-shadow(0 -4px 12px rgba(0, 0, 0, 0.25));
     /* 🏗️ APP SHELL: GPU Layer Lock — prevents floating on Android WebView */
@@ -33,11 +33,10 @@
 }
 
 .nav-item {
-    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end; /* 🏗️ Baseline Sync: All labels start from bottom */
+    justify-content: flex-end; /* ⚓ Baseline Anchorage: Gravity to the bottom */
     color: rgba(255, 255, 255, 0.7);
     text-decoration: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -45,13 +44,19 @@
     background: none;
     border: none;
     padding: 0;
-    padding-bottom: 8px; /* 🟢 Grounded Baseline: Uniform text height */
+    padding-bottom: 10px; /* 📍 THE UNIVERSAL SHELF: Flat baseline Y-axis */
     position: relative;
+    width: 100%;
 }
 
 .nav-item.active {
     color: #ffffff;
     /* pure white for active */
+}
+
+.nav-item-spacer-only {
+    /* 🏗️ Empty Grid Slot: Maintains 5-column symmetry for short bars */
+    height: 100%;
 }
 
 .nav-icon-wrapper {
@@ -72,7 +77,7 @@
 }
 
 .nav-icon-spacer {
-    height: 26px; /* 🟢 MIRROR MATCH: Precisely same height as Icon(22) + Margin(4) */
+    height: 28px; /* 🧩 PERFECT MIRROR: Matches 22px icon + 6px spacing */
     width: 1px;
     visibility: hidden;
 }
@@ -93,33 +98,31 @@
     font-weight: 700;
 }
 
-/* SVG Organic Hill - Full Body backdrop */
+/* 🏗️ SVG CONCAVE CRADLE (Dip Down) */
 .nav-notch-svg {
     position: absolute;
-    top: -14px; /* 🟢 Lowered for slender look */
+    top: 0; /* Align with top border */
     left: 0;
     width: 100%;
-    height: 90px;
-    fill: #4b502a;
+    height: 45px; /* Deep dip */
+    fill: #4B5320;
     z-index: -1;
     pointer-events: none;
-    outline: none;
-    border: none;
 }
 
-/* Floating Button logic */
+/* 🟠 SAFETY ORANGE FLOAT (Negative Offset from Dip) */
 .floating-cart-btn {
     position: absolute;
-    top: -14px; /* 🟢 Lowered to match notch */
+    top: -18px; /* 🟢 Perfectly centered in the Concave Cradle */
     left: 50%;
     transform: translateX(-50%);
-    z-index: 2;
+    z-index: 5;
     pointer-events: auto;
 }
 
-/* Color Variants for Center Button */
+/* 🎨 THE 100% PRECISION PALETTE */
 .variant-cart .cart-inner-circle {
-    background-color: #ff7f00;
+    background-color: #FF8C00;
 }
 
 .variant-add .cart-inner-circle {
@@ -140,16 +143,15 @@
 
 /* Sky Blue for Logistics */
 
-/* Outer Circle matches the bar color */
 .cart-outer-circle {
     width: 60px;
     height: 60px;
-    background-color: #4b502a;
+    background-color: #4B5320; /* 🟢 Match bar body */
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-top: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-top: 2px solid rgba(255, 255, 255, 0.1); /* Subtle definition */
 }
 
 .cart-inner-circle {
