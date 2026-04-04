@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
 import AppContainer from "@/components/Layout/AppContainer";
@@ -8,70 +8,28 @@ import AppRouter from "./router";
 import { useApp } from "@/context/AppContext";
 import BottomNav from "@/components/BottomNav/BottomNav";
 import ScrollToTop from "@/components/ScrollToTop";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { App as CapApp } from "@capacitor/app";
 import { SplashScreen } from "@capacitor/splash-screen";
-import ReactSplashScreen from "@/components/pwa/SplashScreen";
-import { useLayoutEffect } from "react";
 
 export default function App() {
   const { isLoading, toast } = useApp();
-  
-  // 🎯 SplashScreen only on mobile/native, never on desktop
-  const isMobileOrNative = typeof window !== 'undefined' && (
-    window.Capacitor?.isNativePlatform?.() || window.innerWidth < 1024
-  );
-  const [showSplash, setShowSplash] = useState(isMobileOrNative);
   const location = useLocation();
-  const navigate = useNavigate();
 
-  // 🧹 CLEANUP: Restore White Background & Original Status Bar after Splash
-  useEffect(() => {
-    if (!showSplash) {
-      // 1. Restore Page Background and Scroll
-      document.body.style.backgroundColor = '#f8fafc'; 
-      document.body.classList.remove('overflow-hidden');
-      
-      // 2. Restore StatusBar to White/Dark Style for the Storefront
-      const restoreStatusBar = async () => {
-        if (window.Capacitor && window.Capacitor.isNativePlatform() && StatusBar) {
-          try {
-            await StatusBar.setStyle({ style: Style.Light });
-            await StatusBar.setBackgroundColor({ color: '#ffffff' });
-          } catch (err) {
-            // Silently ignore
-          }
-        }
-      };
-      restoreStatusBar();
-    }
-  }, [showSplash]);
-
-  // 🚀 FRAME-PERFECT SYNC: Handoff from Native to React Splash
-  useLayoutEffect(() => {
-    if (window.Capacitor?.isNativePlatform?.()) {
-      // Hide the native splash only AFTER React has built the first frame
-      // This ensures 100% parity between the two layers.
-      setTimeout(() => {
-        SplashScreen.hide();
-      }, 50); // Minimal buffer to ensure paint
-    }
-  }, []);
-
-  // 🛡️ Super-Perfection: Hardware Back Button & StatusBar Sync
+  // 🛡️ Hardware Back Button & Native Features Sync
   useEffect(() => {
     const initNativeFeatures = async () => {
       try {
-        // 1. Check if we are on a native platform (Android/iOS)
-        if (window.Capacitor && window.Capacitor.isNativePlatform() && StatusBar) {
-          try {
-            // 2. StatusBar Style
-            // Match the Deep Olive Edge for total immersion
-            await StatusBar.setStyle({ style: Style.Dark });
-            await StatusBar.setBackgroundColor({ color: '#353B17' });
-          } catch (err) {
-            // Silently ignore if plugin not implemented
+        if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+          // 1. Hide native splash immediately (if manual hide is enabled)
+          // We set it to autohide in config, but this is a safe fallback.
+          await SplashScreen.hide();
+
+          // 2. StatusBar Styles for the Storefront
+          if (StatusBar) {
+            await StatusBar.setStyle({ style: Style.Light });
+            await StatusBar.setBackgroundColor({ color: '#ffffff' });
           }
 
           // 3. Hardware Back Button Handler
@@ -83,8 +41,8 @@ export default function App() {
             }
           });
         }
-      } catch (e) {
-        console.warn("Native features init failed:", e);
+      } catch (err) {
+        console.warn("Native features init failed:", err);
       }
     };
     initNativeFeatures();
@@ -96,7 +54,7 @@ export default function App() {
     };
   }, []);
 
-  // 🔓 Universal Fluid Unlock: All store pages are now 100% width on Mobile/App environments
+  // 🔓 Universal Fluid Unlock
   const isFluidPage = true;
 
   // Pages where BottomNav should be hidden
@@ -104,8 +62,6 @@ export default function App() {
 
   return (
     <div className={`app-root ${isFluidPage ? "is-fluid-layout" : ""}`}>
-      {showSplash && <ReactSplashScreen onComplete={() => setShowSplash(false)} />}
-      
       <ScrollToTop />
       <Navbar />
       <main className={!hideBottomNav ? "has-bottom-nav" : ""}>
