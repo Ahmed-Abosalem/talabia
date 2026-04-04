@@ -5,14 +5,14 @@
     bottom: 0 !important;
     left: 0;
     right: 0;
-    /* 📏 HIGH-FIDELITY CONCAVE: Grid Architecture + Baseline Lock */
+    /* 📏 THE ULTIMATE PRECISION: High-Fidelity Baseline Synchronization */
     height: calc(var(--bottomnav-height, 72px) + (var(--safe-inset-bottom, 0px) * 0.3));
-    background-color: #4B5320; /* 🟢 Precision Dark Olive */
+    background-color: #4B5320; /* 🟢 Certified Dark Olive */
     display: grid;
-    grid-template-columns: repeat(5, 1fr); /* 🏗️ Accurate 20% segments */
+    grid-template-columns: repeat(5, 1fr); /* 🏗️ Mathematical 20% segments */
     align-items: stretch;
     z-index: 10000;
-    padding-bottom: calc(max(8px, var(--safe-inset-bottom, 0px) * 0.3));
+    padding-bottom: calc(max(10px, var(--safe-inset-bottom, 0px) * 0.3));
     direction: rtl;
     filter: drop-shadow(0 -4px 12px rgba(0, 0, 0, 0.25));
     /* 🏗️ APP SHELL: GPU Layer Lock — prevents floating on Android WebView */
@@ -69,7 +69,8 @@
 .nav-icon {
     display: block;
     margin-bottom: 4px;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s ease;
+    /* 🏎️ Premium Spring Animation: Smooth & Interactive */
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s ease;
 }
 
 .nav-item.active .nav-icon {
@@ -77,7 +78,7 @@
 }
 
 .nav-icon-spacer {
-    height: 28px; /* 🧩 PERFECT MIRROR: Matches 22px icon + 6px spacing */
+    height: 26px; /* 🎯 PIXEL-PERFECT SYNC: Matches 22px icon + 4px margin exactly */
     width: 1px;
     visibility: hidden;
 }
@@ -98,26 +99,28 @@
     font-weight: 700;
 }
 
-/* 🏗️ SVG CONCAVE CRADLE (Dip Down) */
+/* 🏗️ SVG CONCAVE CRADLE (Refined Organic Dip) */
 .nav-notch-svg {
     position: absolute;
-    top: 0; /* Align with top border */
+    top: 0;
     left: 0;
     width: 100%;
-    height: 45px; /* Deep dip */
+    height: 48px; /* Deep, smooth dip */
     fill: #4B5320;
     z-index: -1;
+    filter: drop-shadow(0 -2px 4px rgba(0,0,0,0.1));
     pointer-events: none;
 }
 
-/* 🟠 SAFETY ORANGE FLOAT (Negative Offset from Dip) */
+/* 🟠 PRECISION ORANGE FLOAT (Safety Orange #FF8C00) */
 .floating-cart-btn {
     position: absolute;
-    top: -18px; /* 🟢 Perfectly centered in the Concave Cradle */
+    top: -20px; /* 🟢 Centered vertically in the Cradle valley */
     left: 50%;
     transform: translateX(-50%);
-    z-index: 5;
+    z-index: 10;
     pointer-events: auto;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
 }
 
 /* 🎨 THE 100% PRECISION PALETTE */
