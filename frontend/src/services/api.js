@@ -18,7 +18,8 @@ const isNative = (() => {
 const productionAPI = "https://www.talabia.net/api";
 const defaultBaseURL = isNative ? productionAPI : "/api";
 const baseURL = import.meta.env.VITE_API_BASE_URL || defaultBaseURL;
-console.log(`[Talabia API] isNative=${isNative}, baseURL=${baseURL}`);
+  // Removed debug log for production
+
 
 
 /* ------------------------------------------------
@@ -71,7 +72,7 @@ apiInstance.interceptors.response.use(
 
     // 🚷 تجاوز حد الطلبات
     if (status === 429) {
-      console.error("Rate limit exceeded (429). Too many requests.");
+      // 🕊️ Clean PWA Install Log
       // هنا يمكننا منع الطلبات القادمة لفترة أو إظهار رسالة عامة
     }
 

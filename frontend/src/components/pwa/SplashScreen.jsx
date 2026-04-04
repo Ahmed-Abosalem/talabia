@@ -10,14 +10,15 @@ const SplashScreen = ({ onComplete }) => {
     const [animationState, setAnimationState] = useState('entering');
 
     useEffect(() => {
-        // Step 1: Animation entry (just starts)
+        // Step 1: 1.2s of pure branded visibility
         const exitTimer = setTimeout(() => {
             setAnimationState('exiting');
-        }, 1600); // Show for 1.6s
+        }, 1200); 
 
+        // Step 2: Transition to Home after 0.4s fade-out (Total 1.6s)
         const completeTimer = setTimeout(() => {
             if (onComplete) onComplete();
-        }, 2000); // Fully done after 2s
+        }, 1600); 
 
         return () => {
             clearTimeout(exitTimer);
@@ -31,16 +32,7 @@ const SplashScreen = ({ onComplete }) => {
                 <div className="splash-logo-wrapper">
                     <img src={logo} alt="طلبية" className="splash-logo" />
                 </div>
-                <h1 className="splash-title">طلبية</h1>
-                <p className="splash-subtitle">بوابتك للتجارة الآمنة والعصرية</p>
-                
-                <div className="splash-loader">
-                    <div className="splash-loader-bar"></div>
-                </div>
-            </div>
-            
-            <div className="splash-footer">
-                <p>© 2025 طلبية. جميع الحقوق محفوظة.</p>
+                <p className="splash-tagline">بوابتك للتجارة الإلكترونية</p>
             </div>
         </div>
     );

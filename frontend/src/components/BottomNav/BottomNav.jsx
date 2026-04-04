@@ -116,17 +116,17 @@ const BottomNav = () => {
 
     return (
         <nav className="buyer-bottom-nav-root">
-            {/* 🏗️ SVG CONCAVE CRADLE: The "Dip Down" Geometry */}
-            {displayItems.some(item => item?.type === "center") && (
-                <svg
-                    className="nav-notch-svg"
-                    viewBox="0 0 100 90"
-                    preserveAspectRatio="none"
-                >
-                    <path d="M 0 0 H 35 C 41 0, 44 40, 50 40 C 56 40, 59 0, 65 0 H 100 V 90 H 0 Z" />
-                </svg>
-            )}
+            {/* 🏗️ GEOMETRIC MASK: The High-Fidelity Organic Scoop (Cubic Bezier) */}
+            <svg style={{ position: "absolute", width: 0, height: 0 }} aria-hidden="true">
+                <defs>
+                    <clipPath id="nav-notch-clip" clipPathUnits="objectBoundingBox">
+                        <path d="M 0,0 H 0.35 C 0.42,0, 0.44,0.5, 0.5,0.5 C 0.56,0.5, 0.58,0, 0.65,0 H 1 L 1,1 H 0 Z" />
+                    </clipPath>
+                </defs>
+            </svg>
 
+            {/* 🏗️ GEOMETRIC BACKGROUND: The High-Fidelity Masked Base */}
+            <div className="nav-background-mask" />
             {displayItems.map((item) => {
                 if (!item || item.type === "spacer") {
                     return <div key={item?.id || Math.random()} className="nav-item-spacer-only" />;
@@ -140,7 +140,17 @@ const BottomNav = () => {
 
                 if (item.type === "center") {
                     return (
-                        <div key={item.id} className={`nav-item cart-item-wrapper ${isActive ? 'active' : ''}`} onClick={() => item.protected ? handleProtectedNavigation(item.path) : handleSimpleNavigation(item.path)}>
+                        <button
+                            key={item.id}
+                            className={`nav-item cart-item-placeholder ${isActive ? 'active' : ''}`}
+                            onClick={() => {
+                                if (item.protected) {
+                                    handleProtectedNavigation(item.path);
+                                } else {
+                                    handleSimpleNavigation(item.path);
+                                }
+                            }}
+                        >
                             <div className={`floating-cart-btn variant-${item.variant || 'default'}`}>
                                 <div className="cart-outer-circle">
                                     <div className="cart-inner-circle">
@@ -151,9 +161,10 @@ const BottomNav = () => {
                                     </div>
                                 </div>
                             </div>
+                            {/* 🎯 EMPTY SPACE: Reserves the exact icon slot area for baseline synchronization */}
                             <div className="nav-icon-spacer" />
                             <span className="nav-item-label">{item.label}</span>
-                        </div>
+                        </button>
                     );
                 }
 

@@ -266,13 +266,11 @@ export function AppProvider({ children }) {
       e.preventDefault();
       // تخزين الحدث لاستخدامه لاحقاً في صفحة التحميل
       setDeferredPrompt(e);
-      console.log("✅ PWA: 'beforeinstallprompt' event captured globally.");
     };
 
     const handleAppInstalled = () => {
       setIsAppInstalled(true);
       setDeferredPrompt(null);
-      console.log("🎉 PWA: App installed successfully!");
     };
 
     // التحقق الفوري إذا كان يعمل كـ "Standalone" (مثبت بالفعل)
