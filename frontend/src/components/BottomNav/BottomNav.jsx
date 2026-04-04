@@ -97,23 +97,26 @@ const BottomNav = () => {
 
     const rawConfig = navConfigs[effectiveRole] || navConfigs.guest;
     
-    // 🏗️ Symmetrical 5-Slot Normalization
-    // If a role has only 3 items, we place them in slots 1, 3 (center), and 5.
+    /**
+     * 🏗️ THE 5-SLOT MATRIX NORMALIZATION
+     * To maintain absolute symmetry and keep the 'Center' item in the center slot
+     * regardless of the role's item count, we map roles with 3 items to slots 1, 3, and 5.
+     * This preserves the grid-based 20% segment distribution requested in the architecture.
+     */
     let displayItems = [...rawConfig.items];
     if (displayItems.length === 3) {
-        // [Item1, Center, Item2] -> [Item1, null, Center, null, Item2]
         displayItems = [
-            displayItems[0],
-            { id: "spacer1", type: "spacer" },
-            displayItems[1],
-            { id: "spacer2", type: "spacer" },
-            displayItems[2]
+            displayItems[0], // Slot 1: Right
+            { id: "spacer1", type: "spacer" }, // Slot 2: Empty
+            displayItems[1], // Slot 3: Center (Concave Dip)
+            { id: "spacer2", type: "spacer" }, // Slot 4: Empty
+            displayItems[2]  // Slot 5: Left
         ];
     }
 
     return (
         <nav className="buyer-bottom-nav-root">
-            {/* SVG Organic Plateau - Full Body & Concave Cradle Design */}
+            {/* 🏗️ SVG CONCAVE CRADLE: The "Dip Down" Geometry */}
             {displayItems.some(item => item?.type === "center") && (
                 <svg
                     className="nav-notch-svg"

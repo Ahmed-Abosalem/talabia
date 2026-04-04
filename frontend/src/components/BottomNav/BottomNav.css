@@ -47,6 +47,13 @@
     padding-bottom: 10px; /* 📍 THE UNIVERSAL SHELF: Flat baseline Y-axis */
     position: relative;
     width: 100%;
+    /* 🏎️ Unified Interaction Logic */
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.nav-item:active {
+    transform: scale(0.95); /* 🖐️ Tactile Feedback: Physical depression on tap */
+    opacity: 0.8;
 }
 
 .nav-item.active {
@@ -126,25 +133,24 @@
 /* 🎨 THE 100% PRECISION PALETTE */
 .variant-cart .cart-inner-circle {
     background-color: #FF8C00;
+    box-shadow: 0 0 15px rgba(255, 140, 0, 0.35); /* 🟠 Safety Glow */
 }
 
 .variant-add .cart-inner-circle {
     background-color: #22c55e;
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.35); /* 🟢 Growth Glow */
 }
 
-/* Green for Adding */
 .variant-shipping .cart-inner-circle {
     background-color: #0284c7;
+    box-shadow: 0 0 15px rgba(2, 132, 199, 0.35); /* 🔵 Logistics Glow */
 }
 
 .variant-admin .cart-inner-circle {
     background-color: #a30000;
-    /* Admin/Danger Red for Distinctiveness */
-    border: 1.5px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 15px rgba(163, 0, 0, 0.4);
+    box-shadow: 0 0 15px rgba(163, 0, 0, 0.45); /* 🔴 Admin Glow */
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
 }
-
-/* Sky Blue for Logistics */
 
 .cart-outer-circle {
     width: 60px;
@@ -176,8 +182,8 @@
 
 .cart-icon-olive {
     color: #ffffff;
-    /* White icon for better contrast on colored circles */
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* 🏎️ Matching Spring Animation for Center Icon */
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .nav-item.active .cart-icon-olive {
@@ -221,10 +227,8 @@
     min-width: 20px;
     height: 20px;
     border: 1.5px solid #ffffff;
-    /* White border for contrast */
-    background: #4b502a;
-    /* Olive color requested */
-    z-index: 10;
+    background: #4B5320; /* Consistent with bar */
+    z-index: 20; /* 🟢 Ensure above everything else */
     animation: badge-pulse-center 1.2s infinite ease-out;
 }
 
