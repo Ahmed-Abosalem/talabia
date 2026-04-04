@@ -26,6 +26,28 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // 🧹 CLEANUP: Restore White Background & Original Status Bar after Splash
+  useEffect(() => {
+    if (!showSplash) {
+      // 1. Restore Page Background and Scroll
+      document.body.style.backgroundColor = '#f8fafc'; 
+      document.body.classList.remove('overflow-hidden');
+      
+      // 2. Restore StatusBar to White/Dark Style for the Storefront
+      const restoreStatusBar = async () => {
+        if (window.Capacitor && window.Capacitor.isNativePlatform() && StatusBar) {
+          try {
+            await StatusBar.setStyle({ style: Style.Light });
+            await StatusBar.setBackgroundColor({ color: '#ffffff' });
+          } catch (err) {
+            // Silently ignore
+          }
+        }
+      };
+      restoreStatusBar();
+    }
+  }, [showSplash]);
+
   // 🚀 FRAME-PERFECT SYNC: Handoff from Native to React Splash
   useLayoutEffect(() => {
     if (window.Capacitor?.isNativePlatform?.()) {
