@@ -11,7 +11,9 @@ import ScrollToTop from "@/components/ScrollToTop";
 import { useEffect, useState } from "react";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { App as CapApp } from "@capacitor/app";
-import SplashScreen from "@/components/pwa/SplashScreen";
+import { SplashScreen } from "@capacitor/splash-screen";
+import ReactSplashScreen from "@/components/pwa/SplashScreen";
+import { useLayoutEffect } from "react";
 
 export default function App() {
   const { isLoading, toast } = useApp();
@@ -24,6 +26,17 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // 🚀 FRAME-PERFECT SYNC: Handoff from Native to React Splash
+  useLayoutEffect(() => {
+    if (window.Capacitor?.isNativePlatform?.()) {
+      // Hide the native splash only AFTER React has built the first frame
+      // This ensures 100% parity between the two layers.
+      setTimeout(() => {
+        SplashScreen.hide();
+      }, 50); // Minimal buffer to ensure paint
+    }
+  }, []);
+
   // 🛡️ Super-Perfection: Hardware Back Button & StatusBar Sync
   useEffect(() => {
     const initNativeFeatures = async () => {
@@ -32,8 +45,9 @@ export default function App() {
         if (window.Capacitor && window.Capacitor.isNativePlatform() && StatusBar) {
           try {
             // 2. StatusBar Style
-            await StatusBar.setStyle({ style: Style.Light });
-            await StatusBar.setBackgroundColor({ color: '#ffffff' });
+            // Match the Deep Olive Edge for total immersion
+            await StatusBar.setStyle({ style: Style.Dark });
+            await StatusBar.setBackgroundColor({ color: '#353B17' });
           } catch (err) {
             // Silently ignore if plugin not implemented
           }
@@ -68,7 +82,7 @@ export default function App() {
 
   return (
     <div className={`app-root ${isFluidPage ? "is-fluid-layout" : ""}`}>
-      {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
+      {showSplash && <ReactSplashScreen onComplete={() => setShowSplash(false)} />}
       
       <ScrollToTop />
       <Navbar />

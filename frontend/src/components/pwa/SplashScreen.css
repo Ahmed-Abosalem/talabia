@@ -8,17 +8,21 @@
     bottom: 0;
     width: 100%;
     height: 100vh;
-    /* 🎨 UNIFIED BRANDING: Soft Professional Olive Gradient */
-    background: linear-gradient(135deg, #4B5320 0%, #353B17 100%);
+    /* 🎨 UNIFIED BRANDING: Solid Olive for the first frame to match Native Splash exactly */
+    background-color: #4B5320;
+    /* 🏎️ TRANSITION: High-Fidelity 0.4s Fade-out */
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 100000;
     color: #ffffff;
-    font-family: 'Outfit', 'Inter', system-ui, sans-serif;
-    /* 🏎️ TRANSITION: High-Fidelity 0.4s Fade-out */
-    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.splash-root.ready {
+    /* 🎨 UNIFIED BRANDING: High-Fidelity Radial Aura Glow */
+    background: radial-gradient(circle at center, #6B7435 0%, #4B5320 60%, #353B17 100%);
 }
 
 .splash-root.exiting {
@@ -34,23 +38,13 @@
     animation: splash-focal-entrance 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-.splash-logo-wrapper {
-    width: 140px;
-    height: 140px;
-    background-color: #ffffff;
-    /* 🏗️ ARCHITECTURAL SHAPE: Premium Squircle (32px radius) */
-    border-radius: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 28px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-}
-
 .splash-logo {
-    width: 90px;
+    width: 220px; /* Increased size to anchor the aura center */
     height: auto;
     object-fit: contain;
+    margin-bottom: 32px;
+    /* 🏗️ ARCHITECTURAL TOUCH: Subtle drop shadow for depth on the aura */
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
 }
 
 .splash-tagline {

@@ -7,31 +7,28 @@ import logo from '@/assets/logo.png'; // Assuming logo is here based on Footer.j
  * Provides a smooth, branded introduction for the Android/Mobile App.
  */
 const SplashScreen = ({ onComplete }) => {
-    const [animationState, setAnimationState] = useState('entering');
+    const [isExiting, setIsExiting] = useState(false);
+    const [isReady, setIsReady] = useState(false);
 
     useEffect(() => {
-        // Step 1: 1.2s of pure branded visibility
-        const exitTimer = setTimeout(() => {
-            setAnimationState('exiting');
-        }, 1200); 
+        // Step 1: Initial Solid Color Parity Frame (50ms)
+        const readyTimer = setTimeout(() => setIsReady(true), 100);
 
-        // Step 2: Transition to Home after 0.4s fade-out (Total 1.6s)
-        const completeTimer = setTimeout(() => {
-            if (onComplete) onComplete();
-        }, 1600); 
+        // Step 2: Exit to Home Screen (1200ms)
+        const exitTimer = setTimeout(() => setIsExiting(true), 1200);
+        const completeTimer = setTimeout(() => onComplete?.(), 1600);
 
         return () => {
+            clearTimeout(readyTimer);
             clearTimeout(exitTimer);
             clearTimeout(completeTimer);
         };
     }, [onComplete]);
 
     return (
-        <div className={`splash-root ${animationState}`}>
+        <div className={`splash-root ${isExiting ? 'exiting' : ''} ${isReady ? 'ready' : ''}`}>
             <div className="splash-content">
-                <div className="splash-logo-wrapper">
-                    <img src={logo} alt="طلبية" className="splash-logo" />
-                </div>
+                <img src={logo} alt="طلبية" className="splash-logo" />
                 <p className="splash-tagline">بوابتك للتجارة الإلكترونية</p>
             </div>
         </div>
