@@ -5,14 +5,14 @@
     bottom: 0 !important;
     left: 0;
     right: 0;
-    /* 👗 FINAL SLENDER: Maximum slenderness + balanced spacing */
-    height: calc(var(--bottomnav-height, 58px) + (var(--safe-inset-bottom, 0px) * 0.3));
+    /* 👗 ARCHITECTURAL BALANCE: Optimized height + baseline sync */
+    height: calc(var(--bottomnav-height, 64px) + (var(--safe-inset-bottom, 0px) * 0.3));
     background-color: #4b502a; /* 🟢 Olive base for edge-to-edge */
     display: flex;
     justify-content: space-around;
-    align-items: flex-end; /* Lower icons to the bottom */
+    align-items: center; /* Robust vertical synchronization */
     z-index: 10000;
-    padding-bottom: calc(max(6px, var(--safe-inset-bottom, 0px) * 0.3));
+    padding-bottom: calc(max(4px, var(--safe-inset-bottom, 0px) * 0.3));
     direction: rtl;
     filter: drop-shadow(0 -4px 12px rgba(0, 0, 0, 0.25));
     /* 🏗️ APP SHELL: GPU Layer Lock — prevents floating on Android WebView */
@@ -73,7 +73,7 @@
 }
 
 .nav-icon-spacer {
-    height: 26px;
+    height: 20px; /* 🟢 REDUCED: Architectural fix to pull label into viewport */
     width: 1px;
     visibility: hidden;
 }
@@ -82,11 +82,11 @@
     font-size: 0.72rem;
     font-weight: 500;
     color: inherit;
-    /* follow parent color */
     line-height: 1;
     white-space: nowrap;
     text-align: center;
     transition: color 0.2s ease, font-weight 0.2s ease;
+    z-index: 10; /* 🟢 Ensure label is above notch background */
 }
 
 .nav-item.active .nav-item-label {

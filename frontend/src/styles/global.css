@@ -36,8 +36,8 @@ body,
 :root {
   /* ✅ مصدر واحد لارتفاع الشريط العلوي */
   --navbar-height: 60px;
-  /* 📱 ارتفاع الشريط السفلي (Final Slender) */
-  --bottomnav-height: 58px;
+  /* 📱 ارتفاع الشريط السفلي (Balanced Slender) */
+  --bottomnav-height: 64px;
 
   /* 🛡️ Smart Fluid Architecture: Protected Rail System */
   /* These variables ensure content NEVER touches system notches while backgrounds remain edge-to-edge */

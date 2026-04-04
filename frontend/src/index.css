@@ -13,7 +13,7 @@ body {
 
 /* 📱 App Shell: Bottom padding to prevent content from hiding behind BottomNav */
 .has-bottom-nav {
-  padding-bottom: calc(var(--bottomnav-height, 58px) + (var(--safe-inset-bottom, 0px) * 0.3) + 10px);
+  padding-bottom: calc(var(--bottomnav-height, 64px) + (var(--safe-inset-bottom, 0px) * 0.3) + 10px);
 }
 
 @media (min-width: 1024px) {
