@@ -19,6 +19,9 @@ export default function App() {
 
   // 🛡️ Hardware Back Button & Native Features Sync
   useEffect(() => {
+    // 🧹 Forced UI Reset: Ensure storefront is always white/light-gray
+    document.body.style.backgroundColor = '#f8fafc';
+
     const initNativeFeatures = async () => {
       try {
         if (window.Capacitor && window.Capacitor.isNativePlatform()) {
