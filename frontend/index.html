@@ -21,15 +21,11 @@
         "url": "https://talabia.net"
       }
     </script>
+    <style>
+      body { background-color: #f8fafc !important; }
+    </style>
   </head>
   <body class="bg-slate-50">
-    <script>
-      // 🚀 BOOT PARITY: Match Native Splash for zero-flicker experience during engine start
-      if (window && window.location.search.toLowerCase().indexOf('native') !== -1 || (window.Capacitor && window.Capacitor.isNativePlatform())) {
-        document.body.style.backgroundColor = '#353B17';
-        document.body.style.overflow = 'hidden';
-      }
-    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

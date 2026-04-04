@@ -12,7 +12,7 @@
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-        <item name="android:background">@null</item>
+        <item name="android:windowBackground">#f8fafc</item>
     </style>
 
 
@@ -20,6 +20,7 @@
         <item name="windowSplashScreenBackground">#4B502A</item> <!-- Solid fallback for icon area -->
         <item name="android:windowBackground">@drawable/splash_gradient_bg</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_combined_final</item>
+        <item name="windowSplashScreenAnimationDuration">1</item> <!-- Force render for static icon -->
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>
