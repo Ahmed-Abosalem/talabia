@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.talabia.app"
+    namespace = "com.talabia.app.v15"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.talabia.app"
+        applicationId "com.talabia.app.v15"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 100
