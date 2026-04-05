@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <!-- Background of the splash screen -->
-        <item name="windowSplashScreenBackground">#4B502A</item>
-        <item name="android:windowBackground">@drawable/splash_gradient_bg</item>
-
-        <!-- The icon in the middle -->
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <!-- Unified Logo + Gradient Background (Guaranteed Visibility) -->
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_unified</item>
+        <item name="windowSplashScreenBackground">#4B502A</item> <!-- Matches the gradient edge -->
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
 
-        <!-- Use the main app theme after splash -->
+        <!-- Post-splash theme -->
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>
