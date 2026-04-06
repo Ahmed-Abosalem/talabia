@@ -6,7 +6,8 @@
     "url": "https://www.talabia.net/",
     "androidScheme": "https",
     "allowNavigation": [
-      "www.talabia.net"
+      "www.talabia.net",
+      "talabia.net"
     ]
   },
   "plugins": {

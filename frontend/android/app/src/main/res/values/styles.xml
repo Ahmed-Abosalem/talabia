@@ -17,10 +17,14 @@
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <!-- Unified Logo Card + Olive Background (Stable & Premium) -->
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_unified</item>
+        <!-- Core Splashscreen attributes (No Prefix for Compat) -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_unified</item>
         <item name="windowSplashScreenBackground">#4B502A</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        
+        <!-- Native Android 12+ attributes (With Prefix) -->
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_unified</item>
+        <item name="android:windowSplashScreenBackground">#4B502A</item>
 
         <!-- Post-splash theme -->
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
