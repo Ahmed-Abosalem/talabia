@@ -18,7 +18,8 @@
    ========================================= */
 .menu-dropdown-root {
   position: absolute;
-  top: 4.5rem;
+  top: 100%;
+  margin-top: 0.5rem;
   /* Strictly snap to the right */
   right: 1rem;
   inset-inline-start: auto;
