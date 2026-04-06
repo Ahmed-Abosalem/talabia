@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Fallback for Android < 8.0 (API < 26) -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@drawable/splash_bg_gradient" />
+    <!-- 1. Solid Olive Background (#4B502A) -->
+    <item>
+        <color android:color="#4B502A" />
+    </item>
+
+    <!-- 2. Logo Card (Rounded Square with Soft Edges) -->
+    <item
+        android:width="200dp"
+        android:height="200dp"
+        android:gravity="center"
+        android:drawable="@drawable/splash_logo_card" />
+
+    <!-- 3. The New Logo (Centered on the Card) -->
     <item
         android:width="160dp"
         android:height="160dp"
