@@ -13,6 +13,8 @@ import { StatusBar, Style } from "@capacitor/status-bar";
 import { App as CapApp } from "@capacitor/app";
 import { SplashScreen } from "@capacitor/splash-screen";
 
+import EliteHomeSkeleton from "@/components/Skeletons/EliteHomeSkeleton";
+
 export default function App() {
   const { isLoading, toast } = useApp();
   const location = useLocation();
@@ -25,10 +27,6 @@ export default function App() {
     const initNativeFeatures = async () => {
       try {
         if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-          // 1. Hide native splash immediately (if manual hide is enabled)
-          // We set it to autohide in config, but this is a safe fallback.
-          await SplashScreen.hide();
-
           // 2. StatusBar Styles for the Storefront
           if (StatusBar) {
             await StatusBar.setStyle({ style: Style.Light });
@@ -48,6 +46,21 @@ export default function App() {
         console.warn("Native features init failed:", err);
       }
     };
+
+    // 🌊 Clean Launch Controller: Hide splash only when data is ready
+    const handleSplashTransition = async () => {
+      if (!isLoading && window.Capacitor && window.Capacitor.isNativePlatform()) {
+        // Small buffer to ensure first meaningful paint is committed
+        setTimeout(async () => {
+          await SplashScreen.hide();
+        }, 500);
+      }
+    };
+
+    if (isLoading === false) {
+      handleSplashTransition();
+    }
+
     initNativeFeatures();
     
     return () => {
@@ -55,7 +68,7 @@ export default function App() {
         CapApp.removeAllListeners();
       }
     };
-  }, []);
+  }, [isLoading]);
 
   // 🔓 Universal Fluid Unlock
   const isFluidPage = true;
@@ -63,19 +76,23 @@ export default function App() {
   // Pages where BottomNav should be hidden
   const hideBottomNav = ["/login", "/register"].includes(location.pathname);
 
+  // 💎 Elite Professional: Determine which loader to show
+  const isHomePage = location.pathname === "/";
+  const showHomeSkeleton = isLoading && isHomePage;
+
   return (
     <div className={`app-root ${isFluidPage ? "is-fluid-layout" : ""}`}>
       <ScrollToTop />
       <Navbar />
       <main className={!hideBottomNav ? "has-bottom-nav" : ""}>
         <AppContainer fluid={isFluidPage}>
-          <AppRouter />
+          {showHomeSkeleton ? <EliteHomeSkeleton /> : <AppRouter />}
         </AppContainer>
         <Footer />
       </main>
       {!hideBottomNav && <BottomNav />}
 
-      {isLoading && <Loader />}
+      {isLoading && !isHomePage && <Loader />}
       {toast && <Notification type={toast.type} message={toast.message} />}
     </div>
   );

@@ -24,6 +24,34 @@
     <style>
       body { background-color: #f8fafc !important; }
     </style>
+    <!-- 🌊 Elite Professional: Shimmering Skeleton Shell -->
+    <style>
+      body { background-color: #f8fafc; margin: 0; padding: 0; }
+      #root:empty {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        background: #f8fafc;
+      }
+      #root:empty::before {
+        content: "";
+        display: block;
+        height: 45vw; /* Match Banner Aspect Ratio */
+        margin: 10px;
+        background: #4B502A; /* Olive background for the logo area */
+        border-radius: 12px;
+      }
+      #root:empty::after {
+        content: "جاري التحميل...";
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #4B502A;
+        font-family: sans-serif;
+        font-weight: bold;
+        margin-top: 50px;
+      }
+    </style>
   </head>
   <body class="bg-slate-50">
     <div id="root"></div>
