@@ -8,7 +8,7 @@ import AppRouter from "./router";
 import { useApp } from "@/context/AppContext";
 import BottomNav from "@/components/BottomNav/BottomNav";
 import ScrollToTop from "@/components/ScrollToTop";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { App as CapApp } from "@capacitor/app";
 import { SplashScreen } from "@capacitor/splash-screen";
@@ -18,6 +18,9 @@ import EliteHomeSkeleton from "@/components/Skeletons/EliteHomeSkeleton";
 export default function App() {
   const { isLoading, toast } = useApp();
   const location = useLocation();
+
+  // 🛡️ Nuclear Visibility Guard: Ensure NO real UI mounts during splash
+  const [isSplashActive, setIsSplashActive] = useState(true);
 
   // 🛡️ Hardware Back Button & Native Features Sync
   useEffect(() => {
@@ -53,7 +56,11 @@ export default function App() {
         // Small buffer to ensure first meaningful paint is committed
         setTimeout(async () => {
           await SplashScreen.hide();
+          setIsSplashActive(false); // 🔑 Lock released! Real UI can now manifest.
         }, 500);
+      } else if (!isLoading) {
+        // Safe fallback for web or if capacitor fails
+        setIsSplashActive(false);
       }
     };
 
@@ -78,7 +85,8 @@ export default function App() {
 
   // 💎 Elite Professional: Determine which loader to show
   const isHomePage = location.pathname === "/";
-  const showHomeSkeleton = isLoading && isHomePage;
+  // The skeleton shows if we are loading OR if the splash hasn't officially ended
+  const showHomeSkeleton = (isLoading || isSplashActive) && isHomePage;
 
   return (
     <div className={`app-root ${isFluidPage ? "is-fluid-layout" : ""}`}>
@@ -90,7 +98,9 @@ export default function App() {
         </AppContainer>
         <Footer />
       </main>
-      {!hideBottomNav && !isLoading && <BottomNav />}
+      
+      {/* 🚀 Nuclear Gate: No bottom nav ever appears while splash or loading is active */}
+      {!hideBottomNav && !isLoading && !isSplashActive && <BottomNav />}
 
       {isLoading && !isHomePage && <Loader />}
       {toast && <Notification type={toast.type} message={toast.message} />}

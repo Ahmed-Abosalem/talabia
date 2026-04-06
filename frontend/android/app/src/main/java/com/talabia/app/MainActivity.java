@@ -1,6 +1,7 @@
 package com.talabia.app;
 
 import android.os.Bundle;
+import android.webkit.CookieManager;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
 import androidx.core.splashscreen.SplashScreen;
@@ -13,9 +14,16 @@ public class MainActivity extends BridgeActivity {
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
 
-        // 🛡️ Ghost-Busters: Force Clear WebView Cache & Storage to eliminate old UI traces
+        // 🛡️ Nuclear Ghost-Busters: Pure Slate Scrub
         try {
+            // 1. Wipe all Cookies (Forces logout and cache break)
+            CookieManager.getInstance().removeAllCookies(null);
+            CookieManager.getInstance().flush();
+
+            // 2. Wipe all WebStorage (LocalStorage, IndexedDB, etc.)
             WebStorage.getInstance().deleteAllData();
+
+            // 3. Clear WebView Cache (Files, CSS, JS)
             WebView webView = getBridge().getWebView();
             if (webView != null) {
                 webView.clearCache(true);
