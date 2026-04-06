@@ -1,21 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 1. Solid Olive Background (#4B502A) -->
-    <item>
-        <color android:color="#4B502A" />
-    </item>
+    <!-- Removed redundant background layer (handled by windowSplashScreenBackground) -->
 
-    <!-- 2. Logo Card (Rounded Square with Soft Edges) -->
+    <!-- 1. Logo Card (Rounded Square Square with Soft Edges) -->
     <item
         android:width="200dp"
         android:height="200dp"
         android:gravity="center"
         android:drawable="@drawable/splash_logo_card" />
 
-    <!-- 3. The New Logo (Centered on the Card) -->
+    <!-- 2. The New Logo (Centered on the Card - Following the 45% Safe Zone Rule) -->
     <item
-        android:width="160dp"
-        android:height="160dp"
+        android:width="90dp"
+        android:height="90dp"
         android:gravity="center">
         <bitmap
             android:src="@drawable/splash_logo"
