@@ -90,7 +90,7 @@ export default function App() {
         </AppContainer>
         <Footer />
       </main>
-      {!hideBottomNav && <BottomNav />}
+      {!hideBottomNav && !isLoading && <BottomNav />}
 
       {isLoading && !isHomePage && <Loader />}
       {toast && <Notification type={toast.type} message={toast.message} />}

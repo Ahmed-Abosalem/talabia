@@ -45,11 +45,35 @@ const EliteHomeSkeleton = () => {
                 <div className="skeleton-sort-box shimmer-effect" />
             </div>
 
-            {/* 📦 Products Grid */}
+            {/* 📦 Products Grid (Restored) */}
             <div className="skeleton-products-grid">
                 {Array.from({ length: 4 }).map((_, i) => (
                     <ProductCardSkeleton key={i} />
                 ))}
+            </div>
+
+            {/* 🏠 Bottom Nav Skeleton */}
+            <div className="skeleton-bottom-nav">
+                <div className="skeleton-nav-item">
+                    <div className="skeleton-nav-icon shimmer-effect" />
+                    <div className="skeleton-nav-dot shimmer-effect" />
+                </div>
+                <div className="skeleton-nav-item">
+                    <div className="skeleton-nav-icon shimmer-effect" />
+                    <div className="skeleton-nav-dot shimmer-effect" />
+                </div>
+                
+                {/* Concave Center */}
+                <div className="skeleton-nav-center shimmer-effect" />
+
+                <div className="skeleton-nav-item">
+                    <div className="skeleton-nav-icon shimmer-effect" />
+                    <div className="skeleton-nav-dot shimmer-effect" />
+                </div>
+                <div className="skeleton-nav-item">
+                    <div className="skeleton-nav-icon shimmer-effect" />
+                    <div className="skeleton-nav-dot shimmer-effect" />
+                </div>
             </div>
         </div>
     );
