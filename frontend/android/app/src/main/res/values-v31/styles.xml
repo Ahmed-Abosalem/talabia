@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <!-- Core Splashscreen (No Prefix for Compat) -->
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_unified</item>
+        <!-- Using the Pre-baked Single Asset (Card + Logo) to guarantee visual accuracy on Android 12+ -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_final</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_final</item>
+
         <item name="windowSplashScreenBackground">#4B502A</item>
-        <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
-        
-        <!-- Native 12+ (With Prefix) -->
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_unified</item>
         <item name="android:windowSplashScreenBackground">#4B502A</item>
+
+        <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
 
         <!-- Post-splash theme -->
