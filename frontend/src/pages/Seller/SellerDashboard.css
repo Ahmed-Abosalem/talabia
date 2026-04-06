@@ -26,6 +26,8 @@
   color: #0f172a;
   min-height: 100vh;
   background: var(--seller-bg);
+  /* 🛡️ Smart Reset: Remove inherited dashboard padding to fuse with fixed navbar */
+  padding-top: 0 !important;
 }
 
 /* ===== الهيدر العلوي المتطور (Sticky) ===== */
@@ -40,6 +42,8 @@
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
   padding: 0.75rem 1rem;
   transition: all 0.3s ease;
+  /* 📏 Kill any automated top margin from container flow */
+  margin-top: 0 !important;
 }
 
 .seller-header-main {

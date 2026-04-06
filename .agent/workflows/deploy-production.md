@@ -13,9 +13,14 @@ Follow these steps precisely to avoid the "White Screen" initialization error an
    // turbo
    `git add . ; git commit -m "Deployment: [Your Summary]" ; git push origin main`
 
-3. **Remote Execution**:
-   Run the following command in your terminal:
-   `ssh root@165.232.127.15 "cd /root/talabia-app && git fetch origin main && git reset --hard origin/main && chmod +x deploy.sh && ./deploy.sh"`
+3. **Remote Execution (Manual Step)**:
+   > [!IMPORTANT]
+   > This step MUST be executed manually by the USER in their terminal because it requires a password. The AI cannot submit passwords via SSH.
+   
+   Copy and run the following command:
+   ```bash
+   ssh root@165.232.127.15 "cd /root/talabia-app && git fetch origin main && git reset --hard origin/main && chmod +x deploy.sh && ./deploy.sh"
+   ```
 
 4. **Verify Live Site**:
    - Visit https://talabia.net
