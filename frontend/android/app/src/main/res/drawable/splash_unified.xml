@@ -2,20 +2,22 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Removed redundant background layer (handled by windowSplashScreenBackground) -->
 
-    <!-- 1. Logo Card (Fitted to the 108dp System Circle Rule) -->
-    <item
-        android:width="100dp"
-        android:height="100dp"
-        android:gravity="center"
-        android:drawable="@drawable/splash_logo_card" />
-
-    <!-- 2. The New Logo (Centered on the Card - Scaled for Safe Zone) -->
+    <!-- 1. Logo Card (Precision 72dp Square to avoid Circular Clipping) -->
     <item
         android:width="72dp"
         android:height="72dp"
+        android:gravity="center"
+        android:drawable="@drawable/splash_logo_card" />
+
+    <!-- 2. The New Logo (Contain Scaling inside the Card) -->
+    <!-- Using 60dp width to ensure 6dp horizontal padding within the 72dp card -->
+    <item
+        android:width="60dp"
+        android:height="36dp"
         android:gravity="center">
         <bitmap
             android:src="@drawable/splash_logo"
-            android:gravity="center" />
+            android:gravity="center"
+            android:tileMode="disabled" />
     </item>
 </layer-list>
