@@ -26,24 +26,49 @@
   color: #0f172a;
   min-height: 100vh;
   background: var(--seller-bg);
-  /* 🛡️ Smart Reset: Remove inherited dashboard padding to fuse with fixed navbar */
+  /* 🛡️ Flow Neutral: Let the spacer and fixed header manage the top docking */
+  margin-top: 0 !important;
   padding-top: 0 !important;
+  position: relative;
 }
 
-/* ===== الهيدر العلوي المتطور (Sticky) ===== */
+/* ===== الهيدر العلوي المتطور (FIXED) ===== */
 .seller-top-header {
-  position: sticky;
-  top: calc(var(--navbar-height) + var(--safe-inset-top));
-  z-index: 900;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  /* 🏔️ Fixed Immersion: Anchored directly below the navbar for gap-free architecture */
+  position: fixed !important;
+  top: calc(var(--navbar-height, 60px) + var(--safe-inset-top, 0px)) !important;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 950; /* Stay above content, right below navbar dropdowns */
+  
+  background: #ffffff;
+  border-bottom: 2px solid rgba(226, 232, 240, 0.8);
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
   padding: 0.75rem 1rem;
-  transition: all 0.3s ease;
-  /* 📏 Kill any automated top margin from container flow */
-  margin-top: 0 !important;
+  transition: background 0.3s ease;
+  box-sizing: border-box;
+}
+
+/* 🧱 Header Spacer: Compensates for the fixed position */
+.seller-header-spacer {
+  display: block;
+  width: 100%;
+  /* Match the header's total height (approx 110px-130px depending on tabs) */
+  height: 124px; 
+  flex-shrink: 0;
+}
+
+@media (max-width: 1023px) {
+  .seller-header-spacer {
+    height: 64px; /* Slimmer for mobile (no tabs) */
+  }
+}
+
+@media (min-width: 1024px) {
+  .seller-header-spacer {
+    height: 124px; /* Taller for desktop (with sub-nav tabs) */
+  }
 }
 
 .seller-header-main {

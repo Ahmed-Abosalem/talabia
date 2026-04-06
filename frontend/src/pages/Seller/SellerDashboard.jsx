@@ -352,6 +352,9 @@ export default function SellerDashboard() {
           </button>
         </nav>
       </section>
+      
+      {/* 🧱 Fixed Header Spacer: Essential for maintaining flow when header is position:fixed */}
+      <div className="seller-header-spacer" />
 
       {/* ===== المحتوى المتغير (التبويبات أو الصفحات المستقلة) ===== */}
       <Outlet

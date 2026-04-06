@@ -162,7 +162,7 @@
     flex-shrink: 0;
 }
 
-/* 🛡️ Seller Context: Neutralize sticky behavior to prevent overlaps with scrolling store info */
+/* 🛡️ Seller Context: Neutralize fixed behavior to prevent overlaps with dashboard flow */
 .wallet-seller-scope .wallet-top-header,
 .seller-section .wallet-top-header {
     position: relative !important; 
@@ -171,7 +171,7 @@
     right: auto !important;
     border-radius: 0 !important;
     
-    /* 🏔️ Zero-Gap Protocol: Systemic reset — the parent immersion container handles the offset */
+    /* 🏔️ Zero-Gap Protocol: Systemic reset — the dashboard header handles fixed placement */
     margin-top: 0 !important; 
     margin-bottom: 0 !important;
     
