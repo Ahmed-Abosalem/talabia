@@ -76,13 +76,41 @@ export function AuthProvider({ children }) {
           localStorage.removeItem("talabia-auth");
           setToken(null);
         }
-      } catch {
-        localStorage.removeItem("talabia_token");
-        localStorage.removeItem("talabia-auth");
-        setUser(null);
-        setRole(null);
-        setToken(null);
-        setIsLoggedIn(false);
+      } catch (error) {
+        // 🛡️ OFFLINE-FIRST RESILIENCE:
+        // Do NOT blindly destroy the session on network errors or timeouts.
+        const status = error?.response?.status;
+        
+        if (status === 401) {
+          // 401 Unauthorized: Token is genuinely expired/invalid. Clean up strictly.
+          localStorage.removeItem("talabia_token");
+          localStorage.removeItem("talabia-auth");
+          setUser(null);
+          setRole(null);
+          setToken(null);
+          setIsLoggedIn(false);
+        } else {
+          // Network Error, 500, or App temporarily offline on boot.
+          // Fall back to safely cached local data to keep user logged in.
+          try {
+            const cachedData = localStorage.getItem("talabia-auth");
+            if (cachedData) {
+              const parsed = JSON.parse(cachedData);
+              if (parsed.user && parsed.role) {
+                setUser(parsed.user);
+                setRole(parsed.role);
+                setIsLoggedIn(true);
+                // Token already set at the start of initAuth.
+              } else {
+                setToken(null);
+              }
+            } else {
+              setToken(null); // No cache, safe fallback
+            }
+          } catch {
+            setToken(null);
+          }
+        }
       } finally {
         setIsReady(true);
       }
