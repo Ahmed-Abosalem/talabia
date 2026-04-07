@@ -3,7 +3,7 @@
 
 import "./SellerDashboard.css";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Store, BarChart3, ShoppingBag, Info, Wallet } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -69,7 +69,6 @@ export default function SellerDashboard() {
   });
   const [isOverviewLoading, setIsOverviewLoading] = useState(false);
 
-  // إعدادات المتجر (الاسم، الوصف، الظهور + الهاتف + العنوان)
   const [storeSettings, setStoreSettings] = useState({
     name: "",
     description: "",
@@ -78,6 +77,26 @@ export default function SellerDashboard() {
     address: buildEmptyAddress(),
   });
   const [isSettingsSaving, setIsSettingsSaving] = useState(false);
+
+  // 📐 Dynamic Spacer Sync: Perfectly match spacer height to fixed header
+  const headerRef = useRef(null);
+  const [spacerHeight, setSpacerHeight] = useState(124); // Fallback standard height
+
+  useEffect(() => {
+    const headerEl = headerRef.current;
+    if (!headerEl) return;
+
+    // Monitor exact height changes (e.g. from name wrapping or mobile switching)
+    const observer = new ResizeObserver((entries) => {
+      if (entries[0]) {
+        // Use offsetHeight as a reliable cross-browser measure of total block size
+        setSpacerHeight(headerEl.offsetHeight);
+      }
+    });
+
+    observer.observe(headerEl);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -259,7 +278,7 @@ export default function SellerDashboard() {
   return (
     <div className="seller-page">
       {/* ===== الهيدر العلوي: معلومات المتجر والمالك (ثابت) ===== */}
-      <section className="seller-top-header">
+      <section className="seller-top-header" ref={headerRef}>
         <div className="seller-header-main">
           <div className="seller-store-info">
             <div className="seller-store-avatar">
@@ -353,8 +372,8 @@ export default function SellerDashboard() {
         </nav>
       </section>
       
-      {/* 🧱 Fixed Header Spacer: Essential for maintaining flow when header is position:fixed */}
-      <div className="seller-header-spacer" />
+      {/* 🧱 Fixed Header Spacer: Dynamically synced to prevent content occlusion */}
+      <div className="seller-header-spacer" style={{ height: `${spacerHeight}px` }} />
 
       {/* ===== المحتوى المتغير (التبويبات أو الصفحات المستقلة) ===== */}
       <Outlet
