@@ -92,7 +92,7 @@ export default function App() {
     <div className={`app-root ${isFluidPage ? "is-fluid-layout" : ""}`}>
       <ScrollToTop />
       <Navbar />
-      <main className={!hideBottomNav ? "has-bottom-nav" : ""}>
+      <main id="main-scroll-container" className={!hideBottomNav ? "has-bottom-nav" : ""}>
         <AppContainer fluid={isFluidPage}>
           {showHomeSkeleton ? <EliteHomeSkeleton /> : <AppRouter />}
         </AppContainer>
