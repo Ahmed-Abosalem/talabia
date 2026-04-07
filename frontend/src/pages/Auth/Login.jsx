@@ -196,11 +196,16 @@ export default function Login() {
             </ErrorMessage>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <form
+              onSubmit={handleSubmit}
+              method="post"
+              autoComplete="on"
+            >
             <PremiumInput
-              id="email"
+              id="login-email"
               name="email"
-              autoComplete="email"
+              autoComplete="username email"
+              inputMode="email"
               label="البريد الإلكتروني"
               icon={Mail}
               value={formData.email}
@@ -210,7 +215,7 @@ export default function Login() {
             />
 
             <PremiumInput
-              id="password"
+              id="login-password"
               name="password"
               autoComplete="current-password"
               label="كلمة المرور"

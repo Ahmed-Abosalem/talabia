@@ -300,6 +300,10 @@ export default function Register() {
           )}
 
           <PremiumInput
+            id="register-email"
+            name="email"
+            autoComplete="email"
+            inputMode="email"
             label="البريد الإلكتروني"
             icon={Mail}
             value={formData.email}
@@ -310,6 +314,9 @@ export default function Register() {
 
           <Grid>
             <PremiumInput
+              id="register-password"
+              name="password"
+              autoComplete="new-password"
               label="كلمة المرور"
               icon={Lock}
               type={showPassword ? "text" : "password"}
@@ -324,6 +331,9 @@ export default function Register() {
               }
             />
             <PremiumInput
+              id="register-confirm-password"
+              name="confirm-password"
+              autoComplete="new-password"
               label="تأكيد كلمة المرور"
               icon={ShieldCheck}
               type={showPassword ? "text" : "password"}

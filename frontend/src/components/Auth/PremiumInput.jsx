@@ -115,10 +115,17 @@ const PremiumInput = ({
   onChange,
   activeColor,
   type = "text",
+  id,
+  name,
+  autoComplete,
+  inputMode,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const isFloating = isFocused || (value && value.length > 0);
+
+  // Generate a stable ID for label-input linking (critical for autofill)
+  const inputId = id || name || undefined;
 
   return (
     <Gutter>
@@ -129,13 +136,21 @@ const PremiumInput = ({
           </IconWrapper>
         )}
 
-        <Label $isFloating={isFloating} $isFocused={isFocused} $activeColor={activeColor}>
+        <Label
+          htmlFor={inputId}
+          $isFloating={isFloating}
+          $isFocused={isFocused}
+          $activeColor={activeColor}
+        >
           {label}
         </Label>
 
         {type === "textarea" ? (
           <StyledInput
             as="textarea"
+            id={inputId}
+            name={name}
+            autoComplete={autoComplete}
             rows={props.rows || 4}
             value={value}
             onFocus={() => setIsFocused(true)}
@@ -147,6 +162,10 @@ const PremiumInput = ({
         ) : (
           <StyledInput
             type={type}
+            id={inputId}
+            name={name}
+            autoComplete={autoComplete}
+            inputMode={inputMode}
             value={value}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
