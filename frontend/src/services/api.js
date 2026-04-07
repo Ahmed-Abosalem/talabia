@@ -6,9 +6,15 @@ import axios from "axios";
 // ✅ Note: capacitor.config.json has server.url = "https://www.talabia.net/"
 // This means the Android WebView loads from the production domain directly.
 // So "/api" (relative) resolves to https://www.talabia.net/api — which is correct.
-// We keep Capacitor detection as a safety net for future local-dev scenarios.
+// We check both the Capacitor object and the exact origin.
+// On Android Capacitor, the origin is usually exactly "http://localhost" (no port).
+// During PC dev, the origin is "http://localhost:5173", so it won't match exactly.
 const isNative = (() => {
   try {
+    const origin = window.location.origin;
+    if (origin === "capacitor://localhost" || origin === "http://localhost" || origin.includes("ionic://")) {
+      return true;
+    }
     return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   } catch {
     return false;
