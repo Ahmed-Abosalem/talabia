@@ -1,8 +1,6 @@
 package com.talabia.app;
 
 import android.os.Bundle;
-import android.webkit.CookieManager;
-import android.webkit.WebStorage;
 import android.webkit.WebView;
 import androidx.core.splashscreen.SplashScreen;
 import com.getcapacitor.BridgeActivity;
@@ -14,22 +12,15 @@ public class MainActivity extends BridgeActivity {
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
 
-        // 🛡️ Nuclear Ghost-Busters: Pure Slate Scrub
+        // ✅ Soft cache refresh: clear in-memory cache only
+        // Does NOT delete localStorage, cookies, or session data
         try {
-            // 1. Wipe all Cookies (Forces logout and cache break)
-            CookieManager.getInstance().removeAllCookies(null);
-            CookieManager.getInstance().flush();
-
-            // 2. Wipe all WebStorage (LocalStorage, IndexedDB, etc.)
-            WebStorage.getInstance().deleteAllData();
-
-            // 3. Clear WebView Cache (Files, CSS, JS)
             WebView webView = getBridge().getWebView();
             if (webView != null) {
-                webView.clearCache(true);
+                webView.clearCache(false); // false = in-memory only, preserves disk cache
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            // Silent fail — non-critical
         }
     }
 }
