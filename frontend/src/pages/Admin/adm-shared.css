@@ -72,7 +72,8 @@
 /* كلاس مشترك للصفحات المعتمدة على نظام المرجعية */
 .adm-page-root {
     width: 100%;
-    min-height: 100vh;
+    min-height: 100%;
+    /* ✅ يملأ المساحة المتاحة بدون تجاوز حدود <main> */
     background: var(--adm-bg);
     color: var(--adm-text-main);
     padding-bottom: var(--sp-5);
@@ -81,8 +82,8 @@
     direction: rtl;
     text-align: right;
     overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    /* ✅ التمرير يبقى حصرياً في <main> — لا حاوية تمرير مزدوجة */
+    overflow-y: visible;
 }
 
 .adm-header {

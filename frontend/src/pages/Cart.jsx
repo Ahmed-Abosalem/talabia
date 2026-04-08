@@ -1,7 +1,7 @@
 // src/pages/Cart.jsx
 
 import "./Cart.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ShoppingCart,
@@ -47,6 +47,21 @@ export default function Cart() {
 
   const [minOrder, setMinOrder] = useState({ active: false, value: 0 });
   const [removingId, setRemovingId] = useState(null);
+
+  // 📏 Real-time Header Height Tracking (Golden Standard)
+  const headerRef = useRef(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setHeaderHeight(entry.target.offsetHeight);
+      }
+    });
+    observer.observe(headerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // جلب إعدادات الحد الأدنى للطلب
   useEffect(() => {
@@ -287,8 +302,8 @@ export default function Cart() {
   };
 
   return (
-    <div className="adm-page-root cart-page">
-      <header className="adm-header">
+    <div className="adm-page-root cart-page" style={{ '--adm-header-height': `${headerHeight}px` }}>
+      <header className="adm-header" ref={headerRef}>
         <div className="adm-header-inner">
           <div className="adm-header-right">
             <button onClick={() => navigate("/")} className="adm-btn-back" title="العودة للتسوق">
