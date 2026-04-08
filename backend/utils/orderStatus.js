@@ -10,6 +10,8 @@ export const ORDER_STATUS_CODES = {
   AT_SELLER_READY_TO_SHIP: "AT_SELLER_READY_TO_SHIP", // جاهز للتسليم لشركة الشحن
   IN_SHIPPING: "IN_SHIPPING", // في الطريق مع شركة الشحن
   DELIVERED: "DELIVERED", // تم التسليم
+  CANCELLED: "CANCELLED", // ملغى (عام)
+  CANCELLED_BY_BUYER: "CANCELLED_BY_BUYER", // ملغى من المشتري (محجوز مستقبلاً)
   CANCELLED_BY_SELLER: "CANCELLED_BY_SELLER", // ملغي من قبل البائع
   CANCELLED_BY_SHIPPING: "CANCELLED_BY_SHIPPING", // ملغي من قبل شركة الشحن
   CANCELLED_BY_ADMIN: "CANCELLED_BY_ADMIN", // ملغي من قبل الإدارة

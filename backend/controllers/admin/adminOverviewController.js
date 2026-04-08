@@ -17,9 +17,8 @@ import Ad from '../../models/Ad.js';
 import Notification from '../../models/Notification.js';
 import {
   ORDER_STATUS_CODES,
-  // يمكن استخدامه لاحقاً لو أردنا إعادة احتساب الكود لطلبات قديمة بلا statusCode
-  // recomputeOrderStatusCode,
 } from '../../utils/orderStatus.js';
+import { CANCELLED_CODES } from '../../utils/cancellationCodes.js';
 
 // 🕒 مساعد بسيط لحساب تاريخ البداية حسب الفترة المطلوبة
 function resolveFromDate(period) {
@@ -137,6 +136,8 @@ export const getSystemStats = asyncHandler(async (req, res) => {
   ];
 
   const txBaseMatch = genericPeriodFilter ? { ...genericPeriodFilter } : {};
+  // ✅ استبعاد المعاملات المرتبطة بطلبات ملغاة (إذا وجدت) أو أي معاملة ملغاة بحد ذاتها
+  txBaseMatch.status = { $nin: ["CANCELLED", "cancelled"] };
 
   const [
     totalSales,
@@ -168,8 +169,19 @@ export const getSystemStats = asyncHandler(async (req, res) => {
     }),
   ]);
 
+  // 🏛️ تصحيح إضافي للمبيعات: استبعاد الطلبات الملغاة من مجموع الـ Orders
+  // (هذا يضمن أن totalSales تعكس مبيعات الطلبات غير الملغاة فقط)
+  const ordersMatch = { ...ordersPeriodFilter, statusCode: { $nin: CANCELLED_CODES } };
+  
+  const [accurateTotalSales] = await Promise.all([
+    Order.aggregate([
+        { $match: ordersMatch },
+        { $group: { _id: null, total: { $sum: "$totalPrice" } } }
+    ])
+  ]);
+
   const financial = {
-    totalSales,
+    totalSales: accurateTotalSales[0]?.total || 0,
     codSales,
     onlineSales,
     platformCommission,

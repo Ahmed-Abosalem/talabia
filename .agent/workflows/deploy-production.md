@@ -26,3 +26,7 @@ Follow these steps precisely to avoid the "White Screen" initialization error an
    - Visit https://talabia.net
    - Press Ctrl+F5 to clear cache.
    - Check Console (F12) for any "Initialization" errors.
+
+5. **Mobile App Synchronization (No Build Required)**:
+   > [!TIP]
+   > **There is no need to rebuild the Android APK.** Because `capacitor.config.json` is configured with `server.url = "https://www.talabia.net"`, the mobile app fetches the interface directly from the live server. Once the server deployment (Step 3) is complete, all users will see the updates on their phones instantly the next time they open the app.

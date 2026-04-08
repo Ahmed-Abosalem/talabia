@@ -11,6 +11,7 @@ import Product from '../../models/Product.js';
 import Transaction from '../../models/Transaction.js';
 import Category from '../../models/Category.js';
 import { ORDER_STATUS_CODES } from '../../utils/orderStatus.js';
+import { CANCELLED_CODES } from '../../utils/cancellationCodes.js';
 
 /**
  * 🛠️ دالة مساعدة لتحديد نطاق التاريخ بناءً على الفلتر
@@ -71,11 +72,7 @@ export const getAdminReportsOverview = asyncHandler(async (req, res) => {
   const matchStage = {
     createdAt: { $gte: start, $lte: end },
     statusCode: {
-      $nin: [
-        ORDER_STATUS_CODES.CANCELLED,
-        ORDER_STATUS_CODES.CANCELLED_BY_ADMIN,
-        'cancelled'
-      ]
+      $nin: CANCELLED_CODES
     }
   };
 
